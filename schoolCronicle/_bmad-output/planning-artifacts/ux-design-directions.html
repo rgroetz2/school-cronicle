@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SchoolCronicle — UX design directions</title>
+  <style>
+    :root { --ink: #1a1c1e; --muted: #5c5f62; --line: #e0e2e6; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color: var(--ink); background: #f4f5f7; }
+    header { padding: 1.25rem 1.5rem; background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.15rem; }
+    header p { margin: 0; font-size: 0.875rem; color: var(--muted); max-width: 56rem; }
+    main { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+    .dir { background: #fff; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 2rem; overflow: hidden; }
+    .dir h2 { margin: 0; padding: 0.75rem 1rem; font-size: 0.95rem; background: #fafbfc; border-bottom: 1px solid var(--line); }
+    .mock { padding: 1rem; display: grid; gap: 1rem; }
+    @media (min-width: 720px) {
+      .mock { grid-template-columns: 1fr 1.1fr; align-items: start; }
+    }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; border-radius: 8px; font-size: 0.8rem; }
+    .list { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: 0.8rem; }
+    .row { display: flex; justify-content: space-between; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--line); background: #fff; }
+    .row:last-child { border-bottom: 0; }
+    .badge { font-size: 0.65rem; padding: 0.15rem 0.45rem; border-radius: 999px; font-weight: 600; }
+    .compose { border: 1px solid var(--line); border-radius: 8px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .field { display: flex; flex-direction: column; gap: 0.2rem; }
+    .field label { font-size: 0.7rem; color: var(--muted); }
+    .fake-input { height: 2rem; border-radius: 6px; background: #f0f1f4; border: 1px solid #d8dbe0; }
+    .files { border: 1px dashed #c5c9d1; border-radius: 8px; padding: 0.5rem; font-size: 0.72rem; color: var(--muted); }
+    .sticky { display: flex; gap: 0.5rem; margin-top: 0.25rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
+    button { border: 0; border-radius: 8px; padding: 0.45rem 0.85rem; font-size: 0.75rem; font-weight: 600; cursor: default; }
+    .btn-secondary { background: #e8eaef; color: #333; }
+    .btn-primary { color: #fff; }
+    footer { padding: 1rem 1.5rem 2rem; font-size: 0.75rem; color: var(--muted); text-align: center; }
+    a { color: #1565c0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SchoolCronicle — design direction showcase</h1>
+    <p>Four lightweight layout/visual variants for the same core loop: <strong>My appointments</strong> + <strong>Compose</strong> (draft, images, submit). Compare density, chrome weight, and primary hue. Open in a browser; no build step.</p>
+  </header>
+  <main>
+    <!-- Direction A -->
+    <section class="dir" id="dir-a">
+      <h2>Direction A — Institutional calm (default recommendation)</h2>
+      <div class="mock">
+        <div>
+          <div class="toolbar" style="background:#1e3a5f;color:#fff;border-radius:8px;">
+            <span>SchoolCronicle</span><span>Teacher ▾</span>
+          </div>
+          <div class="list" style="margin-top:0.5rem;">
+            <div class="row"><span>Parents’ evening</span><span class="badge" style="background:#e3f2fd;color:#1565c0;">Draft</span></div>
+            <div class="row"><span>Ski trip</span><span class="badge" style="background:#e8f5e9;color:#2e7d32;">Submitted</span></div>
+          </div>
+        </div>
+        <div class="compose">
+          <strong style="font-size:0.85rem;">New appointment</strong>
+          <div class="field"><label>Title</label><div class="fake-input"></div></div>
+          <div class="field"><label>Date</label><div class="fake-input"></div></div>
+          <div class="files">Images: 2 valid · 1 needs fix</div>
+          <div class="sticky">
+            <button type="button" class="btn-secondary">Save draft</button>
+            <button type="button" class="btn-primary" style="background:#1565c0;">Submit</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Direction B -->
+    <section class="dir" id="dir-b">
+      <h2>Direction B — Softer surfaces, warmer primary</h2>
+      <div class="mock">
+        <div>
+          <div class="toolbar" style="background:#fff;color:#333;border:1px solid var(--line);">
+            <span><strong>SchoolCronicle</strong></span><span style="color:var(--muted);">☰</span>
+          </div>
+          <div class="list" style="margin-top:0.5rem;">
+            <div class="row"><span>Parents’ evening</span><span class="badge" style="background:#fff3e0;color:#e65100;">Draft</span></div>
+            <div class="row"><span>Ski trip</span><span class="badge" style="background:#e8f5e9;color:#2e7d32;">Submitted</span></div>
+          </div>
+        </div>
+        <div class="compose" style="background:#faf8f6;border-color:#ebe7e2;">
+          <strong style="font-size:0.85rem;">New appointment</strong>
+          <div class="field"><label>Title</label><div class="fake-input" style="background:#fff;"></div></div>
+          <div class="field"><label>Date</label><div class="fake-input" style="background:#fff;"></div></div>
+          <div class="files" style="border-color:#e0dcd6;">Drop images or browse</div>
+          <div class="sticky">
+            <button type="button" class="btn-secondary">Save draft</button>
+            <button type="button" class="btn-primary" style="background:#bf360c;">Submit</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Direction C -->
+    <section class="dir" id="dir-c">
+      <h2>Direction C — Dense desktop list, airy compose</h2>
+      <div class="mock">
+        <div>
+          <div class="toolbar" style="background:#263238;color:#eceff1;border-radius:8px;">
+            <span>SchoolCronicle</span><span>+ New</span>
+          </div>
+          <div class="list" style="margin-top:0.5rem;font-size:0.72rem;">
+            <div class="row" style="padding:0.35rem 0.6rem;"><span>Parents’ evening · 12 Mar</span><span class="badge" style="background:#37474f;color:#b0bec5;">Draft</span></div>
+            <div class="row" style="padding:0.35rem 0.6rem;"><span>Ski trip · 4 Feb</span><span class="badge" style="background:#1b5e20;color:#c8e6c9;">Submitted</span></div>
+            <div class="row" style="padding:0.35rem 0.6rem;"><span>Certificates day</span><span class="badge" style="background:#37474f;color:#b0bec5;">Draft</span></div>
+          </div>
+        </div>
+        <div class="compose" style="padding:1rem;">
+          <strong style="font-size:0.85rem;">Compose</strong>
+          <div class="field"><label>Title</label><div class="fake-input"></div></div>
+          <div class="field"><label>Date</label><div class="fake-input"></div></div>
+          <div class="files">No images yet</div>
+          <div class="sticky">
+            <button type="button" class="btn-secondary">Save draft</button>
+            <button type="button" class="btn-primary" style="background:#00897b;">Submit</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Direction D -->
+    <section class="dir" id="dir-d">
+      <h2>Direction D — Mobile-first single column (no split)</h2>
+      <div class="mock" style="grid-template-columns:1fr;">
+        <div class="compose" style="max-width:22rem;margin:0 auto;">
+          <div class="toolbar" style="background:#fff;color:#333;border:1px solid var(--line);margin-bottom:0.5rem;">
+            <span>← Appointments</span>
+          </div>
+          <strong style="font-size:0.85rem;">New appointment</strong>
+          <div class="field"><label>Title</label><div class="fake-input"></div></div>
+          <div class="field"><label>Date</label><div class="fake-input"></div></div>
+          <div class="files">+ Add photos</div>
+          <div class="sticky" style="position:sticky;bottom:0;background:#fff;padding-bottom:0.25rem;">
+            <button type="button" class="btn-secondary" style="flex:1;">Save draft</button>
+            <button type="button" class="btn-primary" style="flex:1;background:#3949ab;">Submit</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer>
+    Artifact path: <code>schoolCronicle/_bmad-output/planning-artifacts/ux-design-directions.html</code> — pick a letter (A–D) in chat to override the default before locking the UX spec, or continue with <strong>Direction A</strong>.
+  </footer>
+</body>
+</html>

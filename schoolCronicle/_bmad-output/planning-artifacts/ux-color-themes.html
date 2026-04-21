@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SchoolCronicle — semantic color themes</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 1.5rem; background: #f5f5f5; color: #1a1a1a; }
+    h1 { font-size: 1.1rem; margin: 0 0 1rem; }
+    p { font-size: 0.85rem; color: #444; max-width: 40rem; }
+    .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); max-width: 900px; }
+    .card { background: #fff; border-radius: 10px; padding: 1rem; border: 1px solid #e0e0e0; }
+    .sw { height: 3rem; border-radius: 8px; margin: 0.5rem 0; }
+    .label { font-size: 0.75rem; font-weight: 600; }
+    .hex { font-size: 0.7rem; color: #666; font-family: ui-monospace, monospace; }
+  </style>
+</head>
+<body>
+  <h1>SchoolCronicle — semantic roles (Direction A baseline)</h1>
+  <p>Placeholder swatches for Material theme tokens. Replace hex values with your school brand when available.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="label">Primary</div>
+      <div class="sw" style="background:#1565c0;"></div>
+      <div class="hex">#1565c0</div>
+    </div>
+    <div class="card">
+      <div class="label">Surface / background</div>
+      <div class="sw" style="background:#fafafa;border:1px solid #e0e0e0;"></div>
+      <div class="hex">#fafafa</div>
+    </div>
+    <div class="card">
+      <div class="label">Error</div>
+      <div class="sw" style="background:#c62828;"></div>
+      <div class="hex">#c62828</div>
+    </div>
+    <div class="card">
+      <div class="label">Success (submitted)</div>
+      <div class="sw" style="background:#2e7d32;"></div>
+      <div class="hex">#2e7d32</div>
+    </div>
+    <div class="card">
+      <div class="label">Draft (neutral)</div>
+      <div class="sw" style="background:#eceff1;border:1px solid #b0bec5;"></div>
+      <div class="hex">outline / neutral</div>
+    </div>
+  </div>
+</body>
+</html>
