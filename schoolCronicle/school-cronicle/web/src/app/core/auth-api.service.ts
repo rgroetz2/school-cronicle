@@ -32,6 +32,15 @@ export interface AppointmentDraft {
   notes: string;
   status: 'draft';
   createdAt: string;
+  images: DraftImage[];
+}
+
+export interface DraftImage {
+  id: string;
+  name: string;
+  mimeType: string;
+  dataUrl: string;
+  addedAt: string;
 }
 
 interface CreateDraftResponse {
@@ -178,6 +187,7 @@ export class AuthApiService {
         notes: input.notes.trim(),
         status: 'draft',
         createdAt: new Date().toISOString(),
+        images: [],
       };
 
       const drafts = this.readDummyDrafts();
@@ -194,12 +204,12 @@ export class AuthApiService {
 
   listDrafts(): Observable<CreateDraftResponse['data']['draft'][]> {
     if (this.hasDummySession()) {
-      return of(this.readDummyDrafts());
+      return of(this.readDummyDrafts().map((draft) => this.normalizeDraftImages(draft)));
     }
 
     return this.http
       .get<ListDraftsResponse>('/api/appointments/drafts')
-      .pipe(map((response) => response.data.drafts));
+      .pipe(map((response) => response.data.drafts.map((draft) => this.normalizeDraftImages(draft))));
   }
 
   updateDraft(draftId: string, input: CreateDraftInput): Observable<AppointmentDraft> {
@@ -217,6 +227,7 @@ export class AuthApiService {
           notes: input.notes.trim(),
           status: 'draft',
           createdAt: new Date().toISOString(),
+          images: [],
         });
       }
 
@@ -264,10 +275,46 @@ export class AuthApiService {
       .pipe(map((response) => response.data));
   }
 
+  attachImageToDraft(
+    draftId: string,
+    image: Omit<DraftImage, 'id' | 'addedAt'>,
+  ): Observable<AppointmentDraft | undefined> {
+    const drafts = this.readDummyDrafts();
+    const draft = drafts.find((item) => item.id === draftId);
+    if (!draft) {
+      return of(undefined);
+    }
+
+    draft.images = [
+      ...draft.images,
+      {
+        id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: image.name,
+        mimeType: image.mimeType,
+        dataUrl: image.dataUrl,
+        addedAt: new Date().toISOString(),
+      },
+    ];
+    this.writeDummyDrafts(drafts);
+    return of(draft);
+  }
+
+  removeImageFromDraft(draftId: string, imageId: string): Observable<AppointmentDraft | undefined> {
+    const drafts = this.readDummyDrafts();
+    const draft = drafts.find((item) => item.id === draftId);
+    if (!draft) {
+      return of(undefined);
+    }
+
+    draft.images = draft.images.filter((image) => image.id !== imageId);
+    this.writeDummyDrafts(drafts);
+    return of(draft);
+  }
+
   private readDummyDrafts(): AppointmentDraft[] {
     const storage = this.getStorage();
     if (!storage) {
-      return [...this.inMemoryDummyDrafts];
+      return [...this.inMemoryDummyDrafts].map((draft) => this.normalizeDraftImages(draft));
     }
 
     const serialized = storage.getItem(AuthApiService.DUMMY_DRAFTS_KEY);
@@ -277,7 +324,7 @@ export class AuthApiService {
 
     try {
       const parsed = JSON.parse(serialized) as AppointmentDraft[];
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? parsed.map((draft) => this.normalizeDraftImages(draft)) : [];
     } catch {
       return [];
     }
@@ -291,5 +338,12 @@ export class AuthApiService {
     }
 
     storage.setItem(AuthApiService.DUMMY_DRAFTS_KEY, JSON.stringify(drafts));
+  }
+
+  private normalizeDraftImages(draft: AppointmentDraft): AppointmentDraft {
+    return {
+      ...draft,
+      images: Array.isArray(draft.images) ? draft.images : [],
+    };
   }
 }

@@ -293,4 +293,53 @@ describe('AppointmentsComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Draft is ready for submission.');
     httpTesting.verify();
   });
+
+  it('shows attached images for selected draft and removes one', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-30',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'With image',
+            appointmentDate: '2026-05-01',
+            category: 'meeting',
+            notes: '',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [
+              {
+                id: 'img-1',
+                name: 'photo.png',
+                mimeType: 'image/png',
+                dataUrl: 'data:image/png;base64,AAA',
+                addedAt: new Date().toISOString(),
+              },
+            ],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.openDraft('draft-30');
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('photo.png');
+
+    const removeButton = fixture.nativeElement.querySelector(
+      'section[aria-labelledby="draft-images-heading"] ul button',
+    ) as HTMLButtonElement;
+    removeButton.click();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Image removed.');
+  });
 });

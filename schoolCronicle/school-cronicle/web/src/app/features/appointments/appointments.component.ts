@@ -3,7 +3,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
-import { AppointmentDraft, AuthApiService } from '../../core/auth-api.service';
+import { AppointmentDraft, AuthApiService, DraftImage } from '../../core/auth-api.service';
 
 @Component({
   selector: 'app-appointments',
@@ -50,6 +50,28 @@ import { AppointmentDraft, AuthApiService } from '../../core/auth-api.service';
         <button type="button" (click)="submitDraft()" [disabled]="!canSubmit || isSubmittingDraft">
           {{ isSubmittingDraft ? 'Submitting...' : 'Submit draft' }}
         </button>
+      </section>
+
+      <section aria-labelledby="draft-images-heading">
+        <h3 id="draft-images-heading">Attached images</h3>
+        @if (!selectedDraftId) {
+          <p>Select a draft to attach images.</p>
+        } @else {
+          <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+          @if (selectedDraftImages.length === 0) {
+            <p>No images attached yet.</p>
+          } @else {
+            <ul>
+              @for (image of selectedDraftImages; track image.id) {
+                <li>
+                  <img [src]="image.dataUrl" [alt]="image.name" width="64" height="64" />
+                  <span>{{ image.name }}</span>
+                  <button type="button" (click)="removeImage(image.id)">Remove</button>
+                </li>
+              }
+            </ul>
+          }
+        }
       </section>
 
       <form [formGroup]="draftForm" (ngSubmit)="createDraft()" novalidate>
@@ -104,6 +126,9 @@ import { AppointmentDraft, AuthApiService } from '../../core/auth-api.service';
       @if (draftSubmitMessage) {
         <p role="status">{{ draftSubmitMessage }}</p>
       }
+      @if (imageMessage) {
+        <p role="status">{{ imageMessage }}</p>
+      }
 
       <button type="button" (click)="signOut()" [disabled]="isSigningOut">
         {{ isSigningOut ? 'Signing out...' : 'Sign out' }}
@@ -112,6 +137,7 @@ import { AppointmentDraft, AuthApiService } from '../../core/auth-api.service';
   `,
 })
 export class AppointmentsComponent {
+  private static readonly MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
   private readonly authApiService = inject(AuthApiService);
   private readonly router = inject(Router);
 
@@ -124,6 +150,7 @@ export class AppointmentsComponent {
   openedDraftMessage = '';
   draftSavedMessage = '';
   draftSubmitMessage = '';
+  imageMessage = '';
   selectedDraftId: string | null = null;
   categories: string[] = [];
   drafts: AppointmentDraft[] = [];
@@ -163,6 +190,14 @@ export class AppointmentsComponent {
     return Boolean(this.selectedDraftId) && this.missingRequiredFields.length === 0;
   }
 
+  get selectedDraftImages(): DraftImage[] {
+    if (!this.selectedDraftId) {
+      return [];
+    }
+
+    return this.drafts.find((draft) => draft.id === this.selectedDraftId)?.images ?? [];
+  }
+
   signOut(): void {
     if (this.isSigningOut) {
       return;
@@ -186,6 +221,7 @@ export class AppointmentsComponent {
     this.draftCreatedMessage = '';
     this.draftSavedMessage = '';
     this.draftSubmitMessage = '';
+    this.imageMessage = '';
     this.draftForm.markAllAsTouched();
 
     if (this.draftForm.invalid || this.isCreatingDraft || this.isSavingDraft) {
@@ -269,6 +305,97 @@ export class AppointmentsComponent {
       });
   }
 
+  onImageSelected(event: Event): void {
+    if (!this.selectedDraftId) {
+      return;
+    }
+
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+    if (file.size > AppointmentsComponent.MAX_IMAGE_SIZE_BYTES) {
+      this.imageMessage = 'Image is too large. Maximum size is 2 MB.';
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+      if (!dataUrl) {
+        this.imageMessage = 'Image could not be loaded.';
+        return;
+      }
+
+      this.authApiService
+        .attachImageToDraft(this.selectedDraftId as string, {
+          name: file.name,
+          mimeType: file.type || 'image/*',
+          dataUrl,
+        })
+        .subscribe({
+          next: (draft) => {
+            if (!draft) {
+              const fallbackDraft = this.drafts.find((item) => item.id === this.selectedDraftId);
+              if (!fallbackDraft) {
+                this.imageMessage = 'Draft not found for image attach.';
+                return;
+              }
+
+              const appended: DraftImage = {
+                id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                name: file.name,
+                mimeType: file.type || 'image/*',
+                dataUrl,
+                addedAt: new Date().toISOString(),
+              };
+              this.replaceDraft({
+                ...fallbackDraft,
+                images: [...(fallbackDraft.images ?? []), appended],
+              });
+              this.imageMessage = `Attached image: ${file.name}`;
+              return;
+            }
+
+            this.replaceDraft(draft);
+            this.imageMessage = `Attached image: ${file.name}`;
+          },
+        });
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  removeImage(imageId: string): void {
+    if (!this.selectedDraftId) {
+      return;
+    }
+
+    this.authApiService.removeImageFromDraft(this.selectedDraftId, imageId).subscribe({
+      next: (draft) => {
+        if (!draft) {
+          const fallbackDraft = this.drafts.find((item) => item.id === this.selectedDraftId);
+          if (!fallbackDraft) {
+            this.imageMessage = 'Draft not found for image removal.';
+            return;
+          }
+
+          this.replaceDraft({
+            ...fallbackDraft,
+            images: (fallbackDraft.images ?? []).filter((image) => image.id !== imageId),
+          });
+          this.imageMessage = 'Image removed.';
+          return;
+        }
+
+        this.replaceDraft(draft);
+        this.imageMessage = 'Image removed.';
+      },
+    });
+  }
+
   private loadDrafts(): void {
     this.isLoadingDrafts = true;
     this.authApiService
@@ -282,6 +409,10 @@ export class AppointmentsComponent {
           this.drafts = [];
         },
       });
+  }
+
+  private replaceDraft(updatedDraft: AppointmentDraft): void {
+    this.drafts = this.drafts.map((draft) => (draft.id === updatedDraft.id ? updatedDraft : draft));
   }
 
   private loadCategories(): void {
