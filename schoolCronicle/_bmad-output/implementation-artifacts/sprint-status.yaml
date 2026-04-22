@@ -1,0 +1,83 @@
+# generated: 2026-04-22T04:42:08+0200
+# last_updated: 2026-04-22T04:42:08+0200
+# project: schoolCronicle
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+#
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-04-22T04:42:08+0200
+last_updated: 2026-04-22T04:42:08+0200
+project: schoolCronicle
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: backlog
+  1-1-set-up-initial-project-from-starter-template: backlog
+  1-2-implement-teacher-sign-in: backlog
+  1-3-implement-sign-out-and-session-lifecycle: backlog
+  1-4-implement-access-failure-and-help-path: backlog
+  epic-1-retrospective: optional
+  epic-2: backlog
+  2-1-create-draft-appointment: backlog
+  2-2-view-and-open-appointment-list: backlog
+  2-3-edit-draft-metadata-and-category: backlog
+  2-4-enforce-metadata-submission-gate: backlog
+  2-5-remove-draft-appointment: backlog
+  epic-2-retrospective: optional
+  epic-3: backlog
+  3-1-attach-images-to-draft: backlog
+  3-2-validate-image-type-and-size: backlog
+  3-3-remove-replace-invalid-images: backlog
+  3-4-block-submit-on-image-validation-failures: backlog
+  epic-3-retrospective: optional
+  epic-4: backlog
+  4-1-submit-valid-appointment: backlog
+  4-2-display-draft-vs-submitted-states: backlog
+  4-3-enforce-read-only-submitted-view: backlog
+  epic-4-retrospective: optional
+  epic-5: backlog
+  5-1-enforce-school-scoped-authorization: backlog
+  5-2-persist-correct-school-associations: backlog
+  5-3-generate-structured-export: backlog
+  5-4-preserve-appointment-image-referential-integrity-in-export: backlog
+  5-5-record-audit-trail-for-significant-actions: backlog
+  epic-5-retrospective: optional
+  epic-6: backlog
+  6-1-show-privacy-data-category-summary: backlog
+  6-2-enable-editable-profile-metadata-corrections: backlog
+  6-3-support-erasure-restriction-process-invocation-path: backlog
+  6-4-apply-retention-rules-to-drafts-submissions-and-media: backlog
+  6-5-provide-in-product-guidance-for-required-fields-and-formats: backlog
+  6-6-surface-school-privacy-account-contact-information: backlog
+  epic-6-retrospective: optional
