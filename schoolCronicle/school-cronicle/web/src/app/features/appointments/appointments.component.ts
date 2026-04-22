@@ -253,6 +253,15 @@ type FilterLifecycleState = 'all' | 'needs_attention' | 'ready_to_submit' | 'sub
             <label for="draft-notes">Notes</label>
             <textarea id="draft-notes" formControlName="notes"></textarea>
 
+            <label for="draft-class-grade">Class/grade</label>
+            <input id="draft-class-grade" formControlName="classGrade" type="text" />
+
+            <label for="draft-guardian-name">Guardian name</label>
+            <input id="draft-guardian-name" formControlName="guardianName" type="text" />
+
+            <label for="draft-location">Location</label>
+            <input id="draft-location" formControlName="location" type="text" />
+
             <div class="form-actions">
               <button
                 type="submit"
@@ -434,6 +443,9 @@ export class AppointmentsComponent {
     appointmentDate: new FormControl('', [Validators.required]),
     category: new FormControl('', [Validators.required]),
     notes: new FormControl(''),
+    classGrade: new FormControl(''),
+    guardianName: new FormControl(''),
+    location: new FormControl(''),
   });
 
   readonly filterForm = new FormGroup({
@@ -680,11 +692,22 @@ export class AppointmentsComponent {
     const appointmentDate = this.draftForm.controls.appointmentDate.value ?? '';
     const category = this.draftForm.controls.category.value ?? '';
     const notes = this.draftForm.controls.notes.value ?? '';
+    const classGrade = this.draftForm.controls.classGrade.value ?? '';
+    const guardianName = this.draftForm.controls.guardianName.value ?? '';
+    const location = this.draftForm.controls.location.value ?? '';
 
     if (this.selectedDraftId) {
       this.isSavingDraft = true;
       this.authApiService
-        .updateDraft(this.selectedDraftId, { title, appointmentDate, category, notes })
+        .updateDraft(this.selectedDraftId, {
+          title,
+          appointmentDate,
+          category,
+          notes,
+          classGrade,
+          guardianName,
+          location,
+        })
         .pipe(finalize(() => (this.isSavingDraft = false)))
         .subscribe({
           next: (draft) => {
@@ -697,12 +720,20 @@ export class AppointmentsComponent {
 
     this.isCreatingDraft = true;
     this.authApiService
-      .createDraft({ title, appointmentDate, category, notes })
+      .createDraft({ title, appointmentDate, category, notes, classGrade, guardianName, location })
       .pipe(finalize(() => (this.isCreatingDraft = false)))
       .subscribe({
         next: (draft) => {
           this.draftCreatedMessage = `Draft created: ${draft.title}`;
-          this.draftForm.reset({ title: '', appointmentDate: '', category: '', notes: '' });
+          this.draftForm.reset({
+            title: '',
+            appointmentDate: '',
+            category: '',
+            notes: '',
+            classGrade: '',
+            guardianName: '',
+            location: '',
+          });
           this.loadDrafts();
         },
       });
@@ -723,6 +754,9 @@ export class AppointmentsComponent {
       appointmentDate: draft.appointmentDate,
       category: draft.category,
       notes: draft.notes,
+      classGrade: draft.classGrade ?? '',
+      guardianName: draft.guardianName ?? '',
+      location: draft.location ?? '',
     });
   }
 
@@ -871,7 +905,15 @@ export class AppointmentsComponent {
           this.drafts = this.drafts.filter((draft) => draft.id !== draftId);
           this.selectedDraftId = null;
           this.imageUploadStatuses = [];
-          this.draftForm.reset({ title: '', appointmentDate: '', category: '', notes: '' });
+          this.draftForm.reset({
+            title: '',
+            appointmentDate: '',
+            category: '',
+            notes: '',
+            classGrade: '',
+            guardianName: '',
+            location: '',
+          });
           this.deleteMessage = 'Draft deleted.';
         },
         error: () => {

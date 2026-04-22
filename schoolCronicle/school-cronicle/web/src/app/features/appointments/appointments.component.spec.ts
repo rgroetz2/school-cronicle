@@ -109,10 +109,18 @@ describe('AppointmentsComponent', () => {
       appointmentDate: '2026-04-22',
       category: 'meeting',
       notes: 'First draft',
+      classGrade: '3A',
+      guardianName: 'Miller',
+      location: 'Room 12',
     });
     fixture.componentInstance.createDraft();
     const request = httpTesting.expectOne('/api/appointments/drafts');
     expect(request.request.method).toBe('POST');
+    expect(request.request.body).toMatchObject({
+      classGrade: '3A',
+      guardianName: 'Miller',
+      location: 'Room 12',
+    });
     request.flush({
       data: {
         draft: {
@@ -123,6 +131,9 @@ describe('AppointmentsComponent', () => {
           appointmentDate: '2026-04-22',
           category: 'meeting',
           notes: 'First draft',
+          classGrade: '3A',
+          guardianName: 'Miller',
+          location: 'Room 12',
           status: 'draft',
           createdAt: new Date().toISOString(),
         },
@@ -142,6 +153,9 @@ describe('AppointmentsComponent', () => {
             appointmentDate: '2026-04-22',
             category: 'meeting',
             notes: 'First draft',
+            classGrade: '3A',
+            guardianName: 'Miller',
+            location: 'Room 12',
             status: 'draft',
             createdAt: new Date().toISOString(),
           },
@@ -520,11 +534,19 @@ describe('AppointmentsComponent', () => {
       appointmentDate: '2026-04-24',
       category: 'consultation',
       notes: 'Updated notes',
+      classGrade: '5C',
+      guardianName: 'Taylor',
+      location: 'East Wing',
     });
     fixture.componentInstance.createDraft();
 
     const updateRequest = httpTesting.expectOne('/api/appointments/drafts/draft-11');
     expect(updateRequest.request.method).toBe('PATCH');
+    expect(updateRequest.request.body).toMatchObject({
+      classGrade: '5C',
+      guardianName: 'Taylor',
+      location: 'East Wing',
+    });
     updateRequest.flush({
       data: {
         draft: {
@@ -535,6 +557,9 @@ describe('AppointmentsComponent', () => {
           appointmentDate: '2026-04-24',
           category: 'consultation',
           notes: 'Updated notes',
+          classGrade: '5C',
+          guardianName: 'Taylor',
+          location: 'East Wing',
           status: 'draft',
           createdAt: new Date().toISOString(),
         },
@@ -553,6 +578,9 @@ describe('AppointmentsComponent', () => {
             appointmentDate: '2026-04-24',
             category: 'consultation',
             notes: 'Updated notes',
+            classGrade: '5C',
+            guardianName: 'Taylor',
+            location: 'East Wing',
             status: 'draft',
             createdAt: new Date().toISOString(),
           },
@@ -563,6 +591,40 @@ describe('AppointmentsComponent', () => {
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Draft saved: Updated title');
     httpTesting.verify();
+  });
+
+  it('opens legacy drafts missing optional metadata without breaking form state', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'legacy-1',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Legacy draft',
+            appointmentDate: '2026-05-11',
+            category: 'meeting',
+            notes: 'no optional fields',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.openDraft('legacy-1');
+
+    expect(fixture.componentInstance.draftForm.value.classGrade).toBe('');
+    expect(fixture.componentInstance.draftForm.value.guardianName).toBe('');
+    expect(fixture.componentInstance.draftForm.value.location).toBe('');
+    expect(fixture.componentInstance.canSubmit).toBe(true);
   });
 
   it('submits a complete draft and shows submitted timestamp feedback', () => {
