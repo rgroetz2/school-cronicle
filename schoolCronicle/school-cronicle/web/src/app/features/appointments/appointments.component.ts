@@ -159,13 +159,23 @@ import { AppointmentDraft, AuthApiService, DraftImage } from '../../core/auth-ap
           <p class="state-pill success" role="status">{{ draftSavedMessage }}</p>
         }
         @if (draftSubmitMessage) {
-          <p class="state-pill" role="status">{{ draftSubmitMessage }}</p>
+          <p class="state-pill" [class.warning]="draftSubmitMessage.includes('blocked')" role="status">
+            {{ draftSubmitMessage }}
+          </p>
         }
         @if (imageMessage) {
-          <p class="state-pill" role="status">{{ imageMessage }}</p>
+          <p class="state-pill" [class.warning]="imageMessage.includes('too large')" role="status">
+            {{ imageMessage }}
+          </p>
         }
         @if (deleteMessage) {
-          <p class="state-pill" role="status">{{ deleteMessage }}</p>
+          <p
+            class="state-pill"
+            [class.warning]="deleteMessage.includes('failed') || deleteMessage.includes('could not')"
+            role="status"
+          >
+            {{ deleteMessage }}
+          </p>
         }
       </section>
     </main>

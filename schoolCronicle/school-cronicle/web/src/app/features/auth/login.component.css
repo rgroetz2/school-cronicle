@@ -67,6 +67,13 @@ button {
   color: #fff;
   background: linear-gradient(160deg, var(--brand), var(--brand-strong));
   cursor: pointer;
+  transition:
+    transform 120ms ease,
+    opacity 120ms ease;
+}
+
+button:hover:not([disabled]) {
+  transform: translateY(-1px);
 }
 
 button[disabled] {
