@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -178,6 +179,42 @@ export class AppointmentsController {
     return {
       data: {
         categories: this.appointmentsService.listCategories(),
+      },
+    };
+  }
+
+  @Post('drafts/:draftId/submit')
+  submitDraft(@Param('draftId') draftId: string, @Req() req: Request) {
+    const sessionId = extractSessionIdFromCookieHeader(req.headers.cookie);
+    const session = this.sessionService.getSession(sessionId);
+
+    if (!session) {
+      throw new UnauthorizedException({
+        message: 'Authentication required.',
+      });
+    }
+
+    const draft = this.appointmentsService.findDraftForTeacher(session.teacherId, draftId);
+    if (!draft) {
+      throw new NotFoundException({
+        message: 'Draft not found.',
+      });
+    }
+
+    const missingRequiredFields = this.appointmentsService.evaluateMetadataReadiness(draft);
+    if (missingRequiredFields.length > 0) {
+      throw new ForbiddenException({
+        message: 'Submission blocked until required metadata is complete.',
+        code: 'APPOINTMENT_SUBMIT_BLOCKED',
+        missingRequiredFields,
+      });
+    }
+
+    return {
+      data: {
+        submitted: false,
+        draftId: draft.id,
+        readyToSubmit: true,
       },
     };
   }

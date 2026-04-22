@@ -284,8 +284,9 @@ So that entries are accurate and chronicle-ready.
 **Acceptance Criteria:**
 
 **Given** a saved draft appointment  
-**When** the teacher edits fields and category  
+**When** the teacher edits fields (including appointment date) and category  
 **Then** updates are persisted to the draft  
+**And** appointment date is required and stored in `YYYY-MM-DD` format  
 **And** category options come from the controlled set
 
 ### Story 2.4: Enforce Metadata Submission Gate

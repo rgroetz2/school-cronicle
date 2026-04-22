@@ -336,4 +336,84 @@ describe('AppointmentsController integration', () => {
       code: 'APPOINTMENT_INVALID_DATE',
     });
   });
+
+  it('returns ready-to-submit for complete draft metadata', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Ready draft',
+        appointmentDate: '2026-04-22',
+        category: 'meeting',
+        notes: 'ok',
+      }),
+    });
+    const createBody = await createResponse.json();
+
+    const submitResponse = await fetch(`${baseUrl}/api/appointments/drafts/${createBody.data.draft.id}/submit`, {
+      method: 'POST',
+      headers: {
+        cookie: sessionCookie ?? '',
+      },
+    });
+
+    expect(submitResponse.status).toBe(201);
+    const body = await submitResponse.json();
+    expect(body.data.submitted).toBe(false);
+    expect(body.data.readyToSubmit).toBe(true);
+  });
+
+  it('rejects unauthenticated submit attempts', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const submitResponse = await fetch(`${baseUrl}/api/appointments/drafts/non-existent/submit`, {
+      method: 'POST',
+    });
+
+    expect(submitResponse.status).toBe(401);
+    expect(await submitResponse.json()).toMatchObject({
+      message: 'Authentication required.',
+    });
+  });
 });

@@ -52,6 +52,14 @@ interface ListCategoriesResponse {
   };
 }
 
+interface SubmitDraftResponse {
+  data: {
+    submitted: boolean;
+    draftId: string;
+    readyToSubmit: boolean;
+  };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -233,6 +241,27 @@ export class AuthApiService {
     return this.http
       .get<ListCategoriesResponse>('/api/appointments/categories')
       .pipe(map((response) => response.data.categories));
+  }
+
+  submitDraft(draftId: string): Observable<SubmitDraftResponse['data']> {
+    if (this.hasDummySession()) {
+      const draft = this.readDummyDrafts().find((item) => item.id === draftId);
+      const missingRequiredFields = [
+        !draft?.title.trim() ? 'title' : null,
+        !draft?.appointmentDate.trim() ? 'appointmentDate' : null,
+        !draft?.category.trim() ? 'category' : null,
+      ].filter((value): value is string => Boolean(value));
+
+      return of({
+        submitted: false,
+        draftId,
+        readyToSubmit: missingRequiredFields.length === 0,
+      });
+    }
+
+    return this.http
+      .post<SubmitDraftResponse>(`/api/appointments/drafts/${draftId}/submit`, {})
+      .pipe(map((response) => response.data));
   }
 
   private readDummyDrafts(): AppointmentDraft[] {

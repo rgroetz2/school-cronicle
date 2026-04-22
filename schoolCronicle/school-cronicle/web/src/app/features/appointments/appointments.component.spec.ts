@@ -156,6 +156,7 @@ describe('AppointmentsComponent', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Opened draft draft-7');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('All required metadata is complete.');
     httpTesting.verify();
   });
 
@@ -237,6 +238,59 @@ describe('AppointmentsComponent', () => {
 
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Draft saved: Updated title');
+    httpTesting.verify();
+  });
+
+  it('blocks submit until a complete draft is selected and calls submit endpoint', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-20',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Submit me',
+            appointmentDate: '2026-04-28',
+            category: 'meeting',
+            notes: 'ready',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    let submitButton = fixture.nativeElement.querySelector(
+      'section[aria-labelledby="submit-readiness-heading"] button',
+    ) as HTMLButtonElement;
+    expect(submitButton.disabled).toBe(true);
+
+    fixture.componentInstance.openDraft('draft-20');
+    fixture.detectChanges();
+    submitButton = fixture.nativeElement.querySelector(
+      'section[aria-labelledby="submit-readiness-heading"] button',
+    ) as HTMLButtonElement;
+    expect(submitButton.disabled).toBe(false);
+
+    submitButton.click();
+    const submitRequest = httpTesting.expectOne('/api/appointments/drafts/draft-20/submit');
+    expect(submitRequest.request.method).toBe('POST');
+    submitRequest.flush({
+      data: {
+        submitted: false,
+        draftId: 'draft-20',
+        readyToSubmit: true,
+      },
+    });
+
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Draft is ready for submission.');
     httpTesting.verify();
   });
 });

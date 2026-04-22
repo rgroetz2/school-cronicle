@@ -58,4 +58,23 @@ export class AppointmentsService {
   listCategories(): readonly string[] {
     return APPOINTMENT_CATEGORIES;
   }
+
+  findDraftForTeacher(teacherId: string, draftId: string): AppointmentDraft | undefined {
+    return this.drafts.find((item) => item.id === draftId && item.teacherId === teacherId);
+  }
+
+  evaluateMetadataReadiness(draft: AppointmentDraft): string[] {
+    const missing: string[] = [];
+    if (!draft.title.trim()) {
+      missing.push('title');
+    }
+    if (!draft.appointmentDate.trim()) {
+      missing.push('appointmentDate');
+    }
+    if (!draft.category.trim()) {
+      missing.push('category');
+    }
+
+    return missing;
+  }
 }

@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AppointmentDraft, AuthApiService } from '../../core/auth-api.service';
@@ -29,6 +30,26 @@ import { AppointmentDraft, AuthApiService } from '../../core/auth-api.service';
             }
           </ul>
         }
+      </section>
+
+      <section aria-labelledby="submit-readiness-heading">
+        <h3 id="submit-readiness-heading">Submit readiness</h3>
+        @if (!selectedDraftId) {
+          <p>Select a draft to evaluate submit readiness.</p>
+        }
+        @if (missingRequiredFields.length > 0) {
+          <p>Submission blocked. Missing metadata:</p>
+          <ul>
+            @for (field of missingRequiredFields; track field) {
+              <li>{{ field }}</li>
+            }
+          </ul>
+        } @else if (selectedDraftId) {
+          <p>All required metadata is complete.</p>
+        }
+        <button type="button" (click)="submitDraft()" [disabled]="!canSubmit || isSubmittingDraft">
+          {{ isSubmittingDraft ? 'Submitting...' : 'Submit draft' }}
+        </button>
       </section>
 
       <form [formGroup]="draftForm" (ngSubmit)="createDraft()" novalidate>
@@ -80,6 +101,9 @@ import { AppointmentDraft, AuthApiService } from '../../core/auth-api.service';
       @if (draftSavedMessage) {
         <p role="status">{{ draftSavedMessage }}</p>
       }
+      @if (draftSubmitMessage) {
+        <p role="status">{{ draftSubmitMessage }}</p>
+      }
 
       <button type="button" (click)="signOut()" [disabled]="isSigningOut">
         {{ isSigningOut ? 'Signing out...' : 'Sign out' }}
@@ -94,10 +118,12 @@ export class AppointmentsComponent {
   isSigningOut = false;
   isCreatingDraft = false;
   isSavingDraft = false;
+  isSubmittingDraft = false;
   isLoadingDrafts = false;
   draftCreatedMessage = '';
   openedDraftMessage = '';
   draftSavedMessage = '';
+  draftSubmitMessage = '';
   selectedDraftId: string | null = null;
   categories: string[] = [];
   drafts: AppointmentDraft[] = [];
@@ -112,6 +138,29 @@ export class AppointmentsComponent {
   constructor() {
     this.loadCategories();
     this.loadDrafts();
+  }
+
+  get missingRequiredFields(): string[] {
+    if (!this.selectedDraftId) {
+      return [];
+    }
+
+    const missing: string[] = [];
+    if (!(this.draftForm.controls.title.value ?? '').trim()) {
+      missing.push('title');
+    }
+    if (!(this.draftForm.controls.appointmentDate.value ?? '').trim()) {
+      missing.push('appointmentDate');
+    }
+    if (!(this.draftForm.controls.category.value ?? '').trim()) {
+      missing.push('category');
+    }
+
+    return missing;
+  }
+
+  get canSubmit(): boolean {
+    return Boolean(this.selectedDraftId) && this.missingRequiredFields.length === 0;
   }
 
   signOut(): void {
@@ -136,6 +185,7 @@ export class AppointmentsComponent {
   createDraft(): void {
     this.draftCreatedMessage = '';
     this.draftSavedMessage = '';
+    this.draftSubmitMessage = '';
     this.draftForm.markAllAsTouched();
 
     if (this.draftForm.invalid || this.isCreatingDraft || this.isSavingDraft) {
@@ -189,6 +239,34 @@ export class AppointmentsComponent {
       category: draft.category,
       notes: draft.notes,
     });
+  }
+
+  submitDraft(): void {
+    this.draftSubmitMessage = '';
+    if (!this.selectedDraftId || this.isSubmittingDraft || !this.canSubmit) {
+      return;
+    }
+
+    this.isSubmittingDraft = true;
+    this.authApiService
+      .submitDraft(this.selectedDraftId)
+      .pipe(finalize(() => (this.isSubmittingDraft = false)))
+      .subscribe({
+        next: () => {
+          this.draftSubmitMessage = 'Draft is ready for submission.';
+        },
+        error: (error: unknown) => {
+          const response = error as HttpErrorResponse;
+          const missing = (response.error as { missingRequiredFields?: string[] } | undefined)
+            ?.missingRequiredFields;
+          if (Array.isArray(missing) && missing.length > 0) {
+            this.draftSubmitMessage = `Submission blocked: ${missing.join(', ')}`;
+            return;
+          }
+
+          this.draftSubmitMessage = 'Submission failed. Try again.';
+        },
+      });
   }
 
   private loadDrafts(): void {
