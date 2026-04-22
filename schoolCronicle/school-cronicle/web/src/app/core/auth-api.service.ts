@@ -49,6 +49,13 @@ export interface TeacherProfile {
   contactEmail: string;
 }
 
+export interface PrivacyRequestAuditEvent {
+  id: string;
+  type: 'erasure' | 'restriction';
+  teacherId: string;
+  initiatedAt: string;
+}
+
 interface CreateDraftResponse {
   data: {
     draft: AppointmentDraft;
@@ -90,6 +97,7 @@ export class AuthApiService {
   private static readonly DUMMY_SESSION_KEY = 'sc_dummy_session';
   private static readonly DUMMY_DRAFTS_KEY = 'sc_dummy_drafts';
   private static readonly DUMMY_PROFILE_KEY = 'sc_dummy_profile';
+  private static readonly DUMMY_PRIVACY_EVENTS_KEY = 'sc_dummy_privacy_events';
   private static readonly DUMMY_CATEGORIES = ['meeting', 'consultation', 'progress'];
   private static readonly SIGN_IN_TIMEOUT_MS = 10000;
   private readonly http = inject(HttpClient);
@@ -99,6 +107,7 @@ export class AuthApiService {
     displayName: 'Teacher Account',
     contactEmail: 'teacher@school.local',
   };
+  private inMemoryPrivacyEvents: PrivacyRequestAuditEvent[] = [];
 
   signIn(email: string, password: string): Observable<SignInResponse['data']> {
     const normalizedEmail = email.trim().toLowerCase();
@@ -406,6 +415,17 @@ export class AuthApiService {
     return of(normalized);
   }
 
+  invokePrivacyRequest(type: 'erasure' | 'restriction'): Observable<PrivacyRequestAuditEvent> {
+    const event: PrivacyRequestAuditEvent = {
+      id: `privacy-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      type,
+      teacherId: 'teacher-1',
+      initiatedAt: new Date().toISOString(),
+    };
+    this.writePrivacyAuditEvent(event);
+    return of(event);
+  }
+
   private readDummyDrafts(): AppointmentDraft[] {
     const storage = this.getStorage();
     if (!storage) {
@@ -483,5 +503,25 @@ export class AuthApiService {
     }
 
     storage.setItem(AuthApiService.DUMMY_PROFILE_KEY, JSON.stringify(profile));
+  }
+
+  private writePrivacyAuditEvent(event: PrivacyRequestAuditEvent): void {
+    const storage = this.getStorage();
+    if (!storage) {
+      this.inMemoryPrivacyEvents = [event, ...this.inMemoryPrivacyEvents].slice(0, 50);
+      return;
+    }
+
+    const serialized = storage.getItem(AuthApiService.DUMMY_PRIVACY_EVENTS_KEY);
+    let current: PrivacyRequestAuditEvent[] = [];
+    if (serialized) {
+      try {
+        current = (JSON.parse(serialized) as PrivacyRequestAuditEvent[]) ?? [];
+      } catch {
+        current = [];
+      }
+    }
+    const next = [event, ...current].slice(0, 50);
+    storage.setItem(AuthApiService.DUMMY_PRIVACY_EVENTS_KEY, JSON.stringify(next));
   }
 }

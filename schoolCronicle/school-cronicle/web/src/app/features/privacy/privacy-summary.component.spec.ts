@@ -21,6 +21,8 @@ describe('PrivacySummaryComponent', () => {
     expect(text).toContain('Appointment metadata');
     expect(text).toContain('Image attachments');
     expect(text).toContain('Operational activity records');
+    expect(text).toContain('Erasure and restriction request path');
+    expect(text).toContain('privacy@school.local');
   });
 
   it('navigates back to appointments', () => {
@@ -50,5 +52,14 @@ describe('PrivacySummaryComponent', () => {
     expect(text).toContain('Profile corrections saved.');
     expect(fixture.componentInstance.profileForm.value.displayName).toBe('Teacher Updated');
     expect(fixture.componentInstance.profileForm.value.contactEmail).toBe('teacher.updated@school.local');
+  });
+
+  it('records auditable initiation when invoking erasure request path', () => {
+    const fixture = TestBed.createComponent(PrivacySummaryComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.initiatePrivacyRequest('erasure');
+    expect(fixture.componentInstance.privacyRequestMessage).toContain('Erasure request initiation recorded');
+    expect(fixture.componentInstance.privacyRequestMessage).toContain('reference:');
   });
 });

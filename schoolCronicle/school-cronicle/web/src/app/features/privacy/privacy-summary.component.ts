@@ -60,6 +60,33 @@ interface PrivacyCategory {
             <p class="intro" role="status">{{ profileMessage }}</p>
           }
         </section>
+
+        <section class="profile-section" aria-labelledby="privacy-rights-heading">
+          <h3 id="privacy-rights-heading">Erasure and restriction request path</h3>
+          <p class="intro">
+            To request erasure or restriction, contact your school privacy office with your name, school account
+            email, and the data right you want to invoke.
+          </p>
+          <p class="intro">
+            Contact: <strong>School Privacy Office</strong> -
+            <a href="mailto:privacy@school.local">privacy@school.local</a>
+          </p>
+          <p class="intro">
+            Process: We record your initiation request and route it to the designated school process manager for
+            verification and next steps.
+          </p>
+          <div class="rights-actions">
+            <button type="button" class="ghost" (click)="initiatePrivacyRequest('erasure')">
+              Initiate erasure request
+            </button>
+            <button type="button" class="ghost" (click)="initiatePrivacyRequest('restriction')">
+              Initiate restriction request
+            </button>
+          </div>
+          @if (privacyRequestMessage) {
+            <p class="intro" role="status">{{ privacyRequestMessage }}</p>
+          }
+        </section>
       </section>
     </main>
   `,
@@ -70,6 +97,7 @@ export class PrivacySummaryComponent {
   private readonly router = inject(Router);
   isSavingProfile = false;
   profileMessage = '';
+  privacyRequestMessage = '';
 
   readonly profileForm = new FormGroup({
     displayName: new FormControl('', [Validators.required]),
@@ -141,5 +169,20 @@ export class PrivacySummaryComponent {
           this.profileMessage = 'Profile correction failed. Try again.';
         },
       });
+  }
+
+  initiatePrivacyRequest(type: 'erasure' | 'restriction'): void {
+    this.privacyRequestMessage = '';
+    this.authApiService.invokePrivacyRequest(type).subscribe({
+      next: (event) => {
+        const label = type === 'erasure' ? 'Erasure' : 'Restriction';
+        this.privacyRequestMessage = `${label} request initiation recorded at ${new Date(
+          event.initiatedAt,
+        ).toLocaleString()} (reference: ${event.id}).`;
+      },
+      error: () => {
+        this.privacyRequestMessage = 'Request initiation could not be recorded. Contact privacy@school.local.';
+      },
+    });
   }
 }
