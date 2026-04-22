@@ -234,6 +234,106 @@ describe('AppointmentsComponent', () => {
     httpTesting.verify();
   });
 
+  it('applies dedicated filters and supports clear/reset behavior', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-filter-1',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Math meeting',
+            appointmentDate: '2026-05-01',
+            category: 'meeting',
+            notes: '',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+          {
+            id: 'draft-filter-2',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Submitted consult',
+            appointmentDate: '2026-05-02',
+            category: 'consultation',
+            notes: '',
+            status: 'submitted',
+            submittedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            images: [
+              {
+                id: 'img-filter-1',
+                name: 'proof.png',
+                mimeType: 'image/png',
+                dataUrl: 'data:image/png;base64,AAA',
+                addedAt: new Date().toISOString(),
+              },
+            ],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.filterForm.patchValue({
+      category: 'consultation',
+      status: 'submitted',
+      hasImages: 'yes',
+      lifecycleState: 'submitted',
+    });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.filteredDrafts.length).toBe(1);
+    expect(fixture.componentInstance.filteredDrafts[0]?.id).toBe('draft-filter-2');
+    expect(fixture.componentInstance.hasActiveFilters).toBe(true);
+
+    fixture.componentInstance.resetFilters();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.filteredDrafts.length).toBe(2);
+    expect(fixture.componentInstance.hasActiveFilters).toBe(false);
+  });
+
+  it('shows no-results guidance when filters have no matches', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-filter-empty',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Only meeting',
+            appointmentDate: '2026-05-01',
+            category: 'meeting',
+            notes: '',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.filterForm.patchValue({
+      category: 'consultation',
+    });
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('No appointments match current filters. Adjust or clear filters.');
+  });
+
   it('updates an opened draft with controlled category', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);

@@ -56,6 +56,30 @@
   margin-bottom: 0.9rem;
 }
 
+.filter-panel {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-muted);
+  padding: 0.7rem;
+  margin-bottom: 0.8rem;
+}
+
+.filter-panel h4 {
+  margin: 0 0 0.55rem;
+  font-size: 0.95rem;
+}
+
+.filter-grid {
+  display: grid;
+  gap: 0.45rem 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  align-items: end;
+}
+
+.filter-actions {
+  margin-top: 0.6rem;
+}
+
 .guidance-list {
   margin: 0 0 0.8rem 1.15rem;
   color: var(--text-muted);

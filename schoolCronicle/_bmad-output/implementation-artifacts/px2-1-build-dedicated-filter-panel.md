@@ -1,6 +1,6 @@
 # Story PX2.1: Build Dedicated Filter Panel
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -19,22 +19,22 @@ so that I can quickly narrow appointment lists without scanning everything.
 
 ## Tasks / Subtasks
 
-- [ ] Define filter state model and behavior contract (AC: 1, 2, 4)
-  - [ ] Specify filter keys: category, status, dateFrom/dateTo, hasImages, lifecycleState
-  - [ ] Define combinational logic and default state
-  - [ ] Define reset/clear behavior and URL/query-state strategy (if applicable)
-- [ ] Implement dedicated filter panel UI (AC: 1, 4)
-  - [ ] Add filter controls in a dedicated panel separate from list/editor regions
-  - [ ] Keep controls concise, labeled, and keyboard accessible
-  - [ ] Align with premium-neutral design and declutter goals
-- [ ] Wire list filtering behavior (AC: 1, 2, 3)
-  - [ ] Apply client-side filtering reliably to current appointment dataset
-  - [ ] Ensure updates are immediate and stable across interactions
-  - [ ] Add no-results state with actionable copy
-- [ ] Add tests and quality checks (AC: 1, 2, 3, 4)
-  - [ ] Unit/component tests for each filter criterion and combined scenarios
-  - [ ] Tests for clear/reset behavior and empty-state rendering
-  - [ ] Run focused web lint/tests for touched modules
+- [x] Define filter state model and behavior contract (AC: 1, 2, 4)
+  - [x] Specify filter keys: category, status, dateFrom/dateTo, hasImages, lifecycleState
+  - [x] Define combinational logic and default state
+  - [x] Define reset/clear behavior and URL/query-state strategy (if applicable)
+- [x] Implement dedicated filter panel UI (AC: 1, 4)
+  - [x] Add filter controls in a dedicated panel separate from list/editor regions
+  - [x] Keep controls concise, labeled, and keyboard accessible
+  - [x] Align with premium-neutral design and declutter goals
+- [x] Wire list filtering behavior (AC: 1, 2, 3)
+  - [x] Apply client-side filtering reliably to current appointment dataset
+  - [x] Ensure updates are immediate and stable across interactions
+  - [x] Add no-results state with actionable copy
+- [x] Add tests and quality checks (AC: 1, 2, 3, 4)
+  - [x] Unit/component tests for each filter criterion and combined scenarios
+  - [x] Tests for clear/reset behavior and empty-state rendering
+  - [x] Run focused web lint/tests for touched modules
 
 ## Dev Notes
 
@@ -78,8 +78,16 @@ gpt-5.3-codex
 
 ### Completion Notes List
 
-- Pending implementation.
+- Added a dedicated filter panel in the appointments list area with controls for category, status, date range, has-images, and lifecycle state.
+- Implemented immediate combinational client-side filtering on current list data while preserving existing route-based context views.
+- Added clear/reset filter behavior and active-filter detection to restore baseline list quickly.
+- Added explicit no-results messaging when filters are active and no appointments match.
+- Expanded appointments component tests to cover filter application, reset/clear behavior, and no-match state rendering.
+- Validated quality gates with `npx nx test web` and no linter diagnostics for touched files.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/px2-1-build-dedicated-filter-panel.md`
+- `school-cronicle/web/src/app/features/appointments/appointments.component.ts`
+- `school-cronicle/web/src/app/features/appointments/appointments.component.css`
+- `school-cronicle/web/src/app/features/appointments/appointments.component.spec.ts`

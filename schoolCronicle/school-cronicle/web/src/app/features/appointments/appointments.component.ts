@@ -15,6 +15,8 @@ interface ImageUploadStatus {
   detail?: string;
 }
 
+type FilterLifecycleState = 'all' | 'needs_attention' | 'ready_to_submit' | 'submitted';
+
 @Component({
   selector: 'app-appointments',
   imports: [ReactiveFormsModule, DatePipe],
@@ -41,6 +43,51 @@ interface ImageUploadStatus {
         <section class="panel" aria-labelledby="draft-list-heading">
           <h3 id="draft-list-heading">Your drafts</h3>
           <p class="panel-copy">Choose a draft to continue editing and submission checks.</p>
+        <div class="filter-panel" aria-label="Appointment filters">
+          <h4>Filter list</h4>
+          <form class="filter-grid" [formGroup]="filterForm">
+            <label for="filter-category">Category</label>
+            <select id="filter-category" formControlName="category">
+              <option value="">All categories</option>
+              @for (category of categories; track category) {
+                <option [value]="category">{{ category }}</option>
+              }
+            </select>
+
+            <label for="filter-status">Status</label>
+            <select id="filter-status" formControlName="status">
+              <option value="all">All statuses</option>
+              <option value="draft">Draft</option>
+              <option value="submitted">Submitted</option>
+            </select>
+
+            <label for="filter-date-from">Date from</label>
+            <input id="filter-date-from" type="date" formControlName="dateFrom" />
+
+            <label for="filter-date-to">Date to</label>
+            <input id="filter-date-to" type="date" formControlName="dateTo" />
+
+            <label for="filter-has-images">Has images</label>
+            <select id="filter-has-images" formControlName="hasImages">
+              <option value="all">All</option>
+              <option value="yes">With images</option>
+              <option value="no">Without images</option>
+            </select>
+
+            <label for="filter-lifecycle">Lifecycle state</label>
+            <select id="filter-lifecycle" formControlName="lifecycleState">
+              <option value="all">All lifecycle states</option>
+              <option value="needs_attention">Needs attention</option>
+              <option value="ready_to_submit">Ready to submit</option>
+              <option value="submitted">Submitted</option>
+            </select>
+          </form>
+          <div class="filter-actions">
+            <button type="button" class="ghost inline" (click)="resetFilters()" [disabled]="!hasActiveFilters">
+              Clear filters
+            </button>
+          </div>
+        </div>
         @if (activeListContextLabel) {
           <p class="state-pill">
             Showing: {{ activeListContextLabel }}
@@ -50,7 +97,9 @@ interface ImageUploadStatus {
         @if (isLoadingDrafts) {
           <p class="state-pill loading">Loading drafts...</p>
         } @else if (filteredDrafts.length === 0) {
-          <p class="state-pill">No drafts yet. Create one below to get started.</p>
+          <p class="state-pill">
+            {{ hasActiveFilters ? 'No appointments match current filters. Adjust or clear filters.' : 'No drafts yet. Create one below to get started.' }}
+          </p>
         } @else {
           <ul class="draft-list">
             @for (draft of filteredDrafts; track draft.id) {
@@ -353,6 +402,15 @@ export class AppointmentsComponent {
     notes: new FormControl(''),
   });
 
+  readonly filterForm = new FormGroup({
+    category: new FormControl(''),
+    status: new FormControl<'all' | 'draft' | 'submitted'>('all'),
+    dateFrom: new FormControl(''),
+    dateTo: new FormControl(''),
+    hasImages: new FormControl<'all' | 'yes' | 'no'>('all'),
+    lifecycleState: new FormControl<FilterLifecycleState>('all'),
+  });
+
   constructor() {
     this.loadTeacherProfile();
     this.loadCategories();
@@ -393,16 +451,53 @@ export class AppointmentsComponent {
   }
 
   get filteredDrafts(): AppointmentDraft[] {
+    let filtered = this.drafts;
     if (this.activeListContext === 'drafts') {
-      return this.drafts.filter((draft) => draft.status === 'draft');
+      filtered = filtered.filter((draft) => draft.status === 'draft');
+    } else if (this.activeListContext === 'submitted') {
+      filtered = filtered.filter((draft) => draft.status === 'submitted');
+    } else if (this.activeListContext === 'attention') {
+      filtered = filtered.filter((draft) => this.isDraftMissingRequiredMetadata(draft));
     }
-    if (this.activeListContext === 'submitted') {
-      return this.drafts.filter((draft) => draft.status === 'submitted');
-    }
-    if (this.activeListContext === 'attention') {
-      return this.drafts.filter((draft) => this.isDraftMissingRequiredMetadata(draft));
-    }
-    return this.drafts;
+
+    const category = (this.filterForm.controls.category.value ?? '').trim();
+    const status = this.filterForm.controls.status.value ?? 'all';
+    const dateFrom = this.filterForm.controls.dateFrom.value ?? '';
+    const dateTo = this.filterForm.controls.dateTo.value ?? '';
+    const hasImages = this.filterForm.controls.hasImages.value ?? 'all';
+    const lifecycleState = this.filterForm.controls.lifecycleState.value ?? 'all';
+
+    return filtered.filter((draft) => {
+      if (category && draft.category !== category) {
+        return false;
+      }
+      if (status !== 'all' && draft.status !== status) {
+        return false;
+      }
+      if (dateFrom && draft.appointmentDate < dateFrom) {
+        return false;
+      }
+      if (dateTo && draft.appointmentDate > dateTo) {
+        return false;
+      }
+      const hasDraftImages = (draft.images?.length ?? 0) > 0;
+      if (hasImages === 'yes' && !hasDraftImages) {
+        return false;
+      }
+      if (hasImages === 'no' && hasDraftImages) {
+        return false;
+      }
+      if (lifecycleState === 'submitted' && draft.status !== 'submitted') {
+        return false;
+      }
+      if (lifecycleState === 'needs_attention' && !this.isDraftMissingRequiredMetadata(draft)) {
+        return false;
+      }
+      if (lifecycleState === 'ready_to_submit' && !this.isDraftReadyToSubmit(draft)) {
+        return false;
+      }
+      return true;
+    });
   }
 
   get activeListContextLabel(): string {
@@ -416,6 +511,18 @@ export class AppointmentsComponent {
       return 'Needs attention';
     }
     return '';
+  }
+
+  get hasActiveFilters(): boolean {
+    const {
+      category,
+      status,
+      dateFrom,
+      dateTo,
+      hasImages,
+      lifecycleState,
+    } = this.filterForm.getRawValue();
+    return Boolean(category) || status !== 'all' || Boolean(dateFrom) || Boolean(dateTo) || hasImages !== 'all' || lifecycleState !== 'all';
   }
 
   get selectedDraft(): AppointmentDraft | undefined {
@@ -467,6 +574,17 @@ export class AppointmentsComponent {
   clearListContext(): void {
     void this.router.navigate(['/appointments'], {
       queryParams: {},
+    });
+  }
+
+  resetFilters(): void {
+    this.filterForm.reset({
+      category: '',
+      status: 'all',
+      dateFrom: '',
+      dateTo: '',
+      hasImages: 'all',
+      lifecycleState: 'all',
     });
   }
 
@@ -829,5 +947,9 @@ export class AppointmentsComponent {
       return false;
     }
     return !draft.title.trim() || !draft.appointmentDate.trim() || !draft.category.trim();
+  }
+
+  private isDraftReadyToSubmit(draft: AppointmentDraft): boolean {
+    return draft.status === 'draft' && !this.isDraftMissingRequiredMetadata(draft);
   }
 }
