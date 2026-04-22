@@ -65,6 +65,12 @@
       "options": {
         "lintFilePatterns": ["api/**/*.ts"]
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx vitest run api/src/modules/auth/auth.service.spec.ts api/src/modules/auth/auth.controller.integration.spec.ts"
+      }
     }
   },
   "tags": []
