@@ -1,16 +1,24 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
   Req,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { SignInDto } from './sign-in.dto';
+import {
+  authCookieOptions,
+  AUTH_COOKIE_NAME,
+  extractSessionIdFromCookieHeader,
+} from './auth-cookie.util';
+import { AuthSessionGuard } from './auth-session.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -27,27 +35,20 @@ export class AuthController {
     const password = body.password;
 
     if (!email || !password) {
-      throw new UnauthorizedException({
-        message: 'Sign-in failed. Check your credentials and try again.',
-      });
+      throw this.buildSignInUnauthorized('invalid-credentials');
     }
 
-    const existingSessionId = this.extractSessionId(req);
-    const authResult = this.authService.signIn(email, password, existingSessionId);
+    const existingSessionId = extractSessionIdFromCookieHeader(req.headers.cookie);
+    const signInAttempt = this.authService.signIn(email, password, existingSessionId);
+    const authResult = signInAttempt.result;
 
     if (!authResult) {
-      throw new UnauthorizedException({
-        message: 'Sign-in failed. Check your credentials and try again.',
-      });
+      throw this.buildSignInUnauthorized(
+        signInAttempt.failureReason ?? 'invalid-credentials',
+      );
     }
 
-    response.cookie('sc_session', authResult.sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 1000 * 60 * 60 * 8,
-      path: '/',
-    });
+    response.cookie(AUTH_COOKIE_NAME, authResult.sessionId, authCookieOptions());
 
     return {
       data: {
@@ -57,17 +58,45 @@ export class AuthController {
     };
   }
 
-  private extractSessionId(req: Request): string | undefined {
-    const cookieHeader = req.headers.cookie;
-    if (!cookieHeader) {
-      return undefined;
-    }
+  @Post('sign-out')
+  @HttpCode(HttpStatus.OK)
+  signOut(@Req() req: Request, @Res({ passthrough: true }) response: Response) {
+    const currentSessionId = extractSessionIdFromCookieHeader(req.headers.cookie);
+    this.authService.signOut(currentSessionId);
 
-    const sessionPair = cookieHeader
-      .split(';')
-      .map((entry) => entry.trim())
-      .find((entry) => entry.startsWith('sc_session='));
+    response.clearCookie(AUTH_COOKIE_NAME, {
+      path: '/',
+      sameSite: authCookieOptions().sameSite,
+      httpOnly: authCookieOptions().httpOnly,
+      secure: authCookieOptions().secure,
+    });
 
-    return sessionPair?.slice('sc_session='.length);
+    return {
+      data: {
+        signedOut: true,
+      },
+    };
+  }
+
+  @Get('session')
+  @UseGuards(AuthSessionGuard)
+  getSessionProbe() {
+    return {
+      data: {
+        authenticated: true,
+      },
+    };
+  }
+
+  private buildSignInUnauthorized(reason: 'invalid-credentials' | 'account-blocked') {
+    return new UnauthorizedException({
+      message: 'Sign-in failed. Check your credentials and try again.',
+      code: 'AUTH_SIGN_IN_FAILED',
+      reason,
+      support: {
+        label: process.env.SC_SUPPORT_LABEL ?? 'School account support',
+        email: process.env.SC_SUPPORT_EMAIL ?? 'support@school.local',
+      },
+    });
   }
 }

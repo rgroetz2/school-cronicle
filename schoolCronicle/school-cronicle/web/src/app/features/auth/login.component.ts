@@ -5,6 +5,14 @@ import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthApiService } from '../../core/auth-api.service';
 
+interface LoginErrorPayload {
+  message?: string;
+  support?: {
+    label?: string;
+    email?: string;
+  };
+}
+
 @Component({
   selector: 'app-login',
   imports: [CommonModule, ReactiveFormsModule],
@@ -16,6 +24,8 @@ export class LoginComponent {
   private readonly router = inject(Router);
 
   errorMessage = '';
+  supportLabel = 'School account support';
+  supportEmail = 'support@school.local';
   isSubmitting = false;
 
   readonly signInForm = new FormGroup({
@@ -42,9 +52,15 @@ export class LoginComponent {
         next: () => {
           void this.router.navigateByUrl('/appointments');
         },
-        error: () => {
-          this.errorMessage = 'Sign-in failed. Check your credentials and try again.';
-        },
+        error: (error: unknown) => this.onSignInError(error),
       });
+  }
+
+  onSignInError(error: unknown): void {
+    const errorPayload = (error as { error?: LoginErrorPayload })?.error;
+    this.errorMessage =
+      errorPayload?.message ?? 'Sign-in failed. Check your credentials and try again.';
+    this.supportLabel = errorPayload?.support?.label ?? 'School account support';
+    this.supportEmail = errorPayload?.support?.email ?? 'support@school.local';
   }
 }

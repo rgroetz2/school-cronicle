@@ -10,3 +10,5 @@ export interface SignInResult {
   email: string;
   sessionId: string;
 }
+
+export type SignInFailureReason = 'invalid-credentials' | 'account-blocked';

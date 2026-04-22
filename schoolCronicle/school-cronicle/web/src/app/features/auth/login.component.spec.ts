@@ -65,7 +65,13 @@ describe('LoginComponent', () => {
 
     const request = httpTesting.expectOne('/api/auth/sign-in');
     request.flush(
-      { message: 'Sign-in failed. Check your credentials and try again.' },
+      {
+        message: 'Sign-in failed. Check your credentials and try again.',
+        support: {
+          label: 'School account support',
+          email: 'support@school.local',
+        },
+      },
       { status: 401, statusText: 'Unauthorized' },
     );
 
@@ -74,6 +80,43 @@ describe('LoginComponent', () => {
     expect(compiled.textContent).toContain(
       'Sign-in failed. Check your credentials and try again.',
     );
+    expect(compiled.textContent).toContain('Need help signing in? Contact');
+    const helpLink = compiled.querySelector(
+      '[data-testid="support-contact-link"]',
+    ) as HTMLAnchorElement | null;
+    expect(helpLink?.getAttribute('href')).toBe('mailto:support@school.local');
+    httpTesting.verify();
+  });
+
+  it('shows support contact for blocked-account-mapped failures', () => {
+    const fixture = TestBed.createComponent(LoginComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+
+    fixture.componentInstance.signInForm.setValue({
+      email: 'blocked@school.local',
+      password: 'any',
+    });
+    fixture.componentInstance.submit();
+
+    const request = httpTesting.expectOne('/api/auth/sign-in');
+    request.flush(
+      {
+        message: 'Sign-in failed. Check your credentials and try again.',
+        reason: 'account-blocked',
+        support: {
+          label: 'School account support',
+          email: 'support@school.local',
+        },
+      },
+      { status: 401, statusText: 'Unauthorized' },
+    );
+
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain(
+      'Sign-in failed. Check your credentials and try again.',
+    );
+    expect(compiled.textContent).toContain('School account support');
     httpTesting.verify();
   });
 });

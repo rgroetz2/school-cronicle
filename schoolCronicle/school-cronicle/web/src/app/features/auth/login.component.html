@@ -30,6 +30,13 @@
       <p class="global-error" role="alert" aria-live="polite">
         {{ errorMessage }}
       </p>
+      <p class="help-path" role="status">
+        Need help signing in? Contact
+        <a [attr.href]="'mailto:' + supportEmail" data-testid="support-contact-link">
+          {{ supportLabel }} ({{ supportEmail }})
+        </a>
+        .
+      </p>
     }
   </section>
 </main>

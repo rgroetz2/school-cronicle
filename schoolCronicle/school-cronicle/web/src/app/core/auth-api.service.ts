@@ -9,6 +9,18 @@ interface SignInResponse {
   };
 }
 
+interface SignOutResponse {
+  data: {
+    signedOut: boolean;
+  };
+}
+
+interface SessionProbeResponse {
+  data: {
+    authenticated: boolean;
+  };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -19,5 +31,17 @@ export class AuthApiService {
     return this.http
       .post<SignInResponse>('/api/auth/sign-in', { email, password })
       .pipe(map((response) => response.data));
+  }
+
+  signOut(): Observable<boolean> {
+    return this.http
+      .post<SignOutResponse>('/api/auth/sign-out', {})
+      .pipe(map((response) => response.data.signedOut));
+  }
+
+  verifySession(): Observable<boolean> {
+    return this.http
+      .get<SessionProbeResponse>('/api/auth/session')
+      .pipe(map((response) => response.data.authenticated));
   }
 }

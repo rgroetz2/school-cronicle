@@ -25,4 +25,12 @@ export class SessionService {
 
     this.sessions.delete(sessionId);
   }
+
+  getSession(sessionId?: string): AuthSession | undefined {
+    if (!sessionId) {
+      return undefined;
+    }
+
+    return this.sessions.get(sessionId);
+  }
 }
