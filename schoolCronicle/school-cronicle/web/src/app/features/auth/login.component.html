@@ -1,9 +1,10 @@
 <main class="login-page">
   <section class="login-card">
+    <p class="kicker">School Chronicle</p>
     <h2>Teacher sign-in</h2>
-    <p>Use your school credentials to access the chronicle workspace.</p>
+    <p class="intro">Use your school credentials to access the chronicle workspace.</p>
 
-    <form [formGroup]="signInForm" (ngSubmit)="submit()" novalidate>
+    <form [formGroup]="signInForm" (ngSubmit)="submit()" novalidate class="login-form">
       <label for="email">Email</label>
       <input id="email" type="email" formControlName="email" autocomplete="username" />
       @if (signInForm.controls.email.touched && signInForm.controls.email.invalid) {

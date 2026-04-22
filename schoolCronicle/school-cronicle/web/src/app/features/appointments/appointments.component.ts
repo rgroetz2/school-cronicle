@@ -8,100 +8,123 @@ import { AppointmentDraft, AuthApiService, DraftImage } from '../../core/auth-ap
 @Component({
   selector: 'app-appointments',
   imports: [ReactiveFormsModule],
+  styleUrl: './appointments.component.css',
   template: `
-    <main>
-      <h2>Appointments workspace</h2>
-      <p>You are signed in.</p>
+    <main class="workspace">
+      <header class="workspace-header">
+        <div>
+          <p class="kicker">School Chronicle</p>
+          <h2>Appointments workspace</h2>
+          <p class="subtle">Review drafts, enrich metadata, attach files, and submit confidently.</p>
+        </div>
+        <button type="button" class="ghost" (click)="signOut()" [disabled]="isSigningOut">
+          {{ isSigningOut ? 'Signing out...' : 'Sign out' }}
+        </button>
+      </header>
 
-      <section aria-labelledby="draft-list-heading">
-        <h3 id="draft-list-heading">Your drafts</h3>
+      <div class="workspace-grid">
+        <section class="panel" aria-labelledby="draft-list-heading">
+          <h3 id="draft-list-heading">Your drafts</h3>
+          <p class="panel-copy">Choose a draft to continue editing and submission checks.</p>
         @if (isLoadingDrafts) {
-          <p>Loading drafts...</p>
+          <p class="state-pill loading">Loading drafts...</p>
         } @else if (drafts.length === 0) {
-          <p>No drafts yet. Create one below to get started.</p>
+          <p class="state-pill">No drafts yet. Create one below to get started.</p>
         } @else {
-          <ul>
+          <ul class="draft-list">
             @for (draft of drafts; track draft.id) {
               <li>
-                <button type="button" (click)="openDraft(draft.id)">
-                  Open draft: {{ draft.title }} ({{ draft.category }}) on {{ draft.appointmentDate }}
+                <button
+                  type="button"
+                  class="draft-button"
+                  (click)="openDraft(draft.id)"
+                  [attr.aria-pressed]="selectedDraftId === draft.id"
+                >
+                  <span class="draft-title">{{ draft.title }}</span>
+                  <span class="draft-meta">{{ draft.category }} - {{ draft.appointmentDate }}</span>
                 </button>
               </li>
             }
           </ul>
         }
-      </section>
+        </section>
 
-      <section aria-labelledby="submit-readiness-heading">
-        <h3 id="submit-readiness-heading">Submit readiness</h3>
+        <section class="panel" aria-labelledby="submit-readiness-heading">
+          <h3 id="submit-readiness-heading">Submit readiness</h3>
+          <p class="panel-copy">Required metadata: title, appointment date, and category.</p>
         @if (!selectedDraftId) {
-          <p>Select a draft to evaluate submit readiness.</p>
+          <p class="state-pill">Select a draft to evaluate submit readiness.</p>
         }
         @if (missingRequiredFields.length > 0) {
-          <p>Submission blocked. Missing metadata:</p>
-          <ul>
+          <p class="state-pill warning">Submission blocked. Missing metadata:</p>
+          <ul class="missing-list">
             @for (field of missingRequiredFields; track field) {
               <li>{{ field }}</li>
             }
           </ul>
         } @else if (selectedDraftId) {
-          <p>All required metadata is complete.</p>
+          <p class="state-pill success">All required metadata is complete.</p>
         }
-        <button type="button" (click)="submitDraft()" [disabled]="!canSubmit || isSubmittingDraft">
+        <button type="button" class="primary" (click)="submitDraft()" [disabled]="!canSubmit || isSubmittingDraft">
           {{ isSubmittingDraft ? 'Submitting...' : 'Submit draft' }}
         </button>
-      </section>
+        </section>
 
-      <section aria-labelledby="draft-images-heading">
-        <h3 id="draft-images-heading">Attached images</h3>
+        <section class="panel panel-wide" aria-labelledby="draft-images-heading">
+          <h3 id="draft-images-heading">Attached images</h3>
+          <p class="panel-copy">Attach reference photos up to 2 MB each for local draft context.</p>
         @if (!selectedDraftId) {
-          <p>Select a draft to attach images.</p>
+          <p class="state-pill">Select a draft to attach images.</p>
         } @else {
-          <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+          <input type="file" class="file-input" accept="image/*" (change)="onImageSelected($event)" />
           @if (selectedDraftImages.length === 0) {
-            <p>No images attached yet.</p>
+            <p class="state-pill">No images attached yet.</p>
           } @else {
-            <ul>
+            <ul class="image-list">
               @for (image of selectedDraftImages; track image.id) {
-                <li>
-                  <img [src]="image.dataUrl" [alt]="image.name" width="64" height="64" />
-                  <span>{{ image.name }}</span>
-                  <button type="button" (click)="removeImage(image.id)">Remove</button>
+                <li class="image-card">
+                  <img [src]="image.dataUrl" [alt]="image.name" width="84" height="84" />
+                  <span class="image-name">{{ image.name }}</span>
+                  <button type="button" class="ghost danger" (click)="removeImage(image.id)">Remove</button>
                 </li>
               }
             </ul>
           }
         }
-      </section>
+        </section>
 
-      <form [formGroup]="draftForm" (ngSubmit)="createDraft()" novalidate>
-        <label for="draft-title">Title *</label>
-        <input id="draft-title" formControlName="title" type="text" />
-        @if (draftForm.controls.title.touched && draftForm.controls.title.invalid) {
-          <p>Title is required.</p>
-        }
+        <section class="panel panel-wide form-panel" aria-label="Draft editor">
+          <h3>Draft editor</h3>
+          <p class="panel-copy">Create a new draft or update the currently selected one.</p>
+          <form [formGroup]="draftForm" (ngSubmit)="createDraft()" novalidate>
+            <label for="draft-title">Title *</label>
+            <input id="draft-title" formControlName="title" type="text" />
+            @if (draftForm.controls.title.touched && draftForm.controls.title.invalid) {
+              <p class="field-error">Title is required.</p>
+            }
 
-        <label for="draft-date">Appointment date *</label>
-        <input id="draft-date" formControlName="appointmentDate" type="date" />
-        @if (draftForm.controls.appointmentDate.touched && draftForm.controls.appointmentDate.invalid) {
-          <p>Appointment date is required.</p>
-        }
+            <label for="draft-date">Appointment date *</label>
+            <input id="draft-date" formControlName="appointmentDate" type="date" />
+            @if (draftForm.controls.appointmentDate.touched && draftForm.controls.appointmentDate.invalid) {
+              <p class="field-error">Appointment date is required.</p>
+            }
 
-        <label for="draft-category">Category *</label>
-        <select id="draft-category" formControlName="category">
-          <option value="">Select category</option>
-          @for (category of categories; track category) {
-            <option [value]="category">{{ category }}</option>
-          }
-        </select>
-        @if (draftForm.controls.category.touched && draftForm.controls.category.invalid) {
-          <p>Category is required.</p>
-        }
+            <label for="draft-category">Category *</label>
+            <select id="draft-category" formControlName="category">
+              <option value="">Select category</option>
+              @for (category of categories; track category) {
+                <option [value]="category">{{ category }}</option>
+              }
+            </select>
+            @if (draftForm.controls.category.touched && draftForm.controls.category.invalid) {
+              <p class="field-error">Category is required.</p>
+            }
 
-        <label for="draft-notes">Notes</label>
-        <textarea id="draft-notes" formControlName="notes"></textarea>
+            <label for="draft-notes">Notes</label>
+            <textarea id="draft-notes" formControlName="notes"></textarea>
 
-        <button type="submit" [disabled]="isCreatingDraft || isSavingDraft">
+            <div class="form-actions">
+              <button type="submit" class="primary" [disabled]="isCreatingDraft || isSavingDraft">
           {{
             isSavingDraft
               ? 'Saving draft...'
@@ -111,34 +134,40 @@ import { AppointmentDraft, AuthApiService, DraftImage } from '../../core/auth-ap
                   ? 'Save draft'
                   : 'Create draft'
           }}
-        </button>
-      </form>
+              </button>
+              <button
+                type="button"
+                class="ghost danger"
+                (click)="deleteSelectedDraft()"
+                [disabled]="!selectedDraftId || isDeletingDraft"
+              >
+                {{ isDeletingDraft ? 'Deleting draft...' : 'Delete selected draft' }}
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
 
-      @if (draftCreatedMessage) {
-        <p role="status">{{ draftCreatedMessage }}</p>
-      }
-      @if (openedDraftMessage) {
-        <p role="status">{{ openedDraftMessage }}</p>
-      }
-      @if (draftSavedMessage) {
-        <p role="status">{{ draftSavedMessage }}</p>
-      }
-      @if (draftSubmitMessage) {
-        <p role="status">{{ draftSubmitMessage }}</p>
-      }
-      @if (imageMessage) {
-        <p role="status">{{ imageMessage }}</p>
-      }
-      @if (deleteMessage) {
-        <p role="status">{{ deleteMessage }}</p>
-      }
-
-      <button type="button" (click)="signOut()" [disabled]="isSigningOut">
-        {{ isSigningOut ? 'Signing out...' : 'Sign out' }}
-      </button>
-      <button type="button" (click)="deleteSelectedDraft()" [disabled]="!selectedDraftId || isDeletingDraft">
-        {{ isDeletingDraft ? 'Deleting draft...' : 'Delete selected draft' }}
-      </button>
+      <section class="status-stack" aria-label="System status">
+        @if (draftCreatedMessage) {
+          <p class="state-pill success" role="status">{{ draftCreatedMessage }}</p>
+        }
+        @if (openedDraftMessage) {
+          <p class="state-pill" role="status">{{ openedDraftMessage }}</p>
+        }
+        @if (draftSavedMessage) {
+          <p class="state-pill success" role="status">{{ draftSavedMessage }}</p>
+        }
+        @if (draftSubmitMessage) {
+          <p class="state-pill" role="status">{{ draftSubmitMessage }}</p>
+        }
+        @if (imageMessage) {
+          <p class="state-pill" role="status">{{ imageMessage }}</p>
+        }
+        @if (deleteMessage) {
+          <p class="state-pill" role="status">{{ deleteMessage }}</p>
+        }
+      </section>
     </main>
   `,
 })
