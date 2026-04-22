@@ -1,0 +1,37 @@
+import { TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
+import { vi } from 'vitest';
+import { PrivacySummaryComponent } from './privacy-summary.component';
+
+describe('PrivacySummaryComponent', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [PrivacySummaryComponent],
+      providers: [provideRouter([])],
+    }).compileComponents();
+  });
+
+  it('renders privacy categories in clear language', () => {
+    const fixture = TestBed.createComponent(PrivacySummaryComponent);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Privacy data category summary');
+    expect(text).toContain('Account and identity data');
+    expect(text).toContain('Appointment metadata');
+    expect(text).toContain('Image attachments');
+    expect(text).toContain('Operational activity records');
+  });
+
+  it('navigates back to appointments', () => {
+    const fixture = TestBed.createComponent(PrivacySummaryComponent);
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    button.click();
+
+    expect(navigateSpy).toHaveBeenCalledWith('/appointments');
+  });
+});

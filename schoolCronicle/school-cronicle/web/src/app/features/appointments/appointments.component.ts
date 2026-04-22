@@ -27,9 +27,12 @@ interface ImageUploadStatus {
           <h2>Appointments workspace</h2>
           <p class="subtle">Review drafts, enrich metadata, attach files, and submit confidently.</p>
         </div>
-        <button type="button" class="ghost" (click)="signOut()" [disabled]="isSigningOut">
-          {{ isSigningOut ? 'Signing out...' : 'Sign out' }}
-        </button>
+        <div class="header-actions">
+          <button type="button" class="ghost" (click)="openPrivacySummary()">Privacy summary</button>
+          <button type="button" class="ghost" (click)="signOut()" [disabled]="isSigningOut">
+            {{ isSigningOut ? 'Signing out...' : 'Sign out' }}
+          </button>
+        </div>
       </header>
 
       <div class="workspace-grid">
@@ -403,6 +406,10 @@ export class AppointmentsComponent {
           void this.router.navigateByUrl('/login');
         },
       });
+  }
+
+  openPrivacySummary(): void {
+    void this.router.navigateByUrl('/privacy');
   }
 
   createDraft(): void {

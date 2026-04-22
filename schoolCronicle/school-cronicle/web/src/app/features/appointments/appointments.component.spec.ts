@@ -45,6 +45,28 @@ describe('AppointmentsComponent', () => {
     httpTesting.verify();
   });
 
+  it('navigates to privacy summary from header action', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: { drafts: [] },
+    });
+    fixture.detectChanges();
+
+    const buttons = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('header button'));
+    const privacyButton = buttons.find((button) => button.textContent?.includes('Privacy summary')) as
+      | HTMLButtonElement
+      | undefined;
+    privacyButton?.click();
+
+    expect(navigateSpy).toHaveBeenCalledWith('/privacy');
+  });
+
   it('shows required field validation and creates a draft', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);

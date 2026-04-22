@@ -2,6 +2,7 @@ import { Route } from '@angular/router';
 import { authSessionGuard } from './core/auth-session.guard';
 import { AppointmentsComponent } from './features/appointments/appointments.component';
 import { LoginComponent } from './features/auth/login.component';
+import { PrivacySummaryComponent } from './features/privacy/privacy-summary.component';
 
 export const appRoutes: Route[] = [
   {
@@ -16,6 +17,11 @@ export const appRoutes: Route[] = [
   {
     path: 'appointments',
     component: AppointmentsComponent,
+    canActivate: [authSessionGuard],
+  },
+  {
+    path: 'privacy',
+    component: PrivacySummaryComponent,
     canActivate: [authSessionGuard],
   },
 ];
