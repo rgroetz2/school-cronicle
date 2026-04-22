@@ -57,6 +57,7 @@ so that I can clean up obsolete entries.
 - Story 2.3 added metadata editing, including required appointment date.
 - Story 2.4 added submit-readiness evaluation and submit gate behavior.
 - Current implementation supports local image attachment on drafts in web dummy/local mode.
+- Current implementation enforces a local image max-size guard of 2 MB during attach flow.
 
 ### Architecture Guardrails
 
@@ -74,6 +75,7 @@ so that I can clean up obsolete entries.
   - delete control with confirmation step
   - local state/list refresh after successful delete
   - local image attachments tied to deleted draft are removed from client state as part of draft removal
+  - image attach flow includes local max-size guard (2 MB) with user-facing feedback
   - clear status feedback and consistent empty-state behavior
 
 ### Security and Compliance Notes
@@ -97,6 +99,7 @@ so that I can clean up obsolete entries.
   - confirmation + delete flow
   - deleted item removed from list and selection cleared
   - status feedback for success/failure is visible and accessible
+  - image-attach oversize file path surfaces max-size feedback (2 MB) without persisting file
 - Run full lint/test/build gates.
 
 ### References
@@ -123,6 +126,7 @@ gpt-5.3-codex
 
 - Comprehensive implementation context created for Story 2.5.
 - Scope anchored to draft deletion, ownership enforcement, and list refresh behavior.
+- Local image attachment context documented, including 2 MB max-size guard behavior.
 - Security, UX confirmation, and accessibility guardrails included.
 
 ### File List
