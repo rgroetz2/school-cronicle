@@ -12,6 +12,25 @@ import { AuthApiService } from '../../core/auth-api.service';
       <h2>Appointments workspace</h2>
       <p>You are signed in.</p>
 
+      <section aria-labelledby="draft-list-heading">
+        <h3 id="draft-list-heading">Your drafts</h3>
+        @if (isLoadingDrafts) {
+          <p>Loading drafts...</p>
+        } @else if (drafts.length === 0) {
+          <p>No drafts yet. Create one below to get started.</p>
+        } @else {
+          <ul>
+            @for (draft of drafts; track draft.id) {
+              <li>
+                <button type="button" (click)="openDraft(draft.id)">
+                  Open draft: {{ draft.title }} ({{ draft.category }})
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
       <form [formGroup]="draftForm" (ngSubmit)="createDraft()" novalidate>
         <label for="draft-title">Title *</label>
         <input id="draft-title" formControlName="title" type="text" />
@@ -36,6 +55,9 @@ import { AuthApiService } from '../../core/auth-api.service';
       @if (draftCreatedMessage) {
         <p role="status">{{ draftCreatedMessage }}</p>
       }
+      @if (openedDraftMessage) {
+        <p role="status">{{ openedDraftMessage }}</p>
+      }
 
       <button type="button" (click)="signOut()" [disabled]="isSigningOut">
         {{ isSigningOut ? 'Signing out...' : 'Sign out' }}
@@ -49,13 +71,20 @@ export class AppointmentsComponent {
 
   isSigningOut = false;
   isCreatingDraft = false;
+  isLoadingDrafts = false;
   draftCreatedMessage = '';
+  openedDraftMessage = '';
+  drafts: Array<{ id: string; title: string; category: string }> = [];
 
   readonly draftForm = new FormGroup({
     title: new FormControl('', [Validators.required]),
     category: new FormControl('', [Validators.required]),
     notes: new FormControl(''),
   });
+
+  constructor() {
+    this.loadDrafts();
+  }
 
   signOut(): void {
     if (this.isSigningOut) {
@@ -96,6 +125,30 @@ export class AppointmentsComponent {
         next: (draft) => {
           this.draftCreatedMessage = `Draft created: ${draft.title}`;
           this.draftForm.reset({ title: '', category: '', notes: '' });
+          this.loadDrafts();
+        },
+      });
+  }
+
+  openDraft(draftId: string): void {
+    this.openedDraftMessage = `Opened draft ${draftId}`;
+  }
+
+  private loadDrafts(): void {
+    this.isLoadingDrafts = true;
+    this.authApiService
+      .listDrafts()
+      .pipe(finalize(() => (this.isLoadingDrafts = false)))
+      .subscribe({
+        next: (drafts) => {
+          this.drafts = drafts.map((draft) => ({
+            id: draft.id,
+            title: draft.title,
+            category: draft.category,
+          }));
+        },
+        error: () => {
+          this.drafts = [];
         },
       });
   }

@@ -9,12 +9,6 @@ interface SignInResponse {
   };
 }
 
-interface SignOutResponse {
-  data: {
-    signedOut: boolean;
-  };
-}
-
 interface SessionProbeResponse {
   data: {
     authenticated: boolean;
@@ -39,6 +33,12 @@ interface CreateDraftResponse {
       status: 'draft';
       createdAt: string;
     };
+  };
+}
+
+interface ListDraftsResponse {
+  data: {
+    drafts: CreateDraftResponse['data']['draft'][];
   };
 }
 
@@ -170,6 +170,16 @@ export class AuthApiService {
     return this.http
       .post<CreateDraftResponse>('/api/appointments/drafts', input)
       .pipe(map((response) => response.data.draft));
+  }
+
+  listDrafts(): Observable<CreateDraftResponse['data']['draft'][]> {
+    if (this.hasDummySession()) {
+      return of(this.readDummyDrafts());
+    }
+
+    return this.http
+      .get<ListDraftsResponse>('/api/appointments/drafts')
+      .pipe(map((response) => response.data.drafts));
   }
 
   private readDummyDrafts(): CreateDraftResponse['data']['draft'][] {

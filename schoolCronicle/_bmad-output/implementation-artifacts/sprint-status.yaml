@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-22T04:42:08+0200
-last_updated: 2026-04-22T06:45:00+0200
+last_updated: 2026-04-22T10:07:00+0200
 project: schoolCronicle
 project_key: NOKEY
 tracking_system: file-system
@@ -48,9 +48,9 @@ development_status:
   1-3-implement-sign-out-and-session-lifecycle: review
   1-4-implement-access-failure-and-help-path: review
   epic-1-retrospective: optional
-  epic-2: backlog
+  epic-2: in-progress
   2-1-create-draft-appointment: review
-  2-2-view-and-open-appointment-list: backlog
+  2-2-view-and-open-appointment-list: review
   2-3-edit-draft-metadata-and-category: backlog
   2-4-enforce-metadata-submission-gate: backlog
   2-5-remove-draft-appointment: backlog

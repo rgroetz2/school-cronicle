@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Post,
   Req,
   UnauthorizedException,
@@ -53,6 +54,25 @@ export class AppointmentsController {
     return {
       data: {
         draft,
+      },
+    };
+  }
+
+  @Get('drafts')
+  listDrafts(@Req() req: Request) {
+    const sessionId = extractSessionIdFromCookieHeader(req.headers.cookie);
+    const session = this.sessionService.getSession(sessionId);
+
+    if (!session) {
+      throw new UnauthorizedException({
+        message: 'Authentication required.',
+      });
+    }
+
+    const drafts = this.appointmentsService.listDraftsForTeacher(session.teacherId);
+    return {
+      data: {
+        drafts,
       },
     };
   }

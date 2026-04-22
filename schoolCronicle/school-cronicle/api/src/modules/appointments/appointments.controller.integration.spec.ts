@@ -93,4 +93,71 @@ describe('AppointmentsController integration', () => {
       message: 'Authentication required.',
     });
   });
+
+  it('lists only drafts scoped to current teacher session', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Draft A',
+        category: 'meeting',
+        notes: 'first',
+      }),
+    });
+
+    await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Draft B',
+        category: 'consultation',
+        notes: 'second',
+      }),
+    });
+
+    const listResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      headers: {
+        cookie: sessionCookie ?? '',
+      },
+    });
+
+    const listBody = await listResponse.json();
+    expect(listResponse.status).toBe(200);
+    expect(Array.isArray(listBody.data.drafts)).toBe(true);
+    expect(listBody.data.drafts.length).toBe(2);
+    expect(listBody.data.drafts.every((draft: { teacherId: string }) => draft.teacherId === 'teacher-1')).toBe(
+      true,
+    );
+  });
 });

@@ -25,4 +25,10 @@ export class AppointmentsService {
     this.drafts.push(draft);
     return draft;
   }
+
+  listDraftsForTeacher(teacherId: string): AppointmentDraft[] {
+    return this.drafts
+      .filter((draft) => draft.teacherId === teacherId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
 }
