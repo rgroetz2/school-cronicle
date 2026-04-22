@@ -4,9 +4,15 @@ import {
   AttachDraftImageDto,
   AppointmentDraft,
   CreateAppointmentDraftDto,
+  DraftImage,
   UpdateAppointmentDraftDto,
 } from './appointment.types';
 import { APPOINTMENT_CATEGORIES } from './appointment-categories';
+import {
+  APPOINTMENT_IMAGE_ALLOWED_MIME_TYPES,
+  APPOINTMENT_IMAGE_MAX_BYTES,
+  estimateDataUrlPayloadBytes,
+} from './appointment-image-validation';
 
 @Injectable()
 export class AppointmentsService {
@@ -78,6 +84,20 @@ export class AppointmentsService {
     }
 
     return missing;
+  }
+
+  evaluateImageReadiness(draft: AppointmentDraft): DraftImage[] {
+    return draft.images.filter((image) => {
+      if (
+        !APPOINTMENT_IMAGE_ALLOWED_MIME_TYPES.includes(
+          image.mimeType as (typeof APPOINTMENT_IMAGE_ALLOWED_MIME_TYPES)[number],
+        )
+      ) {
+        return true;
+      }
+
+      return estimateDataUrlPayloadBytes(image.dataUrl) > APPOINTMENT_IMAGE_MAX_BYTES;
+    });
   }
 
   deleteDraftForTeacher(teacherId: string, draftId: string): AppointmentDraft | undefined {

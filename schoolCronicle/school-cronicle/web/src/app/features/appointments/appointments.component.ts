@@ -71,7 +71,18 @@ interface ImageUploadStatus {
               <li>{{ field }}</li>
             }
           </ul>
-        } @else if (selectedDraftId) {
+        }
+        @if (failedImageUploadCount > 0) {
+          <p class="state-pill warning">Submission blocked. Invalid image uploads:</p>
+          <ul class="missing-list">
+            @for (upload of imageUploadStatuses; track upload.id) {
+              @if (upload.state === 'failed') {
+                <li>{{ upload.name }}{{ upload.detail ? ': ' + upload.detail : '' }}</li>
+              }
+            }
+          </ul>
+        }
+        @if (selectedDraftId && missingRequiredFields.length === 0 && failedImageUploadCount === 0) {
           <p class="state-pill success">All required metadata is complete.</p>
         }
         <button type="button" class="primary" (click)="submitDraft()" [disabled]="!canSubmit || isSubmittingDraft">
@@ -286,7 +297,11 @@ export class AppointmentsComponent {
   }
 
   get canSubmit(): boolean {
-    return Boolean(this.selectedDraftId) && this.missingRequiredFields.length === 0;
+    return (
+      Boolean(this.selectedDraftId) &&
+      this.missingRequiredFields.length === 0 &&
+      this.failedImageUploadCount === 0
+    );
   }
 
   get selectedDraftImages(): DraftImage[] {
@@ -295,6 +310,13 @@ export class AppointmentsComponent {
     }
 
     return this.drafts.find((draft) => draft.id === this.selectedDraftId)?.images ?? [];
+  }
+
+  get failedImageUploadCount(): number {
+    return this.imageUploadStatuses.reduce(
+      (count, upload) => (upload.state === 'failed' ? count + 1 : count),
+      0,
+    );
   }
 
   signOut(): void {
@@ -394,10 +416,19 @@ export class AppointmentsComponent {
         },
         error: (error: unknown) => {
           const response = error as HttpErrorResponse;
-          const missing = (response.error as { missingRequiredFields?: string[] } | undefined)
-            ?.missingRequiredFields;
+          const payload = response.error as
+            | { missingRequiredFields?: string[]; invalidImages?: Array<{ name?: string }> }
+            | undefined;
+          const missing = payload?.missingRequiredFields;
+          const invalidImages = payload?.invalidImages;
           if (Array.isArray(missing) && missing.length > 0) {
             this.draftSubmitMessage = `Submission blocked: ${missing.join(', ')}`;
+            return;
+          }
+          if (Array.isArray(invalidImages) && invalidImages.length > 0) {
+            this.draftSubmitMessage = `Submission blocked: invalid images (${invalidImages
+              .map((image) => image.name ?? 'unknown')
+              .join(', ')})`;
             return;
           }
 

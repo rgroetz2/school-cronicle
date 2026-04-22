@@ -308,11 +308,16 @@ export class AppointmentsController {
     }
 
     const missingRequiredFields = this.appointmentsService.evaluateMetadataReadiness(draft);
-    if (missingRequiredFields.length > 0) {
+    const invalidImages = this.appointmentsService.evaluateImageReadiness(draft);
+    if (missingRequiredFields.length > 0 || invalidImages.length > 0) {
       throw new ForbiddenException({
         message: 'Submission blocked until required metadata is complete.',
         code: 'APPOINTMENT_SUBMIT_BLOCKED',
         missingRequiredFields,
+        invalidImages: invalidImages.map((image) => ({
+          id: image.id,
+          name: image.name,
+        })),
       });
     }
 

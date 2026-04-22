@@ -296,6 +296,43 @@ describe('AppointmentsComponent', () => {
     httpTesting.verify();
   });
 
+  it('blocks submit while failed image uploads exist and unblocks after recovery', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-21',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Valid metadata',
+            appointmentDate: '2026-04-28',
+            category: 'meeting',
+            notes: 'ready',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.openDraft('draft-21');
+    fixture.componentInstance.imageUploadStatuses = [
+      { id: 'up-fail', name: 'bad.gif', state: 'failed', detail: 'Unsupported format' },
+    ];
+    expect(fixture.componentInstance.failedImageUploadCount).toBe(1);
+    expect(fixture.componentInstance.canSubmit).toBe(false);
+
+    fixture.componentInstance.removeFailedUpload('up-fail');
+    expect(fixture.componentInstance.failedImageUploadCount).toBe(0);
+    expect(fixture.componentInstance.canSubmit).toBe(true);
+  });
+
   it('shows attached images for selected draft and removes one', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);

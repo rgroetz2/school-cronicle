@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../app/app.module';
 import { INestApplication } from '@nestjs/common';
+import { AppointmentsService } from './appointments.service';
 
 describe('AppointmentsController integration', () => {
   let app: INestApplication | undefined;
@@ -727,5 +728,74 @@ describe('AppointmentsController integration', () => {
     );
 
     expect(attachResponse.status).toBe(413);
+  });
+
+  it('blocks submit when draft contains invalid image state', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Blocked by invalid image',
+        appointmentDate: '2026-05-12',
+        category: 'meeting',
+      }),
+    });
+    const createBody = await createResponse.json();
+    const service = app.get(AppointmentsService);
+    const draft = service.findDraftForTeacher('teacher-1', createBody.data.draft.id);
+    draft?.images.push({
+      id: 'legacy-invalid-image',
+      name: 'legacy.bmp',
+      mimeType: 'image/bmp',
+      dataUrl: 'data:image/bmp;base64,AAA',
+      addedAt: new Date().toISOString(),
+    });
+
+    const submitResponse = await fetch(`${baseUrl}/api/appointments/drafts/${createBody.data.draft.id}/submit`, {
+      method: 'POST',
+      headers: {
+        cookie: sessionCookie ?? '',
+      },
+    });
+
+    expect(submitResponse.status).toBe(403);
+    expect(await submitResponse.json()).toMatchObject({
+      message: 'Submission blocked until required metadata is complete.',
+      code: 'APPOINTMENT_SUBMIT_BLOCKED',
+      invalidImages: [
+        {
+          id: 'legacy-invalid-image',
+          name: 'legacy.bmp',
+        },
+      ],
+    });
   });
 });
