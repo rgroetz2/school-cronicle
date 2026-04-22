@@ -1,5 +1,13 @@
 import { AppointmentCategory } from './appointment-categories';
 
+export interface DraftImage {
+  id: string;
+  name: string;
+  mimeType: string;
+  dataUrl: string;
+  addedAt: string;
+}
+
 export interface AppointmentDraft {
   id: string;
   teacherId: string;
@@ -10,6 +18,7 @@ export interface AppointmentDraft {
   notes: string;
   status: 'draft';
   createdAt: string;
+  images: DraftImage[];
 }
 
 export interface CreateAppointmentDraftDto {
@@ -24,4 +33,10 @@ export interface UpdateAppointmentDraftDto {
   appointmentDate: string;
   category: AppointmentCategory;
   notes?: string;
+}
+
+export interface AttachDraftImageDto {
+  name: string;
+  mimeType: string;
+  dataUrl: string;
 }

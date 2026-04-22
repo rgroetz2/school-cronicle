@@ -5,6 +5,15 @@ import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AppointmentDraft, AuthApiService, DraftImage } from '../../core/auth-api.service';
 
+type ImageUploadState = 'queued' | 'uploading' | 'attached' | 'failed';
+
+interface ImageUploadStatus {
+  id: string;
+  name: string;
+  state: ImageUploadState;
+  detail?: string;
+}
+
 @Component({
   selector: 'app-appointments',
   imports: [ReactiveFormsModule],
@@ -76,7 +85,26 @@ import { AppointmentDraft, AuthApiService, DraftImage } from '../../core/auth-ap
         @if (!selectedDraftId) {
           <p class="state-pill">Select a draft to attach images.</p>
         } @else {
-          <input type="file" class="file-input" accept="image/*" (change)="onImageSelected($event)" />
+          <input type="file" class="file-input" accept="image/*" multiple (change)="onImageSelected($event)" />
+          @if (imageUploadStatuses.length > 0) {
+            <ul class="upload-status-list" aria-label="Attachment status list">
+              @for (upload of imageUploadStatuses; track upload.id) {
+                <li class="upload-status">
+                  <span class="upload-name">{{ upload.name }}</span>
+                  <span
+                    class="upload-state"
+                    [class.success]="upload.state === 'attached'"
+                    [class.warning]="upload.state === 'failed'"
+                  >
+                    {{ upload.state }}
+                  </span>
+                  @if (upload.detail) {
+                    <span class="upload-detail">{{ upload.detail }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          }
           @if (selectedDraftImages.length === 0) {
             <p class="state-pill">No images attached yet.</p>
           } @else {
@@ -198,6 +226,7 @@ export class AppointmentsComponent {
   draftSubmitMessage = '';
   imageMessage = '';
   deleteMessage = '';
+  imageUploadStatuses: ImageUploadStatus[] = [];
   selectedDraftId: string | null = null;
   categories: string[] = [];
   drafts: AppointmentDraft[] = [];
@@ -315,6 +344,7 @@ export class AppointmentsComponent {
     }
 
     this.selectedDraftId = draft.id;
+    this.imageUploadStatuses = [];
     this.openedDraftMessage = `Opened draft ${draftId}`;
     this.draftSavedMessage = '';
     this.draftForm.setValue({
@@ -359,60 +389,78 @@ export class AppointmentsComponent {
     }
 
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) {
+    const files = Array.from(input.files ?? []);
+    if (files.length === 0) {
       return;
     }
-    if (file.size > AppointmentsComponent.MAX_IMAGE_SIZE_BYTES) {
-      this.imageMessage = 'Image is too large. Maximum size is 2 MB.';
-      input.value = '';
-      return;
-    }
+    this.imageMessage = '';
+    for (const file of files) {
+      const uploadId = `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      this.imageUploadStatuses = [
+        ...this.imageUploadStatuses,
+        { id: uploadId, name: file.name, state: 'queued' },
+      ];
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
-      if (!dataUrl) {
-        this.imageMessage = 'Image could not be loaded.';
-        return;
+      if (file.size > AppointmentsComponent.MAX_IMAGE_SIZE_BYTES) {
+        this.updateUploadStatus(uploadId, 'failed', 'Maximum size is 2 MB.');
+        this.imageMessage = 'Image is too large. Maximum size is 2 MB.';
+        continue;
       }
 
-      this.authApiService
-        .attachImageToDraft(this.selectedDraftId as string, {
-          name: file.name,
-          mimeType: file.type || 'image/*',
-          dataUrl,
-        })
-        .subscribe({
-          next: (draft) => {
-            if (!draft) {
-              const fallbackDraft = this.drafts.find((item) => item.id === this.selectedDraftId);
-              if (!fallbackDraft) {
-                this.imageMessage = 'Draft not found for image attach.';
+      this.updateUploadStatus(uploadId, 'uploading');
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+        if (!dataUrl) {
+          this.updateUploadStatus(uploadId, 'failed', 'Image could not be loaded.');
+          this.imageMessage = 'Image could not be loaded.';
+          return;
+        }
+
+        this.authApiService
+          .attachImageToDraft(this.selectedDraftId as string, {
+            name: file.name,
+            mimeType: file.type || 'image/*',
+            dataUrl,
+          })
+          .subscribe({
+            next: (draft) => {
+              if (!draft) {
+                const fallbackDraft = this.drafts.find((item) => item.id === this.selectedDraftId);
+                if (!fallbackDraft) {
+                  this.updateUploadStatus(uploadId, 'failed', 'Draft not found for image attach.');
+                  this.imageMessage = 'Draft not found for image attach.';
+                  return;
+                }
+
+                const appended: DraftImage = {
+                  id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                  name: file.name,
+                  mimeType: file.type || 'image/*',
+                  dataUrl,
+                  addedAt: new Date().toISOString(),
+                };
+                this.replaceDraft({
+                  ...fallbackDraft,
+                  images: [...(fallbackDraft.images ?? []), appended],
+                });
+                this.updateUploadStatus(uploadId, 'attached');
+                this.imageMessage = `Attached image: ${file.name}`;
                 return;
               }
 
-              const appended: DraftImage = {
-                id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                name: file.name,
-                mimeType: file.type || 'image/*',
-                dataUrl,
-                addedAt: new Date().toISOString(),
-              };
-              this.replaceDraft({
-                ...fallbackDraft,
-                images: [...(fallbackDraft.images ?? []), appended],
-              });
+              this.replaceDraft(draft);
+              this.updateUploadStatus(uploadId, 'attached');
               this.imageMessage = `Attached image: ${file.name}`;
-              return;
-            }
-
-            this.replaceDraft(draft);
-            this.imageMessage = `Attached image: ${file.name}`;
-          },
-        });
-    };
-    reader.readAsDataURL(file);
+            },
+            error: () => {
+              this.updateUploadStatus(uploadId, 'failed', 'Attachment failed. Try again.');
+              this.imageMessage = 'Image attachment failed.';
+            },
+          });
+      };
+      reader.readAsDataURL(file);
+    }
     input.value = '';
   }
 
@@ -468,6 +516,7 @@ export class AppointmentsComponent {
 
           this.drafts = this.drafts.filter((draft) => draft.id !== draftId);
           this.selectedDraftId = null;
+          this.imageUploadStatuses = [];
           this.draftForm.reset({ title: '', appointmentDate: '', category: '', notes: '' });
           this.deleteMessage = 'Draft deleted.';
         },
@@ -505,5 +554,17 @@ export class AppointmentsComponent {
         this.categories = [];
       },
     });
+  }
+
+  private updateUploadStatus(uploadId: string, state: ImageUploadState, detail?: string): void {
+    this.imageUploadStatuses = this.imageUploadStatuses.map((upload) =>
+      upload.id === uploadId
+        ? {
+            ...upload,
+            state,
+            detail,
+          }
+        : upload,
+    );
   }
 }

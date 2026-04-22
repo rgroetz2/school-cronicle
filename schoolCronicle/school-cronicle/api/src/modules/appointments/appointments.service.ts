@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
+  AttachDraftImageDto,
   AppointmentDraft,
   CreateAppointmentDraftDto,
   UpdateAppointmentDraftDto,
@@ -26,6 +27,7 @@ export class AppointmentsService {
       notes: input.notes?.trim() ?? '',
       status: 'draft',
       createdAt: new Date().toISOString(),
+      images: [],
     };
 
     this.drafts.push(draft);
@@ -86,5 +88,28 @@ export class AppointmentsService {
 
     const [deletedDraft] = this.drafts.splice(draftIndex, 1);
     return deletedDraft;
+  }
+
+  attachImageToDraftForTeacher(
+    teacherId: string,
+    draftId: string,
+    image: AttachDraftImageDto,
+  ): AppointmentDraft | undefined {
+    const draft = this.findDraftForTeacher(teacherId, draftId);
+    if (!draft) {
+      return undefined;
+    }
+
+    draft.images = [
+      ...draft.images,
+      {
+        id: randomUUID(),
+        name: image.name.trim(),
+        mimeType: image.mimeType.trim(),
+        dataUrl: image.dataUrl.trim(),
+        addedAt: new Date().toISOString(),
+      },
+    ];
+    return draft;
   }
 }

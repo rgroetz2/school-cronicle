@@ -506,4 +506,103 @@ describe('AppointmentsController integration', () => {
       message: 'Authentication required.',
     });
   });
+
+  it('attaches an image to a teacher-owned draft', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Image draft',
+        appointmentDate: '2026-05-12',
+        category: 'meeting',
+      }),
+    });
+    const createBody = await createResponse.json();
+
+    const attachResponse = await fetch(
+      `${baseUrl}/api/appointments/drafts/${createBody.data.draft.id}/images`,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          cookie: sessionCookie ?? '',
+        },
+        body: JSON.stringify({
+          name: 'photo.png',
+          mimeType: 'image/png',
+          dataUrl: 'data:image/png;base64,AAA',
+        }),
+      },
+    );
+
+    expect(attachResponse.status).toBe(201);
+    const attachBody = await attachResponse.json();
+    expect(Array.isArray(attachBody.data.draft.images)).toBe(true);
+    expect(attachBody.data.draft.images[0]).toMatchObject({
+      name: 'photo.png',
+      mimeType: 'image/png',
+    });
+  });
+
+  it('rejects unauthenticated image attach requests', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const attachResponse = await fetch(`${baseUrl}/api/appointments/drafts/non-existent/images`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: 'photo.png',
+        mimeType: 'image/png',
+        dataUrl: 'data:image/png;base64,AAA',
+      }),
+    });
+
+    expect(attachResponse.status).toBe(401);
+    expect(await attachResponse.json()).toMatchObject({
+      message: 'Authentication required.',
+    });
+  });
 });

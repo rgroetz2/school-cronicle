@@ -179,6 +179,49 @@ button {
   margin-bottom: 0.8rem;
 }
 
+.upload-status-list {
+  margin: 0 0 0.8rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.upload-status {
+  display: grid;
+  grid-template-columns: minmax(6rem, 1fr) auto;
+  gap: 0.4rem 0.7rem;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  background: #fff;
+}
+
+.upload-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.upload-state {
+  text-transform: capitalize;
+  color: var(--text-muted);
+}
+
+.upload-state.success {
+  color: var(--success-fg);
+}
+
+.upload-state.warning {
+  color: var(--danger-fg);
+}
+
+.upload-detail {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
 .image-card {
   display: flex;
   align-items: center;

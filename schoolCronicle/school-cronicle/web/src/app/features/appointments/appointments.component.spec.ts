@@ -2,8 +2,10 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { AppointmentsComponent } from './appointments.component';
+import { AuthApiService } from '../../core/auth-api.service';
 
 describe('AppointmentsComponent', () => {
   beforeEach(async () => {
@@ -341,6 +343,86 @@ describe('AppointmentsComponent', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Image removed.');
+  });
+
+  it('shows per-file upload status after image attach', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const authApiService = TestBed.inject(AuthApiService);
+    const attachSpy = vi.spyOn(authApiService, 'attachImageToDraft').mockReturnValue(
+      of({
+        id: 'draft-50',
+        teacherId: 'teacher-1',
+        schoolId: 'school-1',
+        title: 'Attach status',
+        appointmentDate: '2026-05-04',
+        category: 'meeting',
+        notes: '',
+        status: 'draft',
+        createdAt: new Date().toISOString(),
+        images: [
+          {
+            id: 'img-status-1',
+            name: 'status.png',
+            mimeType: 'image/png',
+            dataUrl: 'data:image/png;base64,AAA',
+            addedAt: new Date().toISOString(),
+          },
+        ],
+      }),
+    );
+
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-50',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Attach status',
+            appointmentDate: '2026-05-04',
+            category: 'meeting',
+            notes: '',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.openDraft('draft-50');
+
+    class MockFileReader {
+      result: string | ArrayBuffer | null = null;
+      onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
+
+      readAsDataURL(file: Blob): void {
+        this.result = `data:image/png;base64,${file.size}`;
+        this.onload?.call(this as unknown as FileReader, {} as ProgressEvent<FileReader>);
+      }
+    }
+
+    vi.stubGlobal('FileReader', MockFileReader as unknown as typeof FileReader);
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    const file = new File(['abc'], 'status.png', { type: 'image/png' });
+    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+
+    fixture.componentInstance.onImageSelected({ target: input } as unknown as Event);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(attachSpy).toHaveBeenCalled();
+    expect(text).toContain('status.png');
+    expect(text).toContain('attached');
+    expect(text).toContain('Attached image: status.png');
+
+    vi.unstubAllGlobals();
   });
 
   it('deletes selected draft after confirmation and updates list', () => {

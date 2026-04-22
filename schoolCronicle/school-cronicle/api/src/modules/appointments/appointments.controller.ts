@@ -18,7 +18,11 @@ import { AuthSessionGuard } from '../auth/auth-session.guard';
 import { extractSessionIdFromCookieHeader } from '../auth/auth-cookie.util';
 import { SessionService } from '../auth/session.service';
 import { AppointmentsService } from './appointments.service';
-import { CreateAppointmentDraftDto, UpdateAppointmentDraftDto } from './appointment.types';
+import {
+  AttachDraftImageDto,
+  CreateAppointmentDraftDto,
+  UpdateAppointmentDraftDto,
+} from './appointment.types';
 import { isAppointmentCategory } from './appointment-categories';
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -206,6 +210,48 @@ export class AppointmentsController {
       data: {
         deleted: true,
         draftId: deletedDraft.id,
+      },
+    };
+  }
+
+  @Post('drafts/:draftId/images')
+  attachImage(
+    @Param('draftId') draftId: string,
+    @Body() body: Partial<AttachDraftImageDto>,
+    @Req() req: Request,
+  ) {
+    const name = body.name?.trim();
+    const mimeType = body.mimeType?.trim();
+    const dataUrl = body.dataUrl?.trim();
+    if (!name || !mimeType || !dataUrl) {
+      throw new BadRequestException({
+        message: 'Image attachment payload is incomplete.',
+        code: 'APPOINTMENT_IMAGE_REQUIRED_FIELDS',
+      });
+    }
+
+    const sessionId = extractSessionIdFromCookieHeader(req.headers.cookie);
+    const session = this.sessionService.getSession(sessionId);
+    if (!session) {
+      throw new UnauthorizedException({
+        message: 'Authentication required.',
+      });
+    }
+
+    const draft = this.appointmentsService.attachImageToDraftForTeacher(session.teacherId, draftId, {
+      name,
+      mimeType,
+      dataUrl,
+    });
+    if (!draft) {
+      throw new NotFoundException({
+        message: 'Draft not found.',
+      });
+    }
+
+    return {
+      data: {
+        draft,
       },
     };
   }

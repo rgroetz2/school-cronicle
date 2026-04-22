@@ -286,6 +286,12 @@ export class AuthApiService {
     draftId: string,
     image: Omit<DraftImage, 'id' | 'addedAt'>,
   ): Observable<AppointmentDraft | undefined> {
+    if (!this.hasDummySession()) {
+      return this.http
+        .post<CreateDraftResponse>(`/api/appointments/drafts/${draftId}/images`, image)
+        .pipe(map((response) => response.data.draft));
+    }
+
     const drafts = this.readDummyDrafts();
     const draft = drafts.find((item) => item.id === draftId);
     if (!draft) {
