@@ -425,6 +425,89 @@ describe('AppointmentsComponent', () => {
     vi.unstubAllGlobals();
   });
 
+  it('keeps valid image attached while invalid type shows reason', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const authApiService = TestBed.inject(AuthApiService);
+    const attachSpy = vi.spyOn(authApiService, 'attachImageToDraft').mockReturnValue(
+      of({
+        id: 'draft-51',
+        teacherId: 'teacher-1',
+        schoolId: 'school-1',
+        title: 'Mixed upload',
+        appointmentDate: '2026-05-04',
+        category: 'meeting',
+        notes: '',
+        status: 'draft',
+        createdAt: new Date().toISOString(),
+        images: [
+          {
+            id: 'img-valid',
+            name: 'valid.png',
+            mimeType: 'image/png',
+            dataUrl: 'data:image/png;base64,AAA',
+            addedAt: new Date().toISOString(),
+          },
+        ],
+      }),
+    );
+
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-51',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Mixed upload',
+            appointmentDate: '2026-05-04',
+            category: 'meeting',
+            notes: '',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.openDraft('draft-51');
+
+    class MockFileReader {
+      result: string | ArrayBuffer | null = null;
+      onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
+
+      readAsDataURL(file: Blob): void {
+        this.result = `data:image/png;base64,${file.size}`;
+        this.onload?.call(this as unknown as FileReader, {} as ProgressEvent<FileReader>);
+      }
+    }
+
+    vi.stubGlobal('FileReader', MockFileReader as unknown as typeof FileReader);
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    const validFile = new File(['abc'], 'valid.png', { type: 'image/png' });
+    const invalidFile = new File(['abc'], 'invalid.gif', { type: 'image/gif' });
+    Object.defineProperty(input, 'files', { value: [validFile, invalidFile], configurable: true });
+
+    fixture.componentInstance.onImageSelected({ target: input } as unknown as Event);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(attachSpy).toHaveBeenCalledTimes(1);
+    expect(text).toContain('valid.png');
+    expect(text).toContain('invalid.gif');
+    expect(text).toContain('attached');
+    expect(text).toContain('Unsupported format. Use JPEG, PNG, or WebP.');
+    expect(text).toContain('Unsupported image format. Use JPEG, PNG, or WebP.');
+
+    vi.unstubAllGlobals();
+  });
+
   it('deletes selected draft after confirmation and updates list', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);

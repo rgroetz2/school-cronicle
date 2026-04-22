@@ -24,8 +24,14 @@ import {
   UpdateAppointmentDraftDto,
 } from './appointment.types';
 import { isAppointmentCategory } from './appointment-categories';
+import {
+  APPOINTMENT_IMAGE_ALLOWED_MIME_TYPES,
+  APPOINTMENT_IMAGE_MAX_BYTES,
+  estimateDataUrlPayloadBytes,
+} from './appointment-image-validation';
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const BASE64_DATA_URL_PATTERN = /^data:([a-z]+\/[a-z0-9.+-]+);base64,/i;
 
 function isValidAppointmentDate(value: string): boolean {
   if (!ISO_DATE_PATTERN.test(value)) {
@@ -227,6 +233,33 @@ export class AppointmentsController {
       throw new BadRequestException({
         message: 'Image attachment payload is incomplete.',
         code: 'APPOINTMENT_IMAGE_REQUIRED_FIELDS',
+      });
+    }
+    if (!APPOINTMENT_IMAGE_ALLOWED_MIME_TYPES.includes(mimeType as (typeof APPOINTMENT_IMAGE_ALLOWED_MIME_TYPES)[number])) {
+      throw new BadRequestException({
+        message: 'Image type is not allowed. Supported types: image/jpeg, image/png, image/webp.',
+        code: 'APPOINTMENT_IMAGE_INVALID_TYPE',
+      });
+    }
+    const dataUrlMatch = BASE64_DATA_URL_PATTERN.exec(dataUrl);
+    if (!dataUrlMatch) {
+      throw new BadRequestException({
+        message: 'Image payload must be a valid base64 data URL.',
+        code: 'APPOINTMENT_IMAGE_INVALID_PAYLOAD',
+      });
+    }
+    const dataUrlMimeType = dataUrlMatch[1]?.toLowerCase() ?? '';
+    if (dataUrlMimeType !== mimeType) {
+      throw new BadRequestException({
+        message: 'Image payload MIME type must match declared MIME type.',
+        code: 'APPOINTMENT_IMAGE_MIME_MISMATCH',
+      });
+    }
+    const payloadBytes = estimateDataUrlPayloadBytes(dataUrl);
+    if (payloadBytes > APPOINTMENT_IMAGE_MAX_BYTES) {
+      throw new BadRequestException({
+        message: 'Image is too large. Maximum size is 2 MB.',
+        code: 'APPOINTMENT_IMAGE_TOO_LARGE',
       });
     }
 

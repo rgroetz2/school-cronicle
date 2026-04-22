@@ -605,4 +605,127 @@ describe('AppointmentsController integration', () => {
       message: 'Authentication required.',
     });
   });
+
+  it('rejects image attach with unsupported mime type', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Unsupported mime draft',
+        appointmentDate: '2026-05-12',
+        category: 'meeting',
+      }),
+    });
+    const createBody = await createResponse.json();
+
+    const attachResponse = await fetch(
+      `${baseUrl}/api/appointments/drafts/${createBody.data.draft.id}/images`,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          cookie: sessionCookie ?? '',
+        },
+        body: JSON.stringify({
+          name: 'script.svg',
+          mimeType: 'image/svg+xml',
+          dataUrl: 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=',
+        }),
+      },
+    );
+
+    expect(attachResponse.status).toBe(400);
+    expect(await attachResponse.json()).toMatchObject({
+      message: 'Image type is not allowed. Supported types: image/jpeg, image/png, image/webp.',
+      code: 'APPOINTMENT_IMAGE_INVALID_TYPE',
+    });
+  });
+
+  it('rejects image attach request with oversized payload body', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Large image draft',
+        appointmentDate: '2026-05-12',
+        category: 'meeting',
+      }),
+    });
+    const createBody = await createResponse.json();
+    const oversizedPayload = 'A'.repeat(2 * 1024 * 1024 * 2);
+
+    const attachResponse = await fetch(
+      `${baseUrl}/api/appointments/drafts/${createBody.data.draft.id}/images`,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          cookie: sessionCookie ?? '',
+        },
+        body: JSON.stringify({
+          name: 'large.png',
+          mimeType: 'image/png',
+          dataUrl: `data:image/png;base64,${oversizedPayload}`,
+        }),
+      },
+    );
+
+    expect(attachResponse.status).toBe(413);
+  });
 });

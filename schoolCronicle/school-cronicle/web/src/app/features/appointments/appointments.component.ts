@@ -211,6 +211,7 @@ interface ImageUploadStatus {
 })
 export class AppointmentsComponent {
   private static readonly MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
+  private static readonly ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
   private readonly authApiService = inject(AuthApiService);
   private readonly router = inject(Router);
 
@@ -404,6 +405,11 @@ export class AppointmentsComponent {
       if (file.size > AppointmentsComponent.MAX_IMAGE_SIZE_BYTES) {
         this.updateUploadStatus(uploadId, 'failed', 'Maximum size is 2 MB.');
         this.imageMessage = 'Image is too large. Maximum size is 2 MB.';
+        continue;
+      }
+      if (!AppointmentsComponent.ALLOWED_IMAGE_TYPES.has(file.type)) {
+        this.updateUploadStatus(uploadId, 'failed', 'Unsupported format. Use JPEG, PNG, or WebP.');
+        this.imageMessage = 'Unsupported image format. Use JPEG, PNG, or WebP.';
         continue;
       }
 
