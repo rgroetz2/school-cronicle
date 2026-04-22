@@ -72,6 +72,11 @@ interface ImageUploadStatus {
         <section class="panel" aria-labelledby="submit-readiness-heading">
           <h3 id="submit-readiness-heading">Submit readiness</h3>
           <p class="panel-copy">Required metadata: title, appointment date, and category.</p>
+          <ul class="guidance-list" aria-label="Submit guidance">
+            <li>Use a clear title so the entry is easy to identify later.</li>
+            <li>Set the appointment date in YYYY-MM-DD format.</li>
+            <li>Choose one category before trying to submit.</li>
+          </ul>
         @if (!selectedDraftId) {
           <p class="state-pill">Select a draft to evaluate submit readiness.</p>
         }
@@ -112,6 +117,7 @@ interface ImageUploadStatus {
         <section class="panel panel-wide" aria-labelledby="draft-images-heading">
           <h3 id="draft-images-heading">Attached images</h3>
           <p class="panel-copy">Attach reference photos up to 2 MB each for local draft context.</p>
+          <p class="guidance-text">Accepted formats: JPEG, PNG, WebP. Maximum file size: 2 MB per image.</p>
         @if (!selectedDraftId) {
           <p class="state-pill">Select a draft to attach images.</p>
         } @else if (selectedDraft?.status === 'submitted') {
@@ -217,12 +223,14 @@ interface ImageUploadStatus {
           <form [formGroup]="draftForm" (ngSubmit)="createDraft()" novalidate>
             <label for="draft-title">Title *</label>
             <input id="draft-title" formControlName="title" type="text" />
+            <p class="field-hint">Required. Keep it short and specific (example: Parent meeting).</p>
             @if (draftForm.controls.title.touched && draftForm.controls.title.invalid) {
               <p class="field-error">Title is required.</p>
             }
 
             <label for="draft-date">Appointment date *</label>
             <input id="draft-date" formControlName="appointmentDate" type="date" />
+            <p class="field-hint">Required. Select the calendar date for this appointment.</p>
             @if (draftForm.controls.appointmentDate.touched && draftForm.controls.appointmentDate.invalid) {
               <p class="field-error">Appointment date is required.</p>
             }
@@ -234,6 +242,7 @@ interface ImageUploadStatus {
                 <option [value]="category">{{ category }}</option>
               }
             </select>
+            <p class="field-hint">Required. Choose the category that best fits the appointment.</p>
             @if (draftForm.controls.category.touched && draftForm.controls.category.invalid) {
               <p class="field-error">Category is required.</p>
             }

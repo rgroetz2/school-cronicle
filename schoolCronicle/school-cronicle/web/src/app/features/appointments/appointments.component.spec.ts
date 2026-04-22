@@ -100,6 +100,9 @@ describe('AppointmentsComponent', () => {
     expect(compiled.textContent).toContain('Title is required.');
     expect(compiled.textContent).toContain('Appointment date is required.');
     expect(compiled.textContent).toContain('Category is required.');
+    expect(compiled.textContent).toContain('Required. Keep it short and specific');
+    expect(compiled.textContent).toContain('Required. Select the calendar date for this appointment.');
+    expect(compiled.textContent).toContain('Required. Choose the category that best fits the appointment.');
 
     fixture.componentInstance.draftForm.setValue({
       title: 'Parent meeting',
@@ -149,6 +152,45 @@ describe('AppointmentsComponent', () => {
     fixture.detectChanges();
     expect(compiled.textContent).toContain('Draft created: Parent meeting');
     httpTesting.verify();
+  });
+
+  it('shows contextual guidance for required fields and image formats', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-guidance',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Guidance draft',
+            appointmentDate: '2026-05-04',
+            category: 'meeting',
+            notes: '',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.openDraft('draft-guidance');
+    fixture.componentInstance.imageUploadStatuses = [
+      { id: 'up-fail', name: 'invalid.gif', state: 'failed', detail: 'Unsupported format. Use JPEG, PNG, or WebP.' },
+    ];
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Use a clear title so the entry is easy to identify later.');
+    expect(text).toContain('Set the appointment date in YYYY-MM-DD format.');
+    expect(text).toContain('Choose one category before trying to submit.');
+    expect(text).toContain('Accepted formats: JPEG, PNG, WebP. Maximum file size: 2 MB per image.');
+    expect(text).toContain('Unsupported format. Use JPEG, PNG, or WebP.');
   });
 
   it('renders draft list and opens a selected draft', () => {
