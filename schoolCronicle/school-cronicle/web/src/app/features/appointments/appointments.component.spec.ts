@@ -21,6 +21,14 @@ describe('AppointmentsComponent', () => {
       .spyOn(router, 'navigateByUrl')
       .mockResolvedValue(true);
 
+    const categoriesRequest = httpTesting.expectOne('/api/appointments/categories');
+    expect(categoriesRequest.request.method).toBe('GET');
+    categoriesRequest.flush({
+      data: {
+        categories: ['meeting', 'consultation', 'progress'],
+      },
+    });
+
     const listRequest = httpTesting.expectOne('/api/appointments/drafts');
     expect(listRequest.request.method).toBe('GET');
     listRequest.flush({
@@ -38,6 +46,13 @@ describe('AppointmentsComponent', () => {
   it('shows required field validation and creates a draft', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
+    const categoriesRequest = httpTesting.expectOne('/api/appointments/categories');
+    expect(categoriesRequest.request.method).toBe('GET');
+    categoriesRequest.flush({
+      data: {
+        categories: ['meeting', 'consultation', 'progress'],
+      },
+    });
     const listRequest = httpTesting.expectOne('/api/appointments/drafts');
     expect(listRequest.request.method).toBe('GET');
     listRequest.flush({
@@ -103,6 +118,13 @@ describe('AppointmentsComponent', () => {
   it('renders draft list and opens a selected draft', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
+    const categoriesRequest = httpTesting.expectOne('/api/appointments/categories');
+    expect(categoriesRequest.request.method).toBe('GET');
+    categoriesRequest.flush({
+      data: {
+        categories: ['meeting', 'consultation', 'progress'],
+      },
+    });
     const listRequest = httpTesting.expectOne('/api/appointments/drafts');
     expect(listRequest.request.method).toBe('GET');
     listRequest.flush({
@@ -129,6 +151,83 @@ describe('AppointmentsComponent', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Opened draft draft-7');
+    httpTesting.verify();
+  });
+
+  it('updates an opened draft with controlled category', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const categoriesRequest = httpTesting.expectOne('/api/appointments/categories');
+    categoriesRequest.flush({
+      data: {
+        categories: ['meeting', 'consultation', 'progress'],
+      },
+    });
+
+    const listRequest = httpTesting.expectOne('/api/appointments/drafts');
+    listRequest.flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-11',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Old title',
+            category: 'meeting',
+            notes: 'Old notes',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.openDraft('draft-11');
+    fixture.componentInstance.draftForm.setValue({
+      title: 'Updated title',
+      category: 'consultation',
+      notes: 'Updated notes',
+    });
+    fixture.componentInstance.createDraft();
+
+    const updateRequest = httpTesting.expectOne('/api/appointments/drafts/draft-11');
+    expect(updateRequest.request.method).toBe('PATCH');
+    updateRequest.flush({
+      data: {
+        draft: {
+          id: 'draft-11',
+          teacherId: 'teacher-1',
+          schoolId: 'school-1',
+          title: 'Updated title',
+          category: 'consultation',
+          notes: 'Updated notes',
+          status: 'draft',
+          createdAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    const refreshRequest = httpTesting.expectOne('/api/appointments/drafts');
+    refreshRequest.flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-11',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Updated title',
+            category: 'consultation',
+            notes: 'Updated notes',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Draft saved: Updated title');
     httpTesting.verify();
   });
 });

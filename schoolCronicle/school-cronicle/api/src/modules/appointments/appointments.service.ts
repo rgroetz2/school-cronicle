@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { AppointmentDraft, CreateAppointmentDraftDto } from './appointment.types';
+import {
+  AppointmentDraft,
+  CreateAppointmentDraftDto,
+  UpdateAppointmentDraftDto,
+} from './appointment.types';
+import { APPOINTMENT_CATEGORIES } from './appointment-categories';
 
 @Injectable()
 export class AppointmentsService {
@@ -30,5 +35,25 @@ export class AppointmentsService {
     return this.drafts
       .filter((draft) => draft.teacherId === teacherId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  updateDraftForTeacher(
+    teacherId: string,
+    draftId: string,
+    input: UpdateAppointmentDraftDto,
+  ): AppointmentDraft | undefined {
+    const draft = this.drafts.find((item) => item.id === draftId && item.teacherId === teacherId);
+    if (!draft) {
+      return undefined;
+    }
+
+    draft.title = input.title;
+    draft.category = input.category;
+    draft.notes = input.notes?.trim() ?? '';
+    return draft;
+  }
+
+  listCategories(): readonly string[] {
+    return APPOINTMENT_CATEGORIES;
   }
 }

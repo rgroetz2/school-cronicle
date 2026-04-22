@@ -21,24 +21,32 @@ export interface CreateDraftInput {
   notes: string;
 }
 
+export interface AppointmentDraft {
+  id: string;
+  teacherId: string;
+  schoolId: string;
+  title: string;
+  category: string;
+  notes: string;
+  status: 'draft';
+  createdAt: string;
+}
+
 interface CreateDraftResponse {
   data: {
-    draft: {
-      id: string;
-      teacherId: string;
-      schoolId: string;
-      title: string;
-      category: string;
-      notes: string;
-      status: 'draft';
-      createdAt: string;
-    };
+    draft: AppointmentDraft;
   };
 }
 
 interface ListDraftsResponse {
   data: {
-    drafts: CreateDraftResponse['data']['draft'][];
+    drafts: AppointmentDraft[];
+  };
+}
+
+interface ListCategoriesResponse {
+  data: {
+    categories: string[];
   };
 }
 
@@ -48,10 +56,11 @@ interface ListDraftsResponse {
 export class AuthApiService {
   private static readonly DUMMY_SESSION_KEY = 'sc_dummy_session';
   private static readonly DUMMY_DRAFTS_KEY = 'sc_dummy_drafts';
+  private static readonly DUMMY_CATEGORIES = ['meeting', 'consultation', 'progress'];
   private static readonly SIGN_IN_TIMEOUT_MS = 10000;
   private readonly http = inject(HttpClient);
   private inMemoryDummySession = false;
-  private inMemoryDummyDrafts: CreateDraftResponse['data']['draft'][] = [];
+  private inMemoryDummyDrafts: AppointmentDraft[] = [];
 
   signIn(email: string, password: string): Observable<SignInResponse['data']> {
     const normalizedEmail = email.trim().toLowerCase();
@@ -147,9 +156,9 @@ export class AuthApiService {
     return undefined;
   }
 
-  createDraft(input: CreateDraftInput): Observable<CreateDraftResponse['data']['draft']> {
+  createDraft(input: CreateDraftInput): Observable<AppointmentDraft> {
     if (this.hasDummySession()) {
-      const draft: CreateDraftResponse['data']['draft'] = {
+      const draft: AppointmentDraft = {
         id: `draft-${Date.now()}`,
         teacherId: 'teacher-1',
         schoolId: 'school-1',
@@ -182,7 +191,46 @@ export class AuthApiService {
       .pipe(map((response) => response.data.drafts));
   }
 
-  private readDummyDrafts(): CreateDraftResponse['data']['draft'][] {
+  updateDraft(draftId: string, input: CreateDraftInput): Observable<AppointmentDraft> {
+    if (this.hasDummySession()) {
+      const drafts = this.readDummyDrafts();
+      const target = drafts.find((draft) => draft.id === draftId);
+      if (!target) {
+        return of({
+          id: draftId,
+          teacherId: 'teacher-1',
+          schoolId: 'school-1',
+          title: input.title.trim(),
+          category: input.category.trim(),
+          notes: input.notes.trim(),
+          status: 'draft',
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      target.title = input.title.trim();
+      target.category = input.category.trim();
+      target.notes = input.notes.trim();
+      this.writeDummyDrafts(drafts);
+      return of(target);
+    }
+
+    return this.http
+      .patch<CreateDraftResponse>(`/api/appointments/drafts/${draftId}`, input)
+      .pipe(map((response) => response.data.draft));
+  }
+
+  listCategories(): Observable<string[]> {
+    if (this.hasDummySession()) {
+      return of([...AuthApiService.DUMMY_CATEGORIES]);
+    }
+
+    return this.http
+      .get<ListCategoriesResponse>('/api/appointments/categories')
+      .pipe(map((response) => response.data.categories));
+  }
+
+  private readDummyDrafts(): AppointmentDraft[] {
     const storage = this.getStorage();
     if (!storage) {
       return [...this.inMemoryDummyDrafts];
@@ -194,14 +242,14 @@ export class AuthApiService {
     }
 
     try {
-      const parsed = JSON.parse(serialized) as CreateDraftResponse['data']['draft'][];
+      const parsed = JSON.parse(serialized) as AppointmentDraft[];
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
   }
 
-  private writeDummyDrafts(drafts: CreateDraftResponse['data']['draft'][]): void {
+  private writeDummyDrafts(drafts: AppointmentDraft[]): void {
     const storage = this.getStorage();
     if (!storage) {
       this.inMemoryDummyDrafts = [...drafts];

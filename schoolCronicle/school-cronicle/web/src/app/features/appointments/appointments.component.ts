@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
-import { AuthApiService } from '../../core/auth-api.service';
+import { AppointmentDraft, AuthApiService } from '../../core/auth-api.service';
 
 @Component({
   selector: 'app-appointments',
@@ -39,7 +39,12 @@ import { AuthApiService } from '../../core/auth-api.service';
         }
 
         <label for="draft-category">Category *</label>
-        <input id="draft-category" formControlName="category" type="text" />
+        <select id="draft-category" formControlName="category">
+          <option value="">Select category</option>
+          @for (category of categories; track category) {
+            <option [value]="category">{{ category }}</option>
+          }
+        </select>
         @if (draftForm.controls.category.touched && draftForm.controls.category.invalid) {
           <p>Category is required.</p>
         }
@@ -47,8 +52,16 @@ import { AuthApiService } from '../../core/auth-api.service';
         <label for="draft-notes">Notes</label>
         <textarea id="draft-notes" formControlName="notes"></textarea>
 
-        <button type="submit" [disabled]="isCreatingDraft">
-          {{ isCreatingDraft ? 'Creating draft...' : 'Create draft' }}
+        <button type="submit" [disabled]="isCreatingDraft || isSavingDraft">
+          {{
+            isSavingDraft
+              ? 'Saving draft...'
+              : isCreatingDraft
+                ? 'Creating draft...'
+                : selectedDraftId
+                  ? 'Save draft'
+                  : 'Create draft'
+          }}
         </button>
       </form>
 
@@ -57,6 +70,9 @@ import { AuthApiService } from '../../core/auth-api.service';
       }
       @if (openedDraftMessage) {
         <p role="status">{{ openedDraftMessage }}</p>
+      }
+      @if (draftSavedMessage) {
+        <p role="status">{{ draftSavedMessage }}</p>
       }
 
       <button type="button" (click)="signOut()" [disabled]="isSigningOut">
@@ -71,10 +87,14 @@ export class AppointmentsComponent {
 
   isSigningOut = false;
   isCreatingDraft = false;
+  isSavingDraft = false;
   isLoadingDrafts = false;
   draftCreatedMessage = '';
   openedDraftMessage = '';
-  drafts: Array<{ id: string; title: string; category: string }> = [];
+  draftSavedMessage = '';
+  selectedDraftId: string | null = null;
+  categories: string[] = [];
+  drafts: AppointmentDraft[] = [];
 
   readonly draftForm = new FormGroup({
     title: new FormControl('', [Validators.required]),
@@ -83,6 +103,7 @@ export class AppointmentsComponent {
   });
 
   constructor() {
+    this.loadCategories();
     this.loadDrafts();
   }
 
@@ -107,15 +128,30 @@ export class AppointmentsComponent {
 
   createDraft(): void {
     this.draftCreatedMessage = '';
+    this.draftSavedMessage = '';
     this.draftForm.markAllAsTouched();
 
-    if (this.draftForm.invalid || this.isCreatingDraft) {
+    if (this.draftForm.invalid || this.isCreatingDraft || this.isSavingDraft) {
       return;
     }
 
     const title = this.draftForm.controls.title.value ?? '';
     const category = this.draftForm.controls.category.value ?? '';
     const notes = this.draftForm.controls.notes.value ?? '';
+
+    if (this.selectedDraftId) {
+      this.isSavingDraft = true;
+      this.authApiService
+        .updateDraft(this.selectedDraftId, { title, category, notes })
+        .pipe(finalize(() => (this.isSavingDraft = false)))
+        .subscribe({
+          next: (draft) => {
+            this.draftSavedMessage = `Draft saved: ${draft.title}`;
+            this.loadDrafts();
+          },
+        });
+      return;
+    }
 
     this.isCreatingDraft = true;
     this.authApiService
@@ -131,7 +167,19 @@ export class AppointmentsComponent {
   }
 
   openDraft(draftId: string): void {
+    const draft = this.drafts.find((item) => item.id === draftId);
+    if (!draft) {
+      return;
+    }
+
+    this.selectedDraftId = draft.id;
     this.openedDraftMessage = `Opened draft ${draftId}`;
+    this.draftSavedMessage = '';
+    this.draftForm.setValue({
+      title: draft.title,
+      category: draft.category,
+      notes: draft.notes,
+    });
   }
 
   private loadDrafts(): void {
@@ -141,15 +189,22 @@ export class AppointmentsComponent {
       .pipe(finalize(() => (this.isLoadingDrafts = false)))
       .subscribe({
         next: (drafts) => {
-          this.drafts = drafts.map((draft) => ({
-            id: draft.id,
-            title: draft.title,
-            category: draft.category,
-          }));
+          this.drafts = drafts;
         },
         error: () => {
           this.drafts = [];
         },
       });
+  }
+
+  private loadCategories(): void {
+    this.authApiService.listCategories().subscribe({
+      next: (categories) => {
+        this.categories = categories;
+      },
+      error: () => {
+        this.categories = [];
+      },
+    });
   }
 }

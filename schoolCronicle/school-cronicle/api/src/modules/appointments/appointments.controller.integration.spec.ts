@@ -160,4 +160,124 @@ describe('AppointmentsController integration', () => {
       true,
     );
   });
+
+  it('updates a teacher-owned draft metadata and category', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Original',
+        category: 'meeting',
+        notes: 'before',
+      }),
+    });
+    const createBody = await createResponse.json();
+
+    const updateResponse = await fetch(`${baseUrl}/api/appointments/drafts/${createBody.data.draft.id}`, {
+      method: 'PATCH',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Updated',
+        category: 'consultation',
+        notes: 'after',
+      }),
+    });
+
+    const updateBody = await updateResponse.json();
+    expect(updateResponse.status).toBe(200);
+    expect(updateBody.data.draft.title).toBe('Updated');
+    expect(updateBody.data.draft.category).toBe('consultation');
+    expect(updateBody.data.draft.notes).toBe('after');
+  });
+
+  it('rejects draft update with invalid category', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Original',
+        category: 'meeting',
+        notes: 'before',
+      }),
+    });
+    const createBody = await createResponse.json();
+
+    const updateResponse = await fetch(`${baseUrl}/api/appointments/drafts/${createBody.data.draft.id}`, {
+      method: 'PATCH',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Updated',
+        category: 'invalid-category',
+        notes: 'after',
+      }),
+    });
+
+    expect(updateResponse.status).toBe(400);
+    expect(await updateResponse.json()).toMatchObject({
+      message: 'Category must be one of the allowed values.',
+      code: 'APPOINTMENT_INVALID_CATEGORY',
+    });
+  });
 });
