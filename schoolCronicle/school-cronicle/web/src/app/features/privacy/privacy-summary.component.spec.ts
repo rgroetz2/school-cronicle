@@ -34,4 +34,21 @@ describe('PrivacySummaryComponent', () => {
 
     expect(navigateSpy).toHaveBeenCalledWith('/appointments');
   });
+
+  it('validates and saves editable profile corrections', () => {
+    const fixture = TestBed.createComponent(PrivacySummaryComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.profileForm.setValue({
+      displayName: 'Teacher Updated',
+      contactEmail: 'teacher.updated@school.local',
+    });
+    fixture.componentInstance.saveProfile();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Profile corrections saved.');
+    expect(fixture.componentInstance.profileForm.value.displayName).toBe('Teacher Updated');
+    expect(fixture.componentInstance.profileForm.value.contactEmail).toBe('teacher.updated@school.local');
+  });
 });

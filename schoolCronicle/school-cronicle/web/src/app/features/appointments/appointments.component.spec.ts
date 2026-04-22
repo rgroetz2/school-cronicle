@@ -46,6 +46,13 @@ describe('AppointmentsComponent', () => {
   });
 
   it('navigates to privacy summary from header action', () => {
+    const authApiService = TestBed.inject(AuthApiService);
+    vi.spyOn(authApiService, 'getTeacherProfile').mockReturnValue(
+      of({
+        displayName: 'Teacher Updated',
+        contactEmail: 'teacher.updated@school.local',
+      }),
+    );
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
     const router = TestBed.inject(Router);
@@ -65,6 +72,7 @@ describe('AppointmentsComponent', () => {
     privacyButton?.click();
 
     expect(navigateSpy).toHaveBeenCalledWith('/privacy');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Signed in as Teacher Updated');
   });
 
   it('shows required field validation and creates a draft', () => {

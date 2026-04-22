@@ -25,7 +25,9 @@ interface ImageUploadStatus {
         <div>
           <p class="kicker">School Chronicle</p>
           <h2>Appointments workspace</h2>
-          <p class="subtle">Review drafts, enrich metadata, attach files, and submit confidently.</p>
+          <p class="subtle">
+            Signed in as {{ teacherDisplayName }}. Review drafts, enrich metadata, attach files, and submit confidently.
+          </p>
         </div>
         <div class="header-actions">
           <button type="button" class="ghost" (click)="openPrivacySummary()">Privacy summary</button>
@@ -325,6 +327,7 @@ export class AppointmentsComponent {
   selectedDraftId: string | null = null;
   categories: string[] = [];
   drafts: AppointmentDraft[] = [];
+  teacherDisplayName = 'Teacher Account';
 
   readonly draftForm = new FormGroup({
     title: new FormControl('', [Validators.required]),
@@ -334,6 +337,7 @@ export class AppointmentsComponent {
   });
 
   constructor() {
+    this.loadTeacherProfile();
     this.loadCategories();
     this.loadDrafts();
   }
@@ -657,6 +661,17 @@ export class AppointmentsComponent {
       },
       error: () => {
         this.categories = [];
+      },
+    });
+  }
+
+  private loadTeacherProfile(): void {
+    this.authApiService.getTeacherProfile().subscribe({
+      next: (profile) => {
+        this.teacherDisplayName = profile.displayName;
+      },
+      error: () => {
+        this.teacherDisplayName = 'Teacher Account';
       },
     });
   }

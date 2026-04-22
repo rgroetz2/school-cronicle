@@ -44,6 +44,11 @@ export interface DraftImage {
   addedAt: string;
 }
 
+export interface TeacherProfile {
+  displayName: string;
+  contactEmail: string;
+}
+
 interface CreateDraftResponse {
   data: {
     draft: AppointmentDraft;
@@ -84,11 +89,16 @@ interface DeleteDraftResponse {
 export class AuthApiService {
   private static readonly DUMMY_SESSION_KEY = 'sc_dummy_session';
   private static readonly DUMMY_DRAFTS_KEY = 'sc_dummy_drafts';
+  private static readonly DUMMY_PROFILE_KEY = 'sc_dummy_profile';
   private static readonly DUMMY_CATEGORIES = ['meeting', 'consultation', 'progress'];
   private static readonly SIGN_IN_TIMEOUT_MS = 10000;
   private readonly http = inject(HttpClient);
   private inMemoryDummySession = false;
   private inMemoryDummyDrafts: AppointmentDraft[] = [];
+  private inMemoryDummyProfile: TeacherProfile = {
+    displayName: 'Teacher Account',
+    contactEmail: 'teacher@school.local',
+  };
 
   signIn(email: string, password: string): Observable<SignInResponse['data']> {
     const normalizedEmail = email.trim().toLowerCase();
@@ -383,6 +393,19 @@ export class AuthApiService {
       .pipe(map((response) => response.data.deleted));
   }
 
+  getTeacherProfile(): Observable<TeacherProfile> {
+    return of(this.readTeacherProfile());
+  }
+
+  updateTeacherProfile(profile: TeacherProfile): Observable<TeacherProfile> {
+    const normalized: TeacherProfile = {
+      displayName: profile.displayName.trim(),
+      contactEmail: profile.contactEmail.trim().toLowerCase(),
+    };
+    this.writeTeacherProfile(normalized);
+    return of(normalized);
+  }
+
   private readDummyDrafts(): AppointmentDraft[] {
     const storage = this.getStorage();
     if (!storage) {
@@ -419,5 +442,46 @@ export class AuthApiService {
       submittedAt: draft.status === 'submitted' ? draft.submittedAt : undefined,
       images: Array.isArray(draft.images) ? draft.images : [],
     };
+  }
+
+  private readTeacherProfile(): TeacherProfile {
+    const fallback: TeacherProfile = {
+      displayName: 'Teacher Account',
+      contactEmail: 'teacher@school.local',
+    };
+    const storage = this.getStorage();
+    if (!storage) {
+      return this.inMemoryDummyProfile;
+    }
+
+    const serialized = storage.getItem(AuthApiService.DUMMY_PROFILE_KEY);
+    if (!serialized) {
+      return fallback;
+    }
+
+    try {
+      const parsed = JSON.parse(serialized) as Partial<TeacherProfile>;
+      const displayName = typeof parsed.displayName === 'string' ? parsed.displayName.trim() : '';
+      const contactEmail = typeof parsed.contactEmail === 'string' ? parsed.contactEmail.trim() : '';
+      if (!displayName || !contactEmail) {
+        return fallback;
+      }
+      return {
+        displayName,
+        contactEmail,
+      };
+    } catch {
+      return fallback;
+    }
+  }
+
+  private writeTeacherProfile(profile: TeacherProfile): void {
+    const storage = this.getStorage();
+    if (!storage) {
+      this.inMemoryDummyProfile = profile;
+      return;
+    }
+
+    storage.setItem(AuthApiService.DUMMY_PROFILE_KEY, JSON.stringify(profile));
   }
 }

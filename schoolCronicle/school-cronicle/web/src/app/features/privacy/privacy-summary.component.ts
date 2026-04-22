@@ -1,5 +1,7 @@
 import { Component, inject } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthApiService } from '../../core/auth-api.service';
 
 interface PrivacyCategory {
   title: string;
@@ -8,6 +10,7 @@ interface PrivacyCategory {
 
 @Component({
   selector: 'app-privacy-summary',
+  imports: [ReactiveFormsModule],
   template: `
     <main class="privacy-page">
       <section class="privacy-card" aria-labelledby="privacy-heading">
@@ -30,13 +33,48 @@ interface PrivacyCategory {
             </li>
           }
         </ul>
+
+        <section class="profile-section" aria-labelledby="profile-corrections-heading">
+          <h3 id="profile-corrections-heading">Profile metadata corrections</h3>
+          <p class="intro">Update editable profile details so your account information stays accurate.</p>
+
+          <form class="profile-form" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+            <label for="displayName">Display name *</label>
+            <input id="displayName" formControlName="displayName" type="text" />
+            @if (profileForm.controls.displayName.touched && profileForm.controls.displayName.invalid) {
+              <p class="field-error">Display name is required.</p>
+            }
+
+            <label for="contactEmail">Contact email *</label>
+            <input id="contactEmail" formControlName="contactEmail" type="email" />
+            @if (profileForm.controls.contactEmail.touched && profileForm.controls.contactEmail.invalid) {
+              <p class="field-error">Enter a valid contact email.</p>
+            }
+
+            <button type="submit" class="ghost" [disabled]="isSavingProfile">
+              {{ isSavingProfile ? 'Saving...' : 'Save profile corrections' }}
+            </button>
+          </form>
+
+          @if (profileMessage) {
+            <p class="intro" role="status">{{ profileMessage }}</p>
+          }
+        </section>
       </section>
     </main>
   `,
   styleUrl: './privacy-summary.component.css',
 })
 export class PrivacySummaryComponent {
+  private readonly authApiService = inject(AuthApiService);
   private readonly router = inject(Router);
+  isSavingProfile = false;
+  profileMessage = '';
+
+  readonly profileForm = new FormGroup({
+    displayName: new FormControl('', [Validators.required]),
+    contactEmail: new FormControl('', [Validators.required, Validators.email]),
+  });
 
   readonly categories: PrivacyCategory[] = [
     {
@@ -61,7 +99,47 @@ export class PrivacySummaryComponent {
     },
   ];
 
+  constructor() {
+    this.authApiService.getTeacherProfile().subscribe({
+      next: (profile) => {
+        this.profileForm.setValue({
+          displayName: profile.displayName,
+          contactEmail: profile.contactEmail,
+        });
+      },
+    });
+  }
+
   backToAppointments(): void {
     void this.router.navigateByUrl('/appointments');
+  }
+
+  saveProfile(): void {
+    this.profileMessage = '';
+    this.profileForm.markAllAsTouched();
+    if (this.profileForm.invalid || this.isSavingProfile) {
+      return;
+    }
+
+    this.isSavingProfile = true;
+    this.authApiService
+      .updateTeacherProfile({
+        displayName: this.profileForm.controls.displayName.value ?? '',
+        contactEmail: this.profileForm.controls.contactEmail.value ?? '',
+      })
+      .subscribe({
+        next: (profile) => {
+          this.isSavingProfile = false;
+          this.profileForm.setValue({
+            displayName: profile.displayName,
+            contactEmail: profile.contactEmail,
+          });
+          this.profileMessage = 'Profile corrections saved.';
+        },
+        error: () => {
+          this.isSavingProfile = false;
+          this.profileMessage = 'Profile correction failed. Try again.';
+        },
+      });
   }
 }
