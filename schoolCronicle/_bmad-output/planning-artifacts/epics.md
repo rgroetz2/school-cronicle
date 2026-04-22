@@ -176,6 +176,9 @@ As a developer,
 I want to scaffold the Nx workspace with Angular web and Nest API apps,  
 So that all subsequent features are built on the agreed architecture baseline.
 
+**Implements:** FR1 (foundation enablement), Architecture starter-template requirement
+**NFR Alignment:** NFR4, NFR8
+
 **Acceptance Criteria:**
 
 **Given** an empty repository for implementation  
@@ -189,12 +192,16 @@ As a teacher,
 I want to sign in with school-provisioned credentials,  
 So that I can access my chronicle workspace securely.
 
+**Implements:** FR1
+**NFR Alignment:** NFR4, NFR6, NFR7
+
 **Acceptance Criteria:**
 
 **Given** a valid school teacher account  
 **When** credentials are submitted on sign-in  
 **Then** the user is authenticated and receives a secure session  
-**And** the teacher is redirected to the appointments workspace
+**And** the teacher is redirected to the appointments workspace  
+**And** invalid credentials return non-sensitive error feedback without exposing account existence
 
 ### Story 1.3: Implement Sign-Out and Session Lifecycle
 
@@ -202,18 +209,25 @@ As a teacher,
 I want to sign out and have sessions managed safely,  
 So that my account stays secure on shared devices.
 
+**Implements:** FR2, FR3
+**NFR Alignment:** NFR6, NFR7
+
 **Acceptance Criteria:**
 
 **Given** an authenticated session  
 **When** the teacher selects sign-out  
 **Then** server session is invalidated and protected pages are inaccessible  
-**And** reloading a protected route requires authentication
+**And** reloading a protected route requires authentication  
+**And** expired/invalid sessions are handled consistently with re-authentication flow
 
 ### Story 1.4: Implement Access Failure and Help Path
 
 As a teacher,  
 I want clear failure feedback and support guidance when sign-in fails,  
 So that I know how to recover access quickly.
+
+**Implements:** FR4, FR32
+**NFR Alignment:** NFR11
 
 **Acceptance Criteria:**
 
@@ -232,6 +246,9 @@ As a teacher,
 I want to create a new appointment draft with required fields,  
 So that I can capture chronicle content progressively.
 
+**Implements:** FR5, FR8
+**NFR Alignment:** NFR1, NFR11
+
 **Acceptance Criteria:**
 
 **Given** an authenticated teacher  
@@ -244,6 +261,9 @@ So that I can capture chronicle content progressively.
 As a teacher,  
 I want to view my appointments and open drafts,  
 So that I can continue incomplete work efficiently.
+
+**Implements:** FR6, FR7
+**NFR Alignment:** NFR1, NFR7
 
 **Acceptance Criteria:**
 
@@ -258,6 +278,9 @@ As a teacher,
 I want to edit draft metadata and assign a controlled category,  
 So that entries are accurate and chronicle-ready.
 
+**Implements:** FR7, FR9, FR15
+**NFR Alignment:** NFR1, NFR11
+
 **Acceptance Criteria:**
 
 **Given** a saved draft appointment  
@@ -271,6 +294,9 @@ As a teacher,
 I want submit to be blocked until required metadata is complete,  
 So that I can avoid incomplete submissions.
 
+**Implements:** FR8, FR15
+**NFR Alignment:** NFR3, NFR11
+
 **Acceptance Criteria:**
 
 **Given** a draft with missing required metadata  
@@ -283,6 +309,9 @@ So that I can avoid incomplete submissions.
 As a teacher,  
 I want to remove my draft when policy allows,  
 So that I can clean up obsolete entries.
+
+**Implements:** FR10
+**NFR Alignment:** NFR7
 
 **Acceptance Criteria:**
 
@@ -301,6 +330,9 @@ As a teacher,
 I want to attach one or more images to a draft,  
 So that the appointment includes supporting media.
 
+**Implements:** FR11
+**NFR Alignment:** NFR2, NFR11
+
 **Acceptance Criteria:**
 
 **Given** an editable draft appointment  
@@ -314,18 +346,25 @@ As a teacher,
 I want invalid image files to be detected with clear reasons,  
 So that I can fix issues before submission.
 
+**Implements:** FR13, FR16
+**NFR Alignment:** NFR2, NFR3, NFR12
+
 **Acceptance Criteria:**
 
 **Given** attached files with mixed validity  
 **When** validation is executed  
 **Then** invalid files are flagged with specific reason text  
-**And** valid files remain accepted without reset
+**And** valid files remain accepted without reset  
+**And** unsupported or malformed files are rejected server-side even if client checks are bypassed
 
 ### Story 3.3: Remove/Replace Invalid Images
 
 As a teacher,  
 I want to remove or replace failing images,  
 So that I can recover without restarting the draft.
+
+**Implements:** FR12, FR17
+**NFR Alignment:** NFR11, NFR12
 
 **Acceptance Criteria:**
 
@@ -339,6 +378,9 @@ So that I can recover without restarting the draft.
 As a teacher,  
 I want submit blocked while any image remains invalid,  
 So that submissions cannot include non-compliant media.
+
+**Implements:** FR14
+**NFR Alignment:** NFR3, NFR12
 
 **Acceptance Criteria:**
 
@@ -357,18 +399,25 @@ As a teacher,
 I want to submit a fully valid appointment,  
 So that my contribution enters downstream chronicle processing.
 
+**Implements:** FR18, FR20
+**NFR Alignment:** NFR3, NFR7
+
 **Acceptance Criteria:**
 
 **Given** a draft with valid metadata and images  
 **When** the teacher submits  
 **Then** appointment status changes to submitted  
-**And** submission timestamp is stored and displayed
+**And** submission timestamp is stored and displayed  
+**And** submission is rejected with clear actionable feedback if validation or authorization fails
 
 ### Story 4.2: Display Draft vs Submitted States
 
 As a teacher,  
 I want clear status indicators in list and detail views,  
 So that I always understand entry state.
+
+**Implements:** FR19, FR20
+**NFR Alignment:** NFR11, NFR12
 
 **Acceptance Criteria:**
 
@@ -382,6 +431,9 @@ So that I always understand entry state.
 As a teacher,  
 I want submitted records to be read-only,  
 So that submission integrity is preserved.
+
+**Implements:** FR21
+**NFR Alignment:** NFR7
 
 **Acceptance Criteria:**
 
@@ -400,18 +452,25 @@ As a platform operator,
 I want every protected data access constrained by school scope,  
 So that cross-tenant access is prevented.
 
+**Implements:** FR22
+**NFR Alignment:** NFR7, NFR8
+
 **Acceptance Criteria:**
 
 **Given** multiple school datasets  
 **When** appointment/media endpoints are accessed  
 **Then** only records in requester's allowed school scope are accessible  
-**And** unauthorized scope access attempts are denied and logged
+**And** unauthorized scope access attempts are denied and logged  
+**And** IDOR-style direct identifier access outside scope returns forbidden/hidden responses consistently
 
 ### Story 5.2: Persist Correct School Associations
 
 As a platform operator,  
 I want appointments and media consistently associated to school scope,  
 So that export and access controls remain correct.
+
+**Implements:** FR23
+**NFR Alignment:** NFR7, NFR13
 
 **Acceptance Criteria:**
 
@@ -426,18 +485,25 @@ As authorized school personnel,
 I want a structured export of submitted appointments and image references,  
 So that downstream chronicle assembly can proceed efficiently.
 
+**Implements:** FR24
+**NFR Alignment:** NFR7, NFR13, NFR14
+
 **Acceptance Criteria:**
 
 **Given** submitted appointments in a school scope  
 **When** export is requested through approved channel  
 **Then** export payload is produced in versioned schema format  
-**And** only authorized/scope-permitted records are included
+**And** only authorized/scope-permitted records are included  
+**And** unauthorized export requests are denied with auditable security events
 
 ### Story 5.4: Preserve Appointment-Image Referential Integrity in Export
 
 As downstream chronicle assembler,  
 I want stable appointment-image linkage in exports,  
 So that imported data remains coherent.
+
+**Implements:** FR25
+**NFR Alignment:** NFR13, NFR14
 
 **Acceptance Criteria:**
 
@@ -451,6 +517,9 @@ So that imported data remains coherent.
 As a compliance stakeholder,  
 I want significant actions audited,  
 So that accountability and investigations are possible.
+
+**Implements:** FR30
+**NFR Alignment:** NFR8, NFR9
 
 **Acceptance Criteria:**
 
@@ -469,6 +538,9 @@ As a teacher,
 I want to see a clear summary of personal data categories processed,  
 So that I understand privacy implications.
 
+**Implements:** FR26
+**NFR Alignment:** NFR9, NFR11
+
 **Acceptance Criteria:**
 
 **Given** an authenticated teacher  
@@ -481,6 +553,9 @@ So that I understand privacy implications.
 As a teacher,  
 I want to correct inaccurate editable profile or appointment metadata,  
 So that my data remains accurate.
+
+**Implements:** FR27
+**NFR Alignment:** NFR9
 
 **Acceptance Criteria:**
 
@@ -495,6 +570,9 @@ As a teacher,
 I want a clear way to invoke school privacy processes for erasure/restriction,  
 So that rights can be exercised through approved channels.
 
+**Implements:** FR28, FR32
+**NFR Alignment:** NFR9, NFR11
+
 **Acceptance Criteria:**
 
 **Given** privacy/help surface  
@@ -508,18 +586,25 @@ As a compliance stakeholder,
 I want configured retention policies enforced,  
 So that data is not kept beyond policy.
 
+**Implements:** FR29
+**NFR Alignment:** NFR9
+
 **Acceptance Criteria:**
 
 **Given** retention configuration for records/media  
 **When** retention processing runs  
 **Then** eligible records are handled per policy  
-**And** retention actions are auditable
+**And** retention actions are auditable  
+**And** failed retention actions are retried or flagged to operations without silent data-loss side effects
 
 ### Story 6.5: Provide In-Product Guidance for Required Fields and Formats
 
 As a teacher,  
 I want clear guidance on required fields and accepted image formats,  
 So that I can submit valid content first time.
+
+**Implements:** FR31
+**NFR Alignment:** NFR11, NFR12
 
 **Acceptance Criteria:**
 
@@ -533,6 +618,9 @@ So that I can submit valid content first time.
 As a teacher,  
 I want to easily find who to contact for privacy or account issues,  
 So that I can resolve access/compliance concerns quickly.
+
+**Implements:** FR32
+**NFR Alignment:** NFR11
 
 **Acceptance Criteria:**
 
