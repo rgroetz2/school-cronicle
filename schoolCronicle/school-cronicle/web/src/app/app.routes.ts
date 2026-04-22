@@ -2,6 +2,7 @@ import { Route } from '@angular/router';
 import { authSessionGuard } from './core/auth-session.guard';
 import { AppointmentsComponent } from './features/appointments/appointments.component';
 import { LoginComponent } from './features/auth/login.component';
+import { DashboardHomeComponent } from './features/dashboard/dashboard-home.component';
 import { DashboardShellComponent } from './features/dashboard/dashboard-shell.component';
 import { WorkspacePlaceholderComponent } from './features/dashboard/workspace-placeholder.component';
 import { PrivacySummaryComponent } from './features/privacy/privacy-summary.component';
@@ -23,11 +24,7 @@ export const appRoutes: Route[] = [
     children: [
       {
         path: 'dashboard',
-        component: WorkspacePlaceholderComponent,
-        data: {
-          title: 'Dashboard',
-          description: 'Your teacher dashboard is ready. Use the menu to open appointments and key workflow areas.',
-        },
+        component: DashboardHomeComponent,
       },
       {
         path: 'appointments',

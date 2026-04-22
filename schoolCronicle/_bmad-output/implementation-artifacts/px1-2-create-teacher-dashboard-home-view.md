@@ -1,6 +1,6 @@
 # Story PX1.2: Create Teacher Dashboard Home View
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -18,22 +18,22 @@ so that I can see what needs attention first.
 
 ## Tasks / Subtasks
 
-- [ ] Define teacher dashboard summary model (AC: 1, 3)
-  - [ ] Map available list state to card metrics (drafts, submitted, needs attention)
-  - [ ] Define empty/zero-state copy and visual treatment
-  - [ ] Keep metric calculations deterministic and fast
-- [ ] Implement dashboard home view and cards (AC: 1, 3)
-  - [ ] Build dashboard component/section within new shell
-  - [ ] Render cards with concise labels and short supporting copy
-  - [ ] Preserve premium-neutral visual consistency
-- [ ] Wire card actions to list context navigation (AC: 2)
-  - [ ] Link cards to appointment views with matching focus/filter context
-  - [ ] Keep route/query-state handling predictable
-  - [ ] Ensure keyboard and screen-reader usability of cards as actions
-- [ ] Add tests and quality checks (AC: 1, 2, 3)
-  - [ ] Tests for card rendering with populated and empty datasets
-  - [ ] Tests for navigation behavior from card actions
-  - [ ] Run focused web lint/tests for touched files
+- [x] Define teacher dashboard summary model (AC: 1, 3)
+  - [x] Map available list state to card metrics (drafts, submitted, needs attention)
+  - [x] Define empty/zero-state copy and visual treatment
+  - [x] Keep metric calculations deterministic and fast
+- [x] Implement dashboard home view and cards (AC: 1, 3)
+  - [x] Build dashboard component/section within new shell
+  - [x] Render cards with concise labels and short supporting copy
+  - [x] Preserve premium-neutral visual consistency
+- [x] Wire card actions to list context navigation (AC: 2)
+  - [x] Link cards to appointment views with matching focus/filter context
+  - [x] Keep route/query-state handling predictable
+  - [x] Ensure keyboard and screen-reader usability of cards as actions
+- [x] Add tests and quality checks (AC: 1, 2, 3)
+  - [x] Tests for card rendering with populated and empty datasets
+  - [x] Tests for navigation behavior from card actions
+  - [x] Run focused web lint/tests for touched files
 
 ## Dev Notes
 
@@ -77,8 +77,19 @@ gpt-5.3-codex
 
 ### Completion Notes List
 
-- Pending implementation.
+- Added a dedicated `DashboardHomeComponent` with summary cards for drafts, submitted entries, and needs-attention items, backed by current appointment list data.
+- Wired card actions to navigate into appointments with route query context (`drafts`, `submitted`, `attention`) for faster focused workflow entry.
+- Added lightweight appointments list-context handling so dashboard navigation results in a meaningful filtered list view and clearable context state.
+- Preserved existing appointment create/edit/submit behavior while introducing context filtering as a non-breaking enhancement.
+- Added dashboard home component tests for summary rendering and card navigation behavior.
+- Validated quality gates with `npx nx test web` and no linter diagnostics for touched files.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/px1-2-create-teacher-dashboard-home-view.md`
+- `school-cronicle/web/src/app/features/dashboard/dashboard-home.component.ts`
+- `school-cronicle/web/src/app/features/dashboard/dashboard-home.component.css`
+- `school-cronicle/web/src/app/features/dashboard/dashboard-home.component.spec.ts`
+- `school-cronicle/web/src/app/app.routes.ts`
+- `school-cronicle/web/src/app/features/appointments/appointments.component.ts`
+- `school-cronicle/web/src/app/features/appointments/appointments.component.css`

@@ -177,6 +177,13 @@ button {
   color: var(--text);
 }
 
+.ghost.inline {
+  margin-left: 0.5rem;
+  min-height: auto;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.82rem;
+}
+
 .ghost:hover:not([disabled]) {
   border-color: #b9bec8;
   background: #fafafb;

@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AppointmentDraft, AuthApiService, DraftImage } from '../../core/auth-api.service';
 
@@ -41,13 +41,19 @@ interface ImageUploadStatus {
         <section class="panel" aria-labelledby="draft-list-heading">
           <h3 id="draft-list-heading">Your drafts</h3>
           <p class="panel-copy">Choose a draft to continue editing and submission checks.</p>
+        @if (activeListContextLabel) {
+          <p class="state-pill">
+            Showing: {{ activeListContextLabel }}
+            <button type="button" class="ghost inline" (click)="clearListContext()">Clear</button>
+          </p>
+        }
         @if (isLoadingDrafts) {
           <p class="state-pill loading">Loading drafts...</p>
-        } @else if (drafts.length === 0) {
+        } @else if (filteredDrafts.length === 0) {
           <p class="state-pill">No drafts yet. Create one below to get started.</p>
         } @else {
           <ul class="draft-list">
-            @for (draft of drafts; track draft.id) {
+            @for (draft of filteredDrafts; track draft.id) {
               <li>
                 <button
                   type="button"
@@ -317,6 +323,7 @@ export class AppointmentsComponent {
   private static readonly MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
   private static readonly ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
   private readonly authApiService = inject(AuthApiService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   isSigningOut = false;
@@ -337,6 +344,7 @@ export class AppointmentsComponent {
   categories: string[] = [];
   drafts: AppointmentDraft[] = [];
   teacherDisplayName = 'Teacher Account';
+  activeListContext: 'all' | 'drafts' | 'submitted' | 'attention' = 'all';
 
   readonly draftForm = new FormGroup({
     title: new FormControl('', [Validators.required]),
@@ -349,6 +357,11 @@ export class AppointmentsComponent {
     this.loadTeacherProfile();
     this.loadCategories();
     this.loadDrafts();
+    this.route.queryParamMap.subscribe((params) => {
+      const view = params.get('view');
+      this.activeListContext =
+        view === 'drafts' || view === 'submitted' || view === 'attention' ? view : 'all';
+    });
   }
 
   get missingRequiredFields(): string[] {
@@ -377,6 +390,32 @@ export class AppointmentsComponent {
       this.failedImageUploadCount === 0 &&
       !this.isSelectedDraftSubmitted
     );
+  }
+
+  get filteredDrafts(): AppointmentDraft[] {
+    if (this.activeListContext === 'drafts') {
+      return this.drafts.filter((draft) => draft.status === 'draft');
+    }
+    if (this.activeListContext === 'submitted') {
+      return this.drafts.filter((draft) => draft.status === 'submitted');
+    }
+    if (this.activeListContext === 'attention') {
+      return this.drafts.filter((draft) => this.isDraftMissingRequiredMetadata(draft));
+    }
+    return this.drafts;
+  }
+
+  get activeListContextLabel(): string {
+    if (this.activeListContext === 'drafts') {
+      return 'Draft appointments';
+    }
+    if (this.activeListContext === 'submitted') {
+      return 'Submitted appointments';
+    }
+    if (this.activeListContext === 'attention') {
+      return 'Needs attention';
+    }
+    return '';
   }
 
   get selectedDraft(): AppointmentDraft | undefined {
@@ -423,6 +462,12 @@ export class AppointmentsComponent {
 
   openPrivacySummary(): void {
     void this.router.navigateByUrl('/privacy');
+  }
+
+  clearListContext(): void {
+    void this.router.navigate(['/appointments'], {
+      queryParams: {},
+    });
   }
 
   createDraft(): void {
@@ -777,5 +822,12 @@ export class AppointmentsComponent {
       };
       reader.readAsDataURL(file);
     }
+  }
+
+  private isDraftMissingRequiredMetadata(draft: AppointmentDraft): boolean {
+    if (draft.status !== 'draft') {
+      return false;
+    }
+    return !draft.title.trim() || !draft.appointmentDate.trim() || !draft.category.trim();
   }
 }
