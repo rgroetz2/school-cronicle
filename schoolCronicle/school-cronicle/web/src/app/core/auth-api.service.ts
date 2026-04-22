@@ -21,6 +21,27 @@ interface SessionProbeResponse {
   };
 }
 
+export interface CreateDraftInput {
+  title: string;
+  category: string;
+  notes: string;
+}
+
+interface CreateDraftResponse {
+  data: {
+    draft: {
+      id: string;
+      teacherId: string;
+      schoolId: string;
+      title: string;
+      category: string;
+      notes: string;
+      status: 'draft';
+      createdAt: string;
+    };
+  };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -43,5 +64,11 @@ export class AuthApiService {
     return this.http
       .get<SessionProbeResponse>('/api/auth/session')
       .pipe(map((response) => response.data.authenticated));
+  }
+
+  createDraft(input: CreateDraftInput): Observable<CreateDraftResponse['data']['draft']> {
+    return this.http
+      .post<CreateDraftResponse>('/api/appointments/drafts', input)
+      .pipe(map((response) => response.data.draft));
   }
 }
