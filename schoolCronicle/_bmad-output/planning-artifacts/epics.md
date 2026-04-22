@@ -629,3 +629,167 @@ So that I can resolve access/compliance concerns quickly.
 **When** teacher seeks support details  
 **Then** school-specific contact information is available and current  
 **And** path is reachable from relevant auth/privacy contexts
+
+## Pitch UX Epic Track (Sales Readiness)
+
+This optional track is focused on teacher-facing demo quality for sales conversations. It is intentionally parallel to Epics 1-6 and can be delivered without full completion of all prior epics.
+
+### Epic PX1: Teacher Dashboard Navigation and Menu IA
+
+Teachers can orient quickly via a left-sidebar dashboard and focused menu structure instead of overloaded single-page controls.
+
+### Story PX1.1: Introduce Left Sidebar Dashboard Shell
+
+As a teacher,  
+I want a persistent sidebar menu,  
+So that I can navigate core tasks quickly.
+
+**Acceptance Criteria:**
+
+**Given** I am signed in  
+**When** I open the teacher workspace  
+**Then** I see a left sidebar with clear menu entries (Dashboard, Appointments, Drafts, Submitted, Privacy, Help)  
+**And** the selected menu item is visually clear and keyboard accessible
+
+### Story PX1.2: Create Teacher Dashboard Home View
+
+As a teacher,  
+I want a simple dashboard home view,  
+So that I can understand what needs attention first.
+
+**Acceptance Criteria:**
+
+**Given** I open Dashboard  
+**When** the page loads  
+**Then** I see summary cards for draft count, submitted count, and needs-attention items  
+**And** each card can navigate to a relevant filtered list view
+
+### Story PX1.3: Reduce Workspace Cognitive Load via Section Re-layout
+
+As a teacher,  
+I want the workspace split into clear zones,  
+So that editing and list navigation are not overwhelming.
+
+**Acceptance Criteria:**
+
+**Given** I am in Appointments  
+**When** the page renders  
+**Then** navigation, filters, list, and detail/editor are visually separated  
+**And** only context-relevant controls are shown by default
+
+### Epic PX2: Dedicated Filtering and Saved Views
+
+Teachers can use a dedicated filter list to find appointments fast across larger datasets.
+
+### Story PX2.1: Build Dedicated Filter Panel
+
+As a teacher,  
+I want a dedicated filter panel,  
+So that I can narrow appointment lists without scanning everything.
+
+**Acceptance Criteria:**
+
+**Given** the appointments list  
+**When** I open filters  
+**Then** I can filter by category, status, date range, has images, and draft/submitted  
+**And** filter state is reflected in the list immediately
+
+### Story PX2.2: Add New Optional Metadata Filters
+
+As a teacher,  
+I want to filter by class/grade, guardian name, and location,  
+So that I can quickly find relevant appointments.
+
+**Acceptance Criteria:**
+
+**Given** appointments include optional metadata  
+**When** I set class/grade, guardian name, or location filters  
+**Then** list results update correctly  
+**And** empty states clearly explain no-match outcomes
+
+### Story PX2.3: Add Active Filter Chips and Saved Presets
+
+As a teacher,  
+I want visible active filters and saved views,  
+So that repeated workflows are fast and clear.
+
+**Acceptance Criteria:**
+
+**Given** one or more filters are active  
+**When** I view results  
+**Then** active filters are shown as removable chips  
+**And** I can clear all filters in one action  
+**And** I can load at least two saved presets (for example, Needs Completion and Submitted This Week)
+
+### Epic PX3: Appointment Data Enrichment for Teacher UX
+
+Teachers can capture additional optional context to improve organization and filtering without increasing submission friction.
+
+### Story PX3.1: Add Optional Fields to Appointment Model
+
+As a teacher,  
+I want additional optional fields on appointments,  
+So that I can record useful classroom context.
+
+**Acceptance Criteria:**
+
+**Given** create/edit draft flow  
+**When** I edit an appointment  
+**Then** I can enter class/grade, guardian name, and location  
+**And** existing appointments without these fields remain valid
+
+### Story PX3.2: Show Optional Metadata in List and Detail Views
+
+As a teacher,  
+I want optional metadata visible where I work,  
+So that I can recognize appointments faster.
+
+**Acceptance Criteria:**
+
+**Given** appointments contain optional metadata  
+**When** I view list and detail screens  
+**Then** class/grade, guardian name, and location are displayed as secondary metadata  
+**And** display stays readable and not overloaded
+
+### Story PX3.3: Keep Optional Metadata Outside Submit Gate
+
+As a teacher,  
+I want optional fields not to block submission,  
+So that workflow speed is preserved.
+
+**Acceptance Criteria:**
+
+**Given** optional metadata is empty  
+**When** I submit a draft with required existing fields complete  
+**Then** submission behavior remains unchanged  
+**And** no new blocking validation is introduced for optional metadata
+
+### Epic PX4: Demo Reliability and Replayability
+
+The team can run a deterministic teacher demo repeatedly during sales conversations.
+
+### Story PX4.1: Add Demo Data Seed/Reset Flow
+
+As a sales presenter,  
+I want predictable sample data and reset behavior,  
+So that each demo starts clean and consistent.
+
+**Acceptance Criteria:**
+
+**Given** demo mode is enabled  
+**When** I reset demo data  
+**Then** a known teacher dataset is restored  
+**And** the core pitch journey works without manual cleanup
+
+### Story PX4.2: Define 7-Minute Teacher Demo Path
+
+As a sales presenter,  
+I want a scripted in-app teacher flow,  
+So that value is communicated quickly and consistently.
+
+**Acceptance Criteria:**
+
+**Given** demo mode  
+**When** I follow the scripted path  
+**Then** I can show navigation, filtering, draft work, and submission readiness in under 7 minutes  
+**And** each step has a clear value message
