@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, TimeoutError } from 'rxjs';
 import { AuthApiService } from '../../core/auth-api.service';
 
 interface LoginErrorPayload {
@@ -57,6 +57,14 @@ export class LoginComponent {
   }
 
   onSignInError(error: unknown): void {
+    if (error instanceof TimeoutError) {
+      this.errorMessage =
+        'Sign-in request timed out. Please check server status and try again.';
+      this.supportLabel = 'School account support';
+      this.supportEmail = 'support@school.local';
+      return;
+    }
+
     const errorPayload = (error as { error?: LoginErrorPayload })?.error;
     this.errorMessage =
       errorPayload?.message ?? 'Sign-in failed. Check your credentials and try again.';
