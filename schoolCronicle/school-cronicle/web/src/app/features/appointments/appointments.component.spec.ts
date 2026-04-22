@@ -508,6 +508,150 @@ describe('AppointmentsComponent', () => {
     vi.unstubAllGlobals();
   });
 
+  it('removes failed upload entry without clearing valid attached images', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-52',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Recovery',
+            appointmentDate: '2026-05-04',
+            category: 'meeting',
+            notes: '',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [
+              {
+                id: 'img-valid',
+                name: 'valid.png',
+                mimeType: 'image/png',
+                dataUrl: 'data:image/png;base64,AAA',
+                addedAt: new Date().toISOString(),
+              },
+            ],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.openDraft('draft-52');
+
+    fixture.componentInstance.imageUploadStatuses = [
+      { id: 'up-fail', name: 'invalid.gif', state: 'failed', detail: 'Unsupported format' },
+    ];
+    fixture.componentInstance.removeFailedUpload('up-fail');
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('valid.png');
+    expect(text).not.toContain('invalid.gif');
+  });
+
+  it('replaces failed image and keeps previously valid attachments intact', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const authApiService = TestBed.inject(AuthApiService);
+    const attachSpy = vi.spyOn(authApiService, 'attachImageToDraft').mockReturnValue(
+      of({
+        id: 'draft-53',
+        teacherId: 'teacher-1',
+        schoolId: 'school-1',
+        title: 'Replace failed',
+        appointmentDate: '2026-05-04',
+        category: 'meeting',
+        notes: '',
+        status: 'draft',
+        createdAt: new Date().toISOString(),
+        images: [
+          {
+            id: 'img-valid',
+            name: 'already-valid.png',
+            mimeType: 'image/png',
+            dataUrl: 'data:image/png;base64,AAA',
+            addedAt: new Date().toISOString(),
+          },
+          {
+            id: 'img-replaced',
+            name: 'replacement.png',
+            mimeType: 'image/png',
+            dataUrl: 'data:image/png;base64,BBB',
+            addedAt: new Date().toISOString(),
+          },
+        ],
+      }),
+    );
+
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-53',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Replace failed',
+            appointmentDate: '2026-05-04',
+            category: 'meeting',
+            notes: '',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [
+              {
+                id: 'img-valid',
+                name: 'already-valid.png',
+                mimeType: 'image/png',
+                dataUrl: 'data:image/png;base64,AAA',
+                addedAt: new Date().toISOString(),
+              },
+            ],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.openDraft('draft-53');
+    fixture.componentInstance.imageUploadStatuses = [
+      { id: 'up-fail', name: 'invalid.gif', state: 'failed', detail: 'Unsupported format' },
+    ];
+
+    class MockFileReader {
+      result: string | ArrayBuffer | null = null;
+      onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
+
+      readAsDataURL(file: Blob): void {
+        this.result = `data:image/png;base64,${file.size}`;
+        this.onload?.call(this as unknown as FileReader, {} as ProgressEvent<FileReader>);
+      }
+    }
+    vi.stubGlobal('FileReader', MockFileReader as unknown as typeof FileReader);
+
+    const replacementInput = document.createElement('input');
+    replacementInput.type = 'file';
+    const replacementFile = new File(['abc'], 'replacement.png', { type: 'image/png' });
+    Object.defineProperty(replacementInput, 'files', { value: [replacementFile], configurable: true });
+
+    fixture.componentInstance.replacingUploadId = 'up-fail';
+    fixture.componentInstance.onReplacementSelected({ target: replacementInput } as unknown as Event);
+    fixture.detectChanges();
+
+    expect(attachSpy).toHaveBeenCalledTimes(1);
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('already-valid.png');
+    expect(text).toContain('replacement.png');
+    expect(text).toContain('attached');
+
+    vi.unstubAllGlobals();
+  });
+
   it('deletes selected draft after confirmation and updates list', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);

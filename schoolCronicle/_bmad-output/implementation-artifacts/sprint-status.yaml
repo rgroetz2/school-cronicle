@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-22T04:42:08+0200
-last_updated: 2026-04-22T15:40:00+0200
+last_updated: 2026-04-22T15:50:00+0200
 project: schoolCronicle
 project_key: NOKEY
 tracking_system: file-system
@@ -58,7 +58,7 @@ development_status:
   epic-3: in-progress
   3-1-attach-images-to-draft: review
   3-2-validate-image-type-and-size: review
-  3-3-remove-replace-invalid-images: backlog
+  3-3-remove-replace-invalid-images: review
   3-4-block-submit-on-image-validation-failures: backlog
   epic-3-retrospective: optional
   epic-4: backlog
