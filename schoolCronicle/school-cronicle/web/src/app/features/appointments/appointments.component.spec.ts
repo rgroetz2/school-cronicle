@@ -193,6 +193,43 @@ describe('AppointmentsComponent', () => {
     expect(text).toContain('Unsupported format. Use JPEG, PNG, or WebP.');
   });
 
+  it('renders clear workspace zones for list, detail, and media', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: { drafts: [] },
+    });
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('List and results');
+    expect(text).toContain('Detail and editor');
+    expect(text).toContain('Media and attachments');
+  });
+
+  it('keeps advanced filters collapsed by default and toggles on demand', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: { drafts: [] },
+    });
+    fixture.detectChanges();
+
+    const details = (fixture.nativeElement as HTMLElement).querySelector('details.filter-advanced') as HTMLDetailsElement;
+    expect(details.open).toBe(false);
+
+    const summary = details.querySelector('summary') as HTMLElement;
+    summary.click();
+    fixture.detectChanges();
+    expect(details.open).toBe(true);
+  });
+
   it('renders draft list and opens a selected draft', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);

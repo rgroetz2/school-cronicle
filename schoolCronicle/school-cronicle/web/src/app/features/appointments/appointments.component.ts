@@ -39,48 +39,60 @@ type FilterLifecycleState = 'all' | 'needs_attention' | 'ready_to_submit' | 'sub
         </div>
       </header>
 
-      <div class="workspace-grid">
-        <section class="panel" aria-labelledby="draft-list-heading">
+      <div class="workspace-zones">
+        <section class="zone zone-results" aria-labelledby="results-zone-heading">
+          <header class="zone-header">
+            <h3 id="results-zone-heading">List and results</h3>
+            <p class="panel-copy">Use filters first, then open the draft you want to work on.</p>
+          </header>
+
+          <section class="panel" aria-labelledby="draft-list-heading">
           <h3 id="draft-list-heading">Your drafts</h3>
           <p class="panel-copy">Choose a draft to continue editing and submission checks.</p>
         <div class="filter-panel" aria-label="Appointment filters">
           <h4>Filter list</h4>
-          <form class="filter-grid" [formGroup]="filterForm">
-            <label for="filter-category">Category</label>
-            <select id="filter-category" formControlName="category">
-              <option value="">All categories</option>
-              @for (category of categories; track category) {
-                <option [value]="category">{{ category }}</option>
-              }
-            </select>
+          <form [formGroup]="filterForm">
+            <div class="filter-grid">
+              <label for="filter-category">Category</label>
+              <select id="filter-category" formControlName="category">
+                <option value="">All categories</option>
+                @for (category of categories; track category) {
+                  <option [value]="category">{{ category }}</option>
+                }
+              </select>
 
-            <label for="filter-status">Status</label>
-            <select id="filter-status" formControlName="status">
-              <option value="all">All statuses</option>
-              <option value="draft">Draft</option>
-              <option value="submitted">Submitted</option>
-            </select>
+              <label for="filter-status">Status</label>
+              <select id="filter-status" formControlName="status">
+                <option value="all">All statuses</option>
+                <option value="draft">Draft</option>
+                <option value="submitted">Submitted</option>
+              </select>
+            </div>
+          <details class="filter-advanced" [open]="showAdvancedFilters">
+            <summary (click)="toggleAdvancedFilters($event)">Advanced filters</summary>
+            <div class="filter-grid advanced-grid">
+              <label for="filter-date-from">Date from</label>
+              <input id="filter-date-from" type="date" formControlName="dateFrom" />
 
-            <label for="filter-date-from">Date from</label>
-            <input id="filter-date-from" type="date" formControlName="dateFrom" />
+              <label for="filter-date-to">Date to</label>
+              <input id="filter-date-to" type="date" formControlName="dateTo" />
 
-            <label for="filter-date-to">Date to</label>
-            <input id="filter-date-to" type="date" formControlName="dateTo" />
+              <label for="filter-has-images">Has images</label>
+              <select id="filter-has-images" formControlName="hasImages">
+                <option value="all">All</option>
+                <option value="yes">With images</option>
+                <option value="no">Without images</option>
+              </select>
 
-            <label for="filter-has-images">Has images</label>
-            <select id="filter-has-images" formControlName="hasImages">
-              <option value="all">All</option>
-              <option value="yes">With images</option>
-              <option value="no">Without images</option>
-            </select>
-
-            <label for="filter-lifecycle">Lifecycle state</label>
-            <select id="filter-lifecycle" formControlName="lifecycleState">
-              <option value="all">All lifecycle states</option>
-              <option value="needs_attention">Needs attention</option>
-              <option value="ready_to_submit">Ready to submit</option>
-              <option value="submitted">Submitted</option>
-            </select>
+              <label for="filter-lifecycle">Lifecycle state</label>
+              <select id="filter-lifecycle" formControlName="lifecycleState">
+                <option value="all">All lifecycle states</option>
+                <option value="needs_attention">Needs attention</option>
+                <option value="ready_to_submit">Ready to submit</option>
+                <option value="submitted">Submitted</option>
+              </select>
+            </div>
+          </details>
           </form>
           <div class="filter-actions">
             <button type="button" class="ghost inline" (click)="resetFilters()" [disabled]="!hasActiveFilters">
@@ -123,7 +135,13 @@ type FilterLifecycleState = 'all' | 'needs_attention' | 'ready_to_submit' | 'sub
           </ul>
         }
         </section>
+        </section>
 
+        <section class="zone zone-detail" aria-labelledby="detail-zone-heading">
+          <header class="zone-header">
+            <h3 id="detail-zone-heading">Detail and editor</h3>
+            <p class="panel-copy">Review readiness and edit selected draft details in one focused area.</p>
+          </header>
         <section class="panel" aria-labelledby="submit-readiness-heading">
           <h3 id="submit-readiness-heading">Submit readiness</h3>
           <p class="panel-copy">Required metadata: title, appointment date, and category.</p>
@@ -168,86 +186,7 @@ type FilterLifecycleState = 'all' | 'needs_attention' | 'ready_to_submit' | 'sub
           {{ isSubmittingDraft ? 'Submitting...' : 'Submit draft' }}
         </button>
         </section>
-
-        <section class="panel panel-wide" aria-labelledby="draft-images-heading">
-          <h3 id="draft-images-heading">Attached images</h3>
-          <p class="panel-copy">Attach reference photos up to 2 MB each for local draft context.</p>
-          <p class="guidance-text">Accepted formats: JPEG, PNG, WebP. Maximum file size: 2 MB per image.</p>
-        @if (!selectedDraftId) {
-          <p class="state-pill">Select a draft to attach images.</p>
-        } @else if (selectedDraft?.status === 'submitted') {
-          <p class="state-pill warning">Submitted appointments are read-only. Image changes are disabled.</p>
-          @if (selectedDraftImages.length === 0) {
-            <p class="state-pill">No images attached.</p>
-          } @else {
-            <ul class="image-list">
-              @for (image of selectedDraftImages; track image.id) {
-                <li class="image-card">
-                  <img [src]="image.dataUrl" [alt]="image.name" width="84" height="84" />
-                  <span class="image-name">{{ image.name }}</span>
-                </li>
-              }
-            </ul>
-          }
-        } @else {
-          <input type="file" class="file-input" accept="image/*" multiple (change)="onImageSelected($event)" />
-          <input
-            #replaceFileInput
-            type="file"
-            class="visually-hidden"
-            accept="image/*"
-            (change)="onReplacementSelected($event)"
-          />
-          @if (imageUploadStatuses.length > 0) {
-            <ul class="upload-status-list" aria-label="Attachment status list">
-              @for (upload of imageUploadStatuses; track upload.id) {
-                <li class="upload-status">
-                  <span class="upload-name">{{ upload.name }}</span>
-                  <span
-                    class="upload-state"
-                    [class.success]="upload.state === 'attached'"
-                    [class.warning]="upload.state === 'failed'"
-                  >
-                    {{ upload.state }}
-                  </span>
-                  @if (upload.detail) {
-                    <span class="upload-detail">{{ upload.detail }}</span>
-                  }
-                  @if (upload.state === 'failed') {
-                    <div class="upload-actions">
-                      <button type="button" class="ghost danger" (click)="removeFailedUpload(upload.id)">
-                        Remove failed
-                      </button>
-                      <button
-                        type="button"
-                        class="ghost"
-                        (click)="startReplaceFailedUpload(upload.id, replaceFileInput)"
-                      >
-                        Replace file
-                      </button>
-                    </div>
-                  }
-                </li>
-              }
-            </ul>
-          }
-          @if (selectedDraftImages.length === 0) {
-            <p class="state-pill">No images attached yet.</p>
-          } @else {
-            <ul class="image-list">
-              @for (image of selectedDraftImages; track image.id) {
-                <li class="image-card">
-                  <img [src]="image.dataUrl" [alt]="image.name" width="84" height="84" />
-                  <span class="image-name">{{ image.name }}</span>
-                  <button type="button" class="ghost danger" (click)="removeImage(image.id)">Remove</button>
-                </li>
-              }
-            </ul>
-          }
-        }
-        </section>
-
-        <section class="panel panel-wide form-panel" aria-label="Draft editor">
+        <section class="panel form-panel" aria-label="Draft editor">
           <h3>Draft editor</h3>
           <p class="panel-copy">Create a new draft or update the currently selected one.</p>
           @if (isSelectedDraftSubmitted && selectedDraft) {
@@ -333,6 +272,91 @@ type FilterLifecycleState = 'all' | 'needs_attention' | 'ready_to_submit' | 'sub
           </form>
           }
         </section>
+        </section>
+
+        <section class="zone zone-media" aria-labelledby="media-zone-heading">
+          <header class="zone-header">
+            <h3 id="media-zone-heading">Media and attachments</h3>
+            <p class="panel-copy">Add and manage images separately from core draft editing to keep focus.</p>
+          </header>
+        <section class="panel" aria-labelledby="draft-images-heading">
+          <h3 id="draft-images-heading">Attached images</h3>
+          <p class="panel-copy">Attach reference photos up to 2 MB each for local draft context.</p>
+          <p class="guidance-text">Accepted formats: JPEG, PNG, WebP. Maximum file size: 2 MB per image.</p>
+        @if (!selectedDraftId) {
+          <p class="state-pill">Select a draft to attach images.</p>
+        } @else if (selectedDraft?.status === 'submitted') {
+          <p class="state-pill warning">Submitted appointments are read-only. Image changes are disabled.</p>
+          @if (selectedDraftImages.length === 0) {
+            <p class="state-pill">No images attached.</p>
+          } @else {
+            <ul class="image-list">
+              @for (image of selectedDraftImages; track image.id) {
+                <li class="image-card">
+                  <img [src]="image.dataUrl" [alt]="image.name" width="84" height="84" />
+                  <span class="image-name">{{ image.name }}</span>
+                </li>
+              }
+            </ul>
+          }
+        } @else {
+          <input type="file" class="file-input" accept="image/*" multiple (change)="onImageSelected($event)" />
+          <input
+            #replaceFileInput
+            type="file"
+            class="visually-hidden"
+            accept="image/*"
+            (change)="onReplacementSelected($event)"
+          />
+          @if (imageUploadStatuses.length > 0) {
+            <ul class="upload-status-list" aria-label="Attachment status list">
+              @for (upload of imageUploadStatuses; track upload.id) {
+                <li class="upload-status">
+                  <span class="upload-name">{{ upload.name }}</span>
+                  <span
+                    class="upload-state"
+                    [class.success]="upload.state === 'attached'"
+                    [class.warning]="upload.state === 'failed'"
+                  >
+                    {{ upload.state }}
+                  </span>
+                  @if (upload.detail) {
+                    <span class="upload-detail">{{ upload.detail }}</span>
+                  }
+                  @if (upload.state === 'failed') {
+                    <div class="upload-actions">
+                      <button type="button" class="ghost danger" (click)="removeFailedUpload(upload.id)">
+                        Remove failed
+                      </button>
+                      <button
+                        type="button"
+                        class="ghost"
+                        (click)="startReplaceFailedUpload(upload.id, replaceFileInput)"
+                      >
+                        Replace file
+                      </button>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+          @if (selectedDraftImages.length === 0) {
+            <p class="state-pill">No images attached yet.</p>
+          } @else {
+            <ul class="image-list">
+              @for (image of selectedDraftImages; track image.id) {
+                <li class="image-card">
+                  <img [src]="image.dataUrl" [alt]="image.name" width="84" height="84" />
+                  <span class="image-name">{{ image.name }}</span>
+                  <button type="button" class="ghost danger" (click)="removeImage(image.id)">Remove</button>
+                </li>
+              }
+            </ul>
+          }
+        }
+        </section>
+        </section>
       </div>
 
       <section class="status-stack" aria-label="System status">
@@ -387,6 +411,7 @@ export class AppointmentsComponent {
   draftSubmitMessage = '';
   imageMessage = '';
   deleteMessage = '';
+  showAdvancedFilters = false;
   imageUploadStatuses: ImageUploadStatus[] = [];
   replacingUploadId: string | null = null;
   selectedDraftId: string | null = null;
@@ -586,6 +611,11 @@ export class AppointmentsComponent {
       hasImages: 'all',
       lifecycleState: 'all',
     });
+  }
+
+  toggleAdvancedFilters(event: Event): void {
+    event.preventDefault();
+    this.showAdvancedFilters = !this.showAdvancedFilters;
   }
 
   createDraft(): void {
