@@ -16,8 +16,9 @@ export interface AppointmentDraft {
   appointmentDate: string;
   category: AppointmentCategory;
   notes: string;
-  status: 'draft';
+  status: 'draft' | 'submitted';
   createdAt: string;
+  submittedAt?: string;
   images: DraftImage[];
 }
 

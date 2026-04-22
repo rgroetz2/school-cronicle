@@ -243,7 +243,7 @@ describe('AppointmentsComponent', () => {
     httpTesting.verify();
   });
 
-  it('blocks submit until a complete draft is selected and calls submit endpoint', () => {
+  it('submits a complete draft and shows submitted timestamp feedback', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
     httpTesting.expectOne('/api/appointments/categories').flush({
@@ -283,16 +283,31 @@ describe('AppointmentsComponent', () => {
     submitButton.click();
     const submitRequest = httpTesting.expectOne('/api/appointments/drafts/draft-20/submit');
     expect(submitRequest.request.method).toBe('POST');
+    const submittedAt = new Date().toISOString();
     submitRequest.flush({
       data: {
-        submitted: false,
+        submitted: true,
         draftId: 'draft-20',
-        readyToSubmit: true,
+        submittedAt,
+        draft: {
+          id: 'draft-20',
+          teacherId: 'teacher-1',
+          schoolId: 'school-1',
+          title: 'Submit me',
+          appointmentDate: '2026-04-28',
+          category: 'meeting',
+          notes: 'ready',
+          status: 'submitted',
+          submittedAt,
+          createdAt: new Date().toISOString(),
+          images: [],
+        },
       },
     });
 
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Draft is ready for submission.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Draft submitted at');
+    expect(fixture.componentInstance.isSelectedDraftSubmitted).toBe(true);
     httpTesting.verify();
   });
 
@@ -331,6 +346,41 @@ describe('AppointmentsComponent', () => {
     fixture.componentInstance.removeFailedUpload('up-fail');
     expect(fixture.componentInstance.failedImageUploadCount).toBe(0);
     expect(fixture.componentInstance.canSubmit).toBe(true);
+  });
+
+  it('blocks editing controls for submitted appointments', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-submitted',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Submitted item',
+            appointmentDate: '2026-04-28',
+            category: 'meeting',
+            notes: 'ready',
+            status: 'submitted',
+            submittedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.openDraft('draft-submitted');
+    fixture.detectChanges();
+
+    const html = fixture.nativeElement as HTMLElement;
+    expect(html.textContent).toContain('Submitted appointments are read-only. Image changes are disabled.');
+    expect(fixture.componentInstance.canSubmit).toBe(false);
+    expect(fixture.componentInstance.isSelectedDraftSubmitted).toBe(true);
   });
 
   it('shows attached images for selected draft and removes one', () => {

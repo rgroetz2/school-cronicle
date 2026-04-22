@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -16,7 +17,7 @@ interface ImageUploadStatus {
 
 @Component({
   selector: 'app-appointments',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, DatePipe],
   styleUrl: './appointments.component.css',
   template: `
     <main class="workspace">
@@ -50,7 +51,12 @@ interface ImageUploadStatus {
                   [attr.aria-pressed]="selectedDraftId === draft.id"
                 >
                   <span class="draft-title">{{ draft.title }}</span>
-                  <span class="draft-meta">{{ draft.category }} - {{ draft.appointmentDate }}</span>
+                  <span class="draft-meta">
+                    {{ draft.category }} - {{ draft.appointmentDate }} - {{ draft.status }}
+                    @if (draft.submittedAt) {
+                      (submitted {{ draft.submittedAt | date: 'yyyy-MM-dd HH:mm' }})
+                    }
+                  </span>
                 </button>
               </li>
             }
@@ -95,6 +101,8 @@ interface ImageUploadStatus {
           <p class="panel-copy">Attach reference photos up to 2 MB each for local draft context.</p>
         @if (!selectedDraftId) {
           <p class="state-pill">Select a draft to attach images.</p>
+        } @else if (selectedDraft?.status === 'submitted') {
+          <p class="state-pill warning">Submitted appointments are read-only. Image changes are disabled.</p>
         } @else {
           <input type="file" class="file-input" accept="image/*" multiple (change)="onImageSelected($event)" />
           <input
@@ -184,7 +192,11 @@ interface ImageUploadStatus {
             <textarea id="draft-notes" formControlName="notes"></textarea>
 
             <div class="form-actions">
-              <button type="submit" class="primary" [disabled]="isCreatingDraft || isSavingDraft">
+              <button
+                type="submit"
+                class="primary"
+                [disabled]="isCreatingDraft || isSavingDraft || isSelectedDraftSubmitted"
+              >
           {{
             isSavingDraft
               ? 'Saving draft...'
@@ -199,7 +211,7 @@ interface ImageUploadStatus {
                 type="button"
                 class="ghost danger"
                 (click)="deleteSelectedDraft()"
-                [disabled]="!selectedDraftId || isDeletingDraft"
+                [disabled]="!selectedDraftId || isDeletingDraft || isSelectedDraftSubmitted"
               >
                 {{ isDeletingDraft ? 'Deleting draft...' : 'Delete selected draft' }}
               </button>
@@ -300,8 +312,17 @@ export class AppointmentsComponent {
     return (
       Boolean(this.selectedDraftId) &&
       this.missingRequiredFields.length === 0 &&
-      this.failedImageUploadCount === 0
+      this.failedImageUploadCount === 0 &&
+      !this.isSelectedDraftSubmitted
     );
+  }
+
+  get selectedDraft(): AppointmentDraft | undefined {
+    return this.drafts.find((draft) => draft.id === this.selectedDraftId);
+  }
+
+  get isSelectedDraftSubmitted(): boolean {
+    return this.selectedDraft?.status === 'submitted';
   }
 
   get selectedDraftImages(): DraftImage[] {
@@ -346,7 +367,10 @@ export class AppointmentsComponent {
     this.deleteMessage = '';
     this.draftForm.markAllAsTouched();
 
-    if (this.draftForm.invalid || this.isCreatingDraft || this.isSavingDraft) {
+    if (this.draftForm.invalid || this.isCreatingDraft || this.isSavingDraft || this.isSelectedDraftSubmitted) {
+      if (this.isSelectedDraftSubmitted) {
+        this.draftSavedMessage = 'Submitted appointments are read-only.';
+      }
       return;
     }
 
@@ -411,8 +435,11 @@ export class AppointmentsComponent {
       .submitDraft(this.selectedDraftId)
       .pipe(finalize(() => (this.isSubmittingDraft = false)))
       .subscribe({
-        next: () => {
-          this.draftSubmitMessage = 'Draft is ready for submission.';
+        next: (response) => {
+          this.replaceDraft(response.draft);
+          this.draftSubmitMessage = response.submittedAt
+            ? `Draft submitted at ${new Date(response.submittedAt).toLocaleString()}.`
+            : 'Draft submitted.';
         },
         error: (error: unknown) => {
           const response = error as HttpErrorResponse;
@@ -441,6 +468,10 @@ export class AppointmentsComponent {
     if (!this.selectedDraftId) {
       return;
     }
+    if (this.isSelectedDraftSubmitted) {
+      this.imageMessage = 'Submitted appointments are read-only.';
+      return;
+    }
 
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files ?? []);
@@ -452,6 +483,11 @@ export class AppointmentsComponent {
   }
 
   onReplacementSelected(event: Event): void {
+    if (this.isSelectedDraftSubmitted) {
+      this.imageMessage = 'Submitted appointments are read-only.';
+      return;
+    }
+
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file || !this.replacingUploadId) {
@@ -468,12 +504,20 @@ export class AppointmentsComponent {
   }
 
   startReplaceFailedUpload(uploadId: string, fileInput: HTMLInputElement): void {
+    if (this.isSelectedDraftSubmitted) {
+      this.imageMessage = 'Submitted appointments are read-only.';
+      return;
+    }
     this.replacingUploadId = uploadId;
     fileInput.click();
   }
 
   removeImage(imageId: string): void {
     if (!this.selectedDraftId) {
+      return;
+    }
+    if (this.isSelectedDraftSubmitted) {
+      this.imageMessage = 'Submitted appointments are read-only.';
       return;
     }
 

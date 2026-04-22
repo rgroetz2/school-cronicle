@@ -55,6 +55,9 @@ export class AppointmentsService {
     if (!draft) {
       return undefined;
     }
+    if (draft.status === 'submitted') {
+      return undefined;
+    }
 
     draft.title = input.title;
     draft.appointmentDate = input.appointmentDate;
@@ -119,6 +122,9 @@ export class AppointmentsService {
     if (!draft) {
       return undefined;
     }
+    if (draft.status === 'submitted') {
+      return undefined;
+    }
 
     draft.images = [
       ...draft.images,
@@ -130,6 +136,20 @@ export class AppointmentsService {
         addedAt: new Date().toISOString(),
       },
     ];
+    return draft;
+  }
+
+  submitDraftForTeacher(teacherId: string, draftId: string): AppointmentDraft | undefined {
+    const draft = this.findDraftForTeacher(teacherId, draftId);
+    if (!draft) {
+      return undefined;
+    }
+    if (draft.status === 'submitted') {
+      return draft;
+    }
+
+    draft.status = 'submitted';
+    draft.submittedAt = new Date().toISOString();
     return draft;
   }
 }

@@ -338,7 +338,7 @@ describe('AppointmentsController integration', () => {
     });
   });
 
-  it('returns ready-to-submit for complete draft metadata', async () => {
+  it('submits a valid draft and stores submitted timestamp', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -388,8 +388,10 @@ describe('AppointmentsController integration', () => {
 
     expect(submitResponse.status).toBe(201);
     const body = await submitResponse.json();
-    expect(body.data.submitted).toBe(false);
-    expect(body.data.readyToSubmit).toBe(true);
+    expect(body.data.submitted).toBe(true);
+    expect(body.data.draft.status).toBe('submitted');
+    expect(typeof body.data.submittedAt).toBe('string');
+    expect(body.data.draft.submittedAt).toBe(body.data.submittedAt);
   });
 
   it('rejects unauthenticated submit attempts', async () => {
@@ -796,6 +798,74 @@ describe('AppointmentsController integration', () => {
           name: 'legacy.bmp',
         },
       ],
+    });
+  });
+
+  it('blocks draft update when appointment is already submitted', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Submitted lock',
+        appointmentDate: '2026-05-20',
+        category: 'meeting',
+      }),
+    });
+    const createBody = await createResponse.json();
+
+    await fetch(`${baseUrl}/api/appointments/drafts/${createBody.data.draft.id}/submit`, {
+      method: 'POST',
+      headers: {
+        cookie: sessionCookie ?? '',
+      },
+    });
+
+    const updateResponse = await fetch(`${baseUrl}/api/appointments/drafts/${createBody.data.draft.id}`, {
+      method: 'PATCH',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Attempted update',
+        appointmentDate: '2026-05-20',
+        category: 'meeting',
+        notes: '',
+      }),
+    });
+
+    expect(updateResponse.status).toBe(403);
+    expect(await updateResponse.json()).toMatchObject({
+      message: 'Submitted appointments are read-only.',
+      code: 'APPOINTMENT_READ_ONLY',
     });
   });
 });

@@ -30,8 +30,9 @@ export interface AppointmentDraft {
   appointmentDate: string;
   category: string;
   notes: string;
-  status: 'draft';
+  status: 'draft' | 'submitted';
   createdAt: string;
+  submittedAt?: string;
   images: DraftImage[];
 }
 
@@ -65,7 +66,8 @@ interface SubmitDraftResponse {
   data: {
     submitted: boolean;
     draftId: string;
-    readyToSubmit: boolean;
+    submittedAt?: string;
+    draft: AppointmentDraft;
   };
 }
 
@@ -263,17 +265,48 @@ export class AuthApiService {
 
   submitDraft(draftId: string): Observable<SubmitDraftResponse['data']> {
     if (this.hasDummySession()) {
-      const draft = this.readDummyDrafts().find((item) => item.id === draftId);
+      const drafts = this.readDummyDrafts();
+      const draft = drafts.find((item) => item.id === draftId);
       const missingRequiredFields = [
         !draft?.title.trim() ? 'title' : null,
         !draft?.appointmentDate.trim() ? 'appointmentDate' : null,
         !draft?.category.trim() ? 'category' : null,
       ].filter((value): value is string => Boolean(value));
+      if (!draft) {
+        return of({
+          submitted: false,
+          draftId,
+          draft: {
+            id: draftId,
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: '',
+            appointmentDate: '',
+            category: '',
+            notes: '',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        });
+      }
+      if (missingRequiredFields.length > 0 || draft.status === 'submitted') {
+        return of({
+          submitted: false,
+          draftId,
+          draft,
+        });
+      }
+
+      draft.status = 'submitted';
+      draft.submittedAt = new Date().toISOString();
+      this.writeDummyDrafts(drafts);
 
       return of({
-        submitted: false,
+        submitted: true,
         draftId,
-        readyToSubmit: missingRequiredFields.length === 0,
+        submittedAt: draft.submittedAt,
+        draft,
       });
     }
 

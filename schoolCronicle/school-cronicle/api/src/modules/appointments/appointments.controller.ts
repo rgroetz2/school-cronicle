@@ -138,6 +138,19 @@ export class AppointmentsController {
       });
     }
 
+    const existingDraft = this.appointmentsService.findDraftForTeacher(session.teacherId, draftId);
+    if (!existingDraft) {
+      throw new NotFoundException({
+        message: 'Draft not found.',
+      });
+    }
+    if (existingDraft.status === 'submitted') {
+      throw new ForbiddenException({
+        message: 'Submitted appointments are read-only.',
+        code: 'APPOINTMENT_READ_ONLY',
+      });
+    }
+
     const draft = this.appointmentsService.updateDraftForTeacher(session.teacherId, draftId, {
       title,
       appointmentDate,
@@ -271,6 +284,19 @@ export class AppointmentsController {
       });
     }
 
+    const existingDraft = this.appointmentsService.findDraftForTeacher(session.teacherId, draftId);
+    if (!existingDraft) {
+      throw new NotFoundException({
+        message: 'Draft not found.',
+      });
+    }
+    if (existingDraft.status === 'submitted') {
+      throw new ForbiddenException({
+        message: 'Submitted appointments are read-only.',
+        code: 'APPOINTMENT_READ_ONLY',
+      });
+    }
+
     const draft = this.appointmentsService.attachImageToDraftForTeacher(session.teacherId, draftId, {
       name,
       mimeType,
@@ -321,11 +347,26 @@ export class AppointmentsController {
       });
     }
 
+    if (draft.status === 'submitted') {
+      throw new ForbiddenException({
+        message: 'Appointment is already submitted.',
+        code: 'APPOINTMENT_ALREADY_SUBMITTED',
+      });
+    }
+
+    const submittedDraft = this.appointmentsService.submitDraftForTeacher(session.teacherId, draftId);
+    if (!submittedDraft) {
+      throw new NotFoundException({
+        message: 'Draft not found.',
+      });
+    }
+
     return {
       data: {
-        submitted: false,
-        draftId: draft.id,
-        readyToSubmit: true,
+        submitted: true,
+        draftId: submittedDraft.id,
+        submittedAt: submittedDraft.submittedAt,
+        draft: submittedDraft,
       },
     };
   }
