@@ -1,0 +1,7 @@
+{
+  "name": "@school-cronicle/api",
+  "private": true,
+  "devDependencies": {
+    "webpack-cli": "^5.1.4"
+  }
+}

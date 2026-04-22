@@ -1,0 +1,7 @@
+{
+  "name": "@school-cronicle/api-e2e",
+  "private": true,
+  "devDependencies": {
+    "eslint": "^9.8.0"
+  }
+}
