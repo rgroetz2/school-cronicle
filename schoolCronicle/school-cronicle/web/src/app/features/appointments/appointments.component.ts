@@ -70,6 +70,14 @@ interface ImageUploadStatus {
         @if (!selectedDraftId) {
           <p class="state-pill">Select a draft to evaluate submit readiness.</p>
         }
+        @if (selectedDraft) {
+          <p class="state-pill">
+            Current status: {{ selectedDraft.status === 'submitted' ? 'Submitted' : 'Draft' }}
+          </p>
+          @if (selectedDraft.submittedAt) {
+            <p class="state-pill">Submitted at: {{ selectedDraft.submittedAt | date: 'yyyy-MM-dd HH:mm' }}</p>
+          }
+        }
         @if (missingRequiredFields.length > 0) {
           <p class="state-pill warning">Submission blocked. Missing metadata:</p>
           <ul class="missing-list">

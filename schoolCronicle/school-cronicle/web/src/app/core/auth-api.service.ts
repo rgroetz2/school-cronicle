@@ -402,6 +402,8 @@ export class AuthApiService {
   private normalizeDraftImages(draft: AppointmentDraft): AppointmentDraft {
     return {
       ...draft,
+      status: draft.status === 'submitted' ? 'submitted' : 'draft',
+      submittedAt: draft.status === 'submitted' ? draft.submittedAt : undefined,
       images: Array.isArray(draft.images) ? draft.images : [],
     };
   }

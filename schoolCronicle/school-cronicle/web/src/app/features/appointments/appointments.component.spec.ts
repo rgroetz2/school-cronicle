@@ -383,6 +383,92 @@ describe('AppointmentsComponent', () => {
     expect(fixture.componentInstance.isSelectedDraftSubmitted).toBe(true);
   });
 
+  it('renders mixed draft and submitted states with explicit text labels', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const submittedAt = new Date().toISOString();
+
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-a',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Draft appointment',
+            appointmentDate: '2026-06-01',
+            category: 'meeting',
+            notes: '',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+          {
+            id: 'draft-b',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Submitted appointment',
+            appointmentDate: '2026-06-02',
+            category: 'consultation',
+            notes: '',
+            status: 'submitted',
+            submittedAt,
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Draft appointment');
+    expect(text).toContain('Submitted appointment');
+    expect(text).toContain('draft');
+    expect(text).toContain('submitted');
+    expect(text).toContain('submitted ');
+  });
+
+  it('shows detail status and submitted timestamp for selected submitted entry', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const submittedAt = new Date('2026-06-02T10:30:00.000Z').toISOString();
+
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-detail-submitted',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Submitted detail',
+            appointmentDate: '2026-06-02',
+            category: 'progress',
+            notes: '',
+            status: 'submitted',
+            submittedAt,
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.openDraft('draft-detail-submitted');
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Current status: Submitted');
+    expect(text).toContain('Submitted at:');
+  });
+
   it('shows attached images for selected draft and removes one', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
