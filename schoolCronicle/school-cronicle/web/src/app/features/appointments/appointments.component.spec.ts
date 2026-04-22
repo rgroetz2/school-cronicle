@@ -627,6 +627,81 @@ describe('AppointmentsComponent', () => {
     expect(fixture.componentInstance.canSubmit).toBe(true);
   });
 
+  it('keeps submit readiness unchanged when optional metadata is empty', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-optional-empty',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Required-only draft',
+            appointmentDate: '2026-05-14',
+            category: 'meeting',
+            notes: '',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.openDraft('draft-optional-empty');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.missingRequiredFields).toEqual([]);
+    expect(fixture.componentInstance.canSubmit).toBe(true);
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('All required metadata is complete.');
+    expect(text).not.toContain('classGrade');
+    expect(text).not.toContain('guardianName');
+    expect(text).not.toContain('location');
+  });
+
+  it('allows submit when optional metadata is only partially filled', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-optional-partial',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Partial optional draft',
+            appointmentDate: '2026-05-15',
+            category: 'consultation',
+            notes: '',
+            classGrade: '6A',
+            guardianName: '',
+            location: undefined,
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.openDraft('draft-optional-partial');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.missingRequiredFields).toEqual([]);
+    expect(fixture.componentInstance.canSubmit).toBe(true);
+  });
+
   it('submits a complete draft and shows submitted timestamp feedback', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
