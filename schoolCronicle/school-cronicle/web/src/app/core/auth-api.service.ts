@@ -20,6 +20,9 @@ export interface CreateDraftInput {
   appointmentDate: string;
   category: string;
   notes: string;
+  classGrade?: string;
+  guardianName?: string;
+  location?: string;
 }
 
 export interface AppointmentDraft {
@@ -30,6 +33,9 @@ export interface AppointmentDraft {
   appointmentDate: string;
   category: string;
   notes: string;
+  classGrade?: string;
+  guardianName?: string;
+  location?: string;
   status: 'draft' | 'submitted';
   createdAt: string;
   submittedAt?: string;
@@ -213,6 +219,9 @@ export class AuthApiService {
         appointmentDate: input.appointmentDate.trim(),
         category: input.category.trim(),
         notes: input.notes.trim(),
+        classGrade: input.classGrade?.trim() || undefined,
+        guardianName: input.guardianName?.trim() || undefined,
+        location: input.location?.trim() || undefined,
         status: 'draft',
         createdAt: new Date().toISOString(),
         images: [],
@@ -253,6 +262,9 @@ export class AuthApiService {
           appointmentDate: input.appointmentDate.trim(),
           category: input.category.trim(),
           notes: input.notes.trim(),
+          classGrade: input.classGrade?.trim() || undefined,
+          guardianName: input.guardianName?.trim() || undefined,
+          location: input.location?.trim() || undefined,
           status: 'draft',
           createdAt: new Date().toISOString(),
           images: [],
@@ -266,6 +278,9 @@ export class AuthApiService {
       target.appointmentDate = input.appointmentDate.trim();
       target.category = input.category.trim();
       target.notes = input.notes.trim();
+      target.classGrade = input.classGrade?.trim() || undefined;
+      target.guardianName = input.guardianName?.trim() || undefined;
+      target.location = input.location?.trim() || undefined;
       this.writeDummyDrafts(drafts);
       return of(target);
     }
@@ -306,6 +321,9 @@ export class AuthApiService {
             appointmentDate: '',
             category: '',
             notes: '',
+            classGrade: undefined,
+            guardianName: undefined,
+            location: undefined,
             status: 'draft',
             createdAt: new Date().toISOString(),
             images: [],
@@ -460,6 +478,9 @@ export class AuthApiService {
       ...draft,
       status: draft.status === 'submitted' ? 'submitted' : 'draft',
       submittedAt: draft.status === 'submitted' ? draft.submittedAt : undefined,
+      classGrade: typeof draft.classGrade === 'string' ? draft.classGrade.trim() || undefined : undefined,
+      guardianName: typeof draft.guardianName === 'string' ? draft.guardianName.trim() || undefined : undefined,
+      location: typeof draft.location === 'string' ? draft.location.trim() || undefined : undefined,
       images: Array.isArray(draft.images) ? draft.images : [],
     };
   }

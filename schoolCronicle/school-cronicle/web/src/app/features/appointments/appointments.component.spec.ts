@@ -336,6 +336,119 @@ describe('AppointmentsComponent', () => {
     expect(fixture.componentInstance.hasActiveFilters).toBe(false);
   });
 
+  it('filters by class/grade, guardian name, and location metadata', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'meta-1',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Alpha',
+            appointmentDate: '2026-05-01',
+            category: 'meeting',
+            notes: '',
+            classGrade: '3A',
+            guardianName: 'Miller',
+            location: 'Room 101',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+          {
+            id: 'meta-2',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Beta',
+            appointmentDate: '2026-05-01',
+            category: 'meeting',
+            notes: '',
+            classGrade: '4B',
+            guardianName: 'Schmidt',
+            location: 'Room 202',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.filterForm.patchValue({
+      classGrade: '3a',
+      guardianName: 'mill',
+      location: '101',
+    });
+
+    expect(fixture.componentInstance.filteredDrafts.length).toBe(1);
+    expect(fixture.componentInstance.filteredDrafts[0]?.id).toBe('meta-1');
+  });
+
+  it('combines metadata filters with base filters deterministically', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'combo-1',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Ready combo',
+            appointmentDate: '2026-05-02',
+            category: 'consultation',
+            notes: '',
+            classGrade: '5A',
+            guardianName: 'Taylor',
+            location: 'Main Building',
+            status: 'submitted',
+            submittedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+          {
+            id: 'combo-2',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Wrong location',
+            appointmentDate: '2026-05-02',
+            category: 'consultation',
+            notes: '',
+            classGrade: '5A',
+            guardianName: 'Taylor',
+            location: 'Gym',
+            status: 'submitted',
+            submittedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.filterForm.patchValue({
+      category: 'consultation',
+      status: 'submitted',
+      classGrade: '5a',
+      guardianName: 'tay',
+      location: 'main',
+    });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.filteredDrafts.length).toBe(1);
+    expect(fixture.componentInstance.filteredDrafts[0]?.id).toBe('combo-1');
+  });
+
   it('shows no-results guidance when filters have no matches', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);

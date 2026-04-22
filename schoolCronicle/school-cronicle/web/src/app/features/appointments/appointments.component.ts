@@ -91,6 +91,15 @@ type FilterLifecycleState = 'all' | 'needs_attention' | 'ready_to_submit' | 'sub
                 <option value="ready_to_submit">Ready to submit</option>
                 <option value="submitted">Submitted</option>
               </select>
+
+              <label for="filter-class-grade">Class/grade</label>
+              <input id="filter-class-grade" type="text" formControlName="classGrade" />
+
+              <label for="filter-guardian-name">Guardian name</label>
+              <input id="filter-guardian-name" type="text" formControlName="guardianName" />
+
+              <label for="filter-location">Location</label>
+              <input id="filter-location" type="text" formControlName="location" />
             </div>
           </details>
           </form>
@@ -434,6 +443,9 @@ export class AppointmentsComponent {
     dateTo: new FormControl(''),
     hasImages: new FormControl<'all' | 'yes' | 'no'>('all'),
     lifecycleState: new FormControl<FilterLifecycleState>('all'),
+    classGrade: new FormControl(''),
+    guardianName: new FormControl(''),
+    location: new FormControl(''),
   });
 
   constructor() {
@@ -491,6 +503,9 @@ export class AppointmentsComponent {
     const dateTo = this.filterForm.controls.dateTo.value ?? '';
     const hasImages = this.filterForm.controls.hasImages.value ?? 'all';
     const lifecycleState = this.filterForm.controls.lifecycleState.value ?? 'all';
+    const classGradeFilter = (this.filterForm.controls.classGrade.value ?? '').trim().toLowerCase();
+    const guardianNameFilter = (this.filterForm.controls.guardianName.value ?? '').trim().toLowerCase();
+    const locationFilter = (this.filterForm.controls.location.value ?? '').trim().toLowerCase();
 
     return filtered.filter((draft) => {
       if (category && draft.category !== category) {
@@ -521,6 +536,18 @@ export class AppointmentsComponent {
       if (lifecycleState === 'ready_to_submit' && !this.isDraftReadyToSubmit(draft)) {
         return false;
       }
+      const classGrade = (draft.classGrade ?? '').trim().toLowerCase();
+      if (classGradeFilter && !classGrade.includes(classGradeFilter)) {
+        return false;
+      }
+      const guardianName = (draft.guardianName ?? '').trim().toLowerCase();
+      if (guardianNameFilter && !guardianName.includes(guardianNameFilter)) {
+        return false;
+      }
+      const location = (draft.location ?? '').trim().toLowerCase();
+      if (locationFilter && !location.includes(locationFilter)) {
+        return false;
+      }
       return true;
     });
   }
@@ -546,8 +573,21 @@ export class AppointmentsComponent {
       dateTo,
       hasImages,
       lifecycleState,
+      classGrade,
+      guardianName,
+      location,
     } = this.filterForm.getRawValue();
-    return Boolean(category) || status !== 'all' || Boolean(dateFrom) || Boolean(dateTo) || hasImages !== 'all' || lifecycleState !== 'all';
+    return (
+      Boolean(category) ||
+      status !== 'all' ||
+      Boolean(dateFrom) ||
+      Boolean(dateTo) ||
+      hasImages !== 'all' ||
+      lifecycleState !== 'all' ||
+      Boolean(classGrade) ||
+      Boolean(guardianName) ||
+      Boolean(location)
+    );
   }
 
   get selectedDraft(): AppointmentDraft | undefined {
@@ -610,6 +650,9 @@ export class AppointmentsComponent {
       dateTo: '',
       hasImages: 'all',
       lifecycleState: 'all',
+      classGrade: '',
+      guardianName: '',
+      location: '',
     });
   }
 
