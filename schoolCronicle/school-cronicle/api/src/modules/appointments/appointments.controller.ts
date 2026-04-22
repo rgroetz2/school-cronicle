@@ -383,4 +383,21 @@ export class AppointmentsController {
       },
     };
   }
+
+  @Post('retention/run')
+  runRetention(@Req() req: Request) {
+    const sessionId = extractSessionIdFromCookieHeader(req.headers.cookie);
+    const session = this.sessionService.getSession(sessionId);
+
+    if (!session) {
+      throw new UnauthorizedException({
+        message: 'Authentication required.',
+      });
+    }
+
+    const result = this.appointmentsService.runRetention();
+    return {
+      data: result,
+    };
+  }
 }

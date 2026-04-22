@@ -929,4 +929,155 @@ describe('AppointmentsController integration', () => {
       code: 'APPOINTMENT_READ_ONLY',
     });
   });
+
+  it('applies retention rules and audits draft/submission cleanup', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const service = app.get(AppointmentsService);
+    const oldDraft = service.createDraft('teacher-1', 'school-1', {
+      title: 'Old draft',
+      appointmentDate: '2025-01-01',
+      category: 'meeting',
+      notes: '',
+    });
+    oldDraft.createdAt = '2025-01-01T00:00:00.000Z';
+    oldDraft.images.push({
+      id: 'old-draft-img',
+      name: 'old.png',
+      mimeType: 'image/png',
+      dataUrl: 'data:image/png;base64,AAA',
+      addedAt: '2025-01-01T00:00:00.000Z',
+    });
+
+    const oldSubmitted = service.createDraft('teacher-1', 'school-1', {
+      title: 'Old submitted',
+      appointmentDate: '2024-01-01',
+      category: 'meeting',
+      notes: '',
+    });
+    oldSubmitted.createdAt = '2024-01-01T00:00:00.000Z';
+    oldSubmitted.status = 'submitted';
+    oldSubmitted.submittedAt = '2024-01-10T00:00:00.000Z';
+    oldSubmitted.images.push({
+      id: 'old-sub-img',
+      name: 'old-sub.png',
+      mimeType: 'image/png',
+      dataUrl: 'data:image/png;base64,AAA',
+      addedAt: '2024-01-10T00:00:00.000Z',
+    });
+
+    const retentionResponse = await fetch(`${baseUrl}/api/appointments/retention/run`, {
+      method: 'POST',
+      headers: {
+        cookie: sessionCookie ?? '',
+      },
+    });
+    const retentionBody = await retentionResponse.json();
+
+    expect(retentionResponse.status).toBe(201);
+    expect(retentionBody.data.processedCount).toBeGreaterThanOrEqual(2);
+    expect(retentionBody.data.deletedCount).toBeGreaterThanOrEqual(2);
+    expect(retentionBody.data.failedCount).toBe(0);
+    expect(
+      retentionBody.data.audits.some(
+        (audit: { draftId: string; action: string; outcome: string }) =>
+          audit.draftId === oldDraft.id && audit.action === 'delete_draft' && audit.outcome === 'deleted',
+      ),
+    ).toBe(true);
+    expect(
+      retentionBody.data.audits.some(
+        (audit: { draftId: string; action: string; outcome: string }) =>
+          audit.draftId === oldSubmitted.id &&
+          audit.action === 'delete_submission' &&
+          audit.outcome === 'deleted',
+      ),
+    ).toBe(true);
+    expect(service.findDraftForTeacher('teacher-1', oldDraft.id)).toBeUndefined();
+    expect(service.findDraftForTeacher('teacher-1', oldSubmitted.id)).toBeUndefined();
+  });
+
+  it('flags retention failures with retry metadata when stale record is inconsistent', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const service = app.get(AppointmentsService);
+    const inconsistentSubmitted = service.createDraft('teacher-1', 'school-1', {
+      title: 'Broken submitted',
+      appointmentDate: '2024-01-01',
+      category: 'meeting',
+      notes: '',
+    });
+    inconsistentSubmitted.status = 'submitted';
+    inconsistentSubmitted.submittedAt = undefined;
+    inconsistentSubmitted.createdAt = '2024-01-01T00:00:00.000Z';
+
+    const retentionResponse = await fetch(`${baseUrl}/api/appointments/retention/run`, {
+      method: 'POST',
+      headers: {
+        cookie: sessionCookie ?? '',
+      },
+    });
+    const retentionBody = await retentionResponse.json();
+
+    expect(retentionResponse.status).toBe(201);
+    expect(retentionBody.data.failedCount).toBe(1);
+    expect(retentionBody.data.failures[0]).toMatchObject({
+      draftId: inconsistentSubmitted.id,
+      retryable: true,
+      retryCount: 1,
+    });
+    expect(typeof retentionBody.data.failures[0].nextRetryAt).toBe('string');
+    expect(
+      retentionBody.data.audits.some(
+        (audit: { draftId: string; outcome: string }) =>
+          audit.draftId === inconsistentSubmitted.id && audit.outcome === 'failed',
+      ),
+    ).toBe(true);
+    expect(service.findDraftForTeacher('teacher-1', inconsistentSubmitted.id)).toBeDefined();
+  });
 });

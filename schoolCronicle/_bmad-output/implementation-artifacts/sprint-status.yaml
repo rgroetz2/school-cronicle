@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-22T04:42:08+0200
-last_updated: 2026-04-22T16:40:00+0200
+last_updated: 2026-04-22T16:42:00+0200
 project: schoolCronicle
 project_key: NOKEY
 tracking_system: file-system
@@ -77,7 +77,7 @@ development_status:
   6-1-show-privacy-data-category-summary: review
   6-2-enable-editable-profile-metadata-corrections: review
   6-3-support-erasure-restriction-process-invocation-path: review
-  6-4-apply-retention-rules-to-drafts-submissions-and-media: backlog
+  6-4-apply-retention-rules-to-drafts-submissions-and-media: review
   6-5-provide-in-product-guidance-for-required-fields-and-formats: backlog
   6-6-surface-school-privacy-account-contact-information: backlog
   epic-6-retrospective: optional
