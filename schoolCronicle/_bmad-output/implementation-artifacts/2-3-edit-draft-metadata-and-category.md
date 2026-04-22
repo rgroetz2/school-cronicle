@@ -12,14 +12,14 @@ so that entries are accurate and chronicle-ready.
 
 ## Acceptance Criteria
 
-1. Given a saved draft appointment, when the teacher edits fields and category, then updates are persisted to the draft.
+1. Given a saved draft appointment, when the teacher edits fields (including appointment date) and category, then updates are persisted to the draft.
 2. Given a draft editor with category selection, when the teacher opens category options, then options come from the controlled set.
 
 ## Tasks / Subtasks
 
 - [x] Implement draft metadata update API (AC: 1)
   - [x] Add authenticated update endpoint for teacher-owned draft appointments
-  - [x] Validate required metadata fields and keep error envelope consistency
+  - [x] Validate required metadata fields (title, appointment date, category) and keep error envelope consistency
   - [x] Persist updates only for the current teacher/session scope
 - [x] Implement controlled category source and enforcement (AC: 2)
   - [x] Define controlled category set in shared appointments domain location
@@ -27,6 +27,7 @@ so that entries are accurate and chronicle-ready.
   - [x] Keep category naming stable across web and API layers
 - [x] Extend appointment draft editor UI for metadata and category updates (AC: 1, 2)
   - [x] Add editable draft form state hydrated from selected draft
+  - [x] Include appointment date as a required editable field
   - [x] Render category input as controlled select/options list
   - [x] Save changes and surface success/failure feedback without losing user input
   - [x] Preserve keyboard and screen-reader accessibility for form updates
@@ -64,9 +65,10 @@ so that entries are accurate and chronicle-ready.
 - API:
   - authenticated draft update endpoint
   - teacher-owned draft-only mutation
+  - required appointment date validation (`YYYY-MM-DD`)
   - controlled category validation
 - Web:
-  - editable draft metadata form bound to selected draft
+  - editable draft metadata form (including appointment date) bound to selected draft
   - controlled category selector
   - save/update feedback and retained input on recoverable errors
 
@@ -87,9 +89,10 @@ so that entries are accurate and chronicle-ready.
 - API:
   - successful teacher-owned draft update
   - unauthorized/forbidden update attempts
+  - invalid appointment date rejection
   - invalid category rejection
 - Web:
-  - draft edit form hydrates and saves changes
+  - draft edit form hydrates and saves title/date/category changes
   - category options are controlled-set only
   - save feedback and a11y cues are present
 - Run full lint/test/build gates.
@@ -117,9 +120,10 @@ gpt-5.3-codex
 ### Completion Notes List
 
 - Added authenticated draft update API (`PATCH /api/appointments/drafts/:draftId`) with teacher-scope ownership enforcement.
+- Added required `appointmentDate` metadata across create/update/list flows with ISO date validation.
 - Added controlled category model and validation in API plus categories endpoint for UI consistency.
-- Extended appointments UI to open/hydrate/edit a draft and save metadata/category updates.
-- Added integration and component tests covering update success and invalid category rejection.
+- Extended appointments UI to open/hydrate/edit a draft and save metadata/date/category updates.
+- Added integration and component tests covering update success plus invalid date/category rejection.
 - Focused lint/test/build checks pass for changed projects; full run-many remains blocked by existing `web:build:production` failure.
 
 ### File List

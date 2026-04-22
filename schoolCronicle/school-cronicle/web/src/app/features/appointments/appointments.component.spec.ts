@@ -66,10 +66,12 @@ describe('AppointmentsComponent', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Title is required.');
+    expect(compiled.textContent).toContain('Appointment date is required.');
     expect(compiled.textContent).toContain('Category is required.');
 
     fixture.componentInstance.draftForm.setValue({
       title: 'Parent meeting',
+      appointmentDate: '2026-04-22',
       category: 'meeting',
       notes: 'First draft',
     });
@@ -83,6 +85,7 @@ describe('AppointmentsComponent', () => {
           teacherId: 'teacher-1',
           schoolId: 'school-1',
           title: 'Parent meeting',
+          appointmentDate: '2026-04-22',
           category: 'meeting',
           notes: 'First draft',
           status: 'draft',
@@ -101,6 +104,7 @@ describe('AppointmentsComponent', () => {
             teacherId: 'teacher-1',
             schoolId: 'school-1',
             title: 'Parent meeting',
+            appointmentDate: '2026-04-22',
             category: 'meeting',
             notes: 'First draft',
             status: 'draft',
@@ -135,6 +139,7 @@ describe('AppointmentsComponent', () => {
             teacherId: 'teacher-1',
             schoolId: 'school-1',
             title: 'Science check-in',
+            appointmentDate: '2026-04-23',
             category: 'progress',
             notes: '',
             status: 'draft',
@@ -173,6 +178,7 @@ describe('AppointmentsComponent', () => {
             teacherId: 'teacher-1',
             schoolId: 'school-1',
             title: 'Old title',
+            appointmentDate: '2026-04-20',
             category: 'meeting',
             notes: 'Old notes',
             status: 'draft',
@@ -186,6 +192,7 @@ describe('AppointmentsComponent', () => {
     fixture.componentInstance.openDraft('draft-11');
     fixture.componentInstance.draftForm.setValue({
       title: 'Updated title',
+      appointmentDate: '2026-04-24',
       category: 'consultation',
       notes: 'Updated notes',
     });
@@ -200,6 +207,7 @@ describe('AppointmentsComponent', () => {
           teacherId: 'teacher-1',
           schoolId: 'school-1',
           title: 'Updated title',
+          appointmentDate: '2026-04-24',
           category: 'consultation',
           notes: 'Updated notes',
           status: 'draft',
@@ -217,6 +225,7 @@ describe('AppointmentsComponent', () => {
             teacherId: 'teacher-1',
             schoolId: 'school-1',
             title: 'Updated title',
+            appointmentDate: '2026-04-24',
             category: 'consultation',
             notes: 'Updated notes',
             status: 'draft',

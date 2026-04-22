@@ -19,6 +19,17 @@ import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDraftDto, UpdateAppointmentDraftDto } from './appointment.types';
 import { isAppointmentCategory } from './appointment-categories';
 
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidAppointmentDate(value: string): boolean {
+  if (!ISO_DATE_PATTERN.test(value)) {
+    return false;
+  }
+
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
 @Controller('appointments')
 @UseGuards(AuthSessionGuard)
 export class AppointmentsController {
@@ -30,13 +41,20 @@ export class AppointmentsController {
   @Post('drafts')
   createDraft(@Body() body: Partial<CreateAppointmentDraftDto>, @Req() req: Request) {
     const title = body.title?.trim();
+    const appointmentDate = body.appointmentDate?.trim();
     const category = body.category?.trim();
     const notes = body.notes?.trim();
 
-    if (!title || !category) {
+    if (!title || !appointmentDate || !category) {
       throw new BadRequestException({
         message: 'Required appointment metadata is missing.',
         code: 'APPOINTMENT_REQUIRED_FIELDS',
+      });
+    }
+    if (!isValidAppointmentDate(appointmentDate)) {
+      throw new BadRequestException({
+        message: 'Appointment date must be a valid ISO date (YYYY-MM-DD).',
+        code: 'APPOINTMENT_INVALID_DATE',
       });
     }
     if (!isAppointmentCategory(category)) {
@@ -57,6 +75,7 @@ export class AppointmentsController {
 
     const draft = this.appointmentsService.createDraft(session.teacherId, 'school-1', {
       title,
+      appointmentDate,
       category,
       notes,
     });
@@ -75,13 +94,20 @@ export class AppointmentsController {
     @Req() req: Request,
   ) {
     const title = body.title?.trim();
+    const appointmentDate = body.appointmentDate?.trim();
     const category = body.category?.trim();
     const notes = body.notes?.trim();
 
-    if (!title || !category) {
+    if (!title || !appointmentDate || !category) {
       throw new BadRequestException({
         message: 'Required appointment metadata is missing.',
         code: 'APPOINTMENT_REQUIRED_FIELDS',
+      });
+    }
+    if (!isValidAppointmentDate(appointmentDate)) {
+      throw new BadRequestException({
+        message: 'Appointment date must be a valid ISO date (YYYY-MM-DD).',
+        code: 'APPOINTMENT_INVALID_DATE',
       });
     }
     if (!isAppointmentCategory(category)) {
@@ -102,6 +128,7 @@ export class AppointmentsController {
 
     const draft = this.appointmentsService.updateDraftForTeacher(session.teacherId, draftId, {
       title,
+      appointmentDate,
       category,
       notes,
     });

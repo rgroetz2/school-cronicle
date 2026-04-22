@@ -21,6 +21,7 @@ export class AppointmentsService {
       teacherId,
       schoolId,
       title: input.title,
+      appointmentDate: input.appointmentDate,
       category: input.category,
       notes: input.notes?.trim() ?? '',
       status: 'draft',
@@ -48,6 +49,7 @@ export class AppointmentsService {
     }
 
     draft.title = input.title;
+    draft.appointmentDate = input.appointmentDate;
     draft.category = input.category;
     draft.notes = input.notes?.trim() ?? '';
     return draft;

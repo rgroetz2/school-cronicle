@@ -47,6 +47,7 @@ describe('AppointmentsController integration', () => {
       },
       body: JSON.stringify({
         title: 'Parent meeting',
+        appointmentDate: '2026-04-22',
         category: 'meeting',
         notes: 'First draft',
       }),
@@ -58,6 +59,7 @@ describe('AppointmentsController integration', () => {
     expect(body.data.draft.teacherId).toBe('teacher-1');
     expect(body.data.draft.schoolId).toBe('school-1');
     expect(body.data.draft.title).toBe('Parent meeting');
+    expect(body.data.draft.appointmentDate).toBe('2026-04-22');
     expect(body.data.draft.category).toBe('meeting');
   });
 
@@ -84,6 +86,7 @@ describe('AppointmentsController integration', () => {
       },
       body: JSON.stringify({
         title: 'Parent meeting',
+        appointmentDate: '2026-04-22',
         category: 'meeting',
       }),
     });
@@ -128,6 +131,7 @@ describe('AppointmentsController integration', () => {
       },
       body: JSON.stringify({
         title: 'Draft A',
+        appointmentDate: '2026-04-22',
         category: 'meeting',
         notes: 'first',
       }),
@@ -141,6 +145,7 @@ describe('AppointmentsController integration', () => {
       },
       body: JSON.stringify({
         title: 'Draft B',
+        appointmentDate: '2026-04-23',
         category: 'consultation',
         notes: 'second',
       }),
@@ -195,6 +200,7 @@ describe('AppointmentsController integration', () => {
       },
       body: JSON.stringify({
         title: 'Original',
+        appointmentDate: '2026-04-20',
         category: 'meeting',
         notes: 'before',
       }),
@@ -209,6 +215,7 @@ describe('AppointmentsController integration', () => {
       },
       body: JSON.stringify({
         title: 'Updated',
+        appointmentDate: '2026-04-24',
         category: 'consultation',
         notes: 'after',
       }),
@@ -217,6 +224,7 @@ describe('AppointmentsController integration', () => {
     const updateBody = await updateResponse.json();
     expect(updateResponse.status).toBe(200);
     expect(updateBody.data.draft.title).toBe('Updated');
+    expect(updateBody.data.draft.appointmentDate).toBe('2026-04-24');
     expect(updateBody.data.draft.category).toBe('consultation');
     expect(updateBody.data.draft.notes).toBe('after');
   });
@@ -255,6 +263,7 @@ describe('AppointmentsController integration', () => {
       },
       body: JSON.stringify({
         title: 'Original',
+        appointmentDate: '2026-04-20',
         category: 'meeting',
         notes: 'before',
       }),
@@ -269,6 +278,7 @@ describe('AppointmentsController integration', () => {
       },
       body: JSON.stringify({
         title: 'Updated',
+        appointmentDate: '2026-04-24',
         category: 'invalid-category',
         notes: 'after',
       }),
@@ -278,6 +288,52 @@ describe('AppointmentsController integration', () => {
     expect(await updateResponse.json()).toMatchObject({
       message: 'Category must be one of the allowed values.',
       code: 'APPOINTMENT_INVALID_CATEGORY',
+    });
+  });
+
+  it('rejects draft creation with invalid appointment date', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const response = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Bad date',
+        appointmentDate: '22-04-2026',
+        category: 'meeting',
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      message: 'Appointment date must be a valid ISO date (YYYY-MM-DD).',
+      code: 'APPOINTMENT_INVALID_DATE',
     });
   });
 });

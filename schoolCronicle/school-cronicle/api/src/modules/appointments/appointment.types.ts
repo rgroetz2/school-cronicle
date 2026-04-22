@@ -5,6 +5,7 @@ export interface AppointmentDraft {
   teacherId: string;
   schoolId: string;
   title: string;
+  appointmentDate: string;
   category: AppointmentCategory;
   notes: string;
   status: 'draft';
@@ -13,12 +14,14 @@ export interface AppointmentDraft {
 
 export interface CreateAppointmentDraftDto {
   title: string;
+  appointmentDate: string;
   category: AppointmentCategory;
   notes?: string;
 }
 
 export interface UpdateAppointmentDraftDto {
   title: string;
+  appointmentDate: string;
   category: AppointmentCategory;
   notes?: string;
 }

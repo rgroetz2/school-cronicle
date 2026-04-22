@@ -17,6 +17,7 @@ interface SessionProbeResponse {
 
 export interface CreateDraftInput {
   title: string;
+  appointmentDate: string;
   category: string;
   notes: string;
 }
@@ -26,6 +27,7 @@ export interface AppointmentDraft {
   teacherId: string;
   schoolId: string;
   title: string;
+  appointmentDate: string;
   category: string;
   notes: string;
   status: 'draft';
@@ -163,6 +165,7 @@ export class AuthApiService {
         teacherId: 'teacher-1',
         schoolId: 'school-1',
         title: input.title.trim(),
+        appointmentDate: input.appointmentDate.trim(),
         category: input.category.trim(),
         notes: input.notes.trim(),
         status: 'draft',
@@ -201,6 +204,7 @@ export class AuthApiService {
           teacherId: 'teacher-1',
           schoolId: 'school-1',
           title: input.title.trim(),
+          appointmentDate: input.appointmentDate.trim(),
           category: input.category.trim(),
           notes: input.notes.trim(),
           status: 'draft',
@@ -209,6 +213,7 @@ export class AuthApiService {
       }
 
       target.title = input.title.trim();
+      target.appointmentDate = input.appointmentDate.trim();
       target.category = input.category.trim();
       target.notes = input.notes.trim();
       this.writeDummyDrafts(drafts);

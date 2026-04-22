@@ -23,7 +23,7 @@ import { AppointmentDraft, AuthApiService } from '../../core/auth-api.service';
             @for (draft of drafts; track draft.id) {
               <li>
                 <button type="button" (click)="openDraft(draft.id)">
-                  Open draft: {{ draft.title }} ({{ draft.category }})
+                  Open draft: {{ draft.title }} ({{ draft.category }}) on {{ draft.appointmentDate }}
                 </button>
               </li>
             }
@@ -36,6 +36,12 @@ import { AppointmentDraft, AuthApiService } from '../../core/auth-api.service';
         <input id="draft-title" formControlName="title" type="text" />
         @if (draftForm.controls.title.touched && draftForm.controls.title.invalid) {
           <p>Title is required.</p>
+        }
+
+        <label for="draft-date">Appointment date *</label>
+        <input id="draft-date" formControlName="appointmentDate" type="date" />
+        @if (draftForm.controls.appointmentDate.touched && draftForm.controls.appointmentDate.invalid) {
+          <p>Appointment date is required.</p>
         }
 
         <label for="draft-category">Category *</label>
@@ -98,6 +104,7 @@ export class AppointmentsComponent {
 
   readonly draftForm = new FormGroup({
     title: new FormControl('', [Validators.required]),
+    appointmentDate: new FormControl('', [Validators.required]),
     category: new FormControl('', [Validators.required]),
     notes: new FormControl(''),
   });
@@ -136,13 +143,14 @@ export class AppointmentsComponent {
     }
 
     const title = this.draftForm.controls.title.value ?? '';
+    const appointmentDate = this.draftForm.controls.appointmentDate.value ?? '';
     const category = this.draftForm.controls.category.value ?? '';
     const notes = this.draftForm.controls.notes.value ?? '';
 
     if (this.selectedDraftId) {
       this.isSavingDraft = true;
       this.authApiService
-        .updateDraft(this.selectedDraftId, { title, category, notes })
+        .updateDraft(this.selectedDraftId, { title, appointmentDate, category, notes })
         .pipe(finalize(() => (this.isSavingDraft = false)))
         .subscribe({
           next: (draft) => {
@@ -155,12 +163,12 @@ export class AppointmentsComponent {
 
     this.isCreatingDraft = true;
     this.authApiService
-      .createDraft({ title, category, notes })
+      .createDraft({ title, appointmentDate, category, notes })
       .pipe(finalize(() => (this.isCreatingDraft = false)))
       .subscribe({
         next: (draft) => {
           this.draftCreatedMessage = `Draft created: ${draft.title}`;
-          this.draftForm.reset({ title: '', category: '', notes: '' });
+          this.draftForm.reset({ title: '', appointmentDate: '', category: '', notes: '' });
           this.loadDrafts();
         },
       });
@@ -177,6 +185,7 @@ export class AppointmentsComponent {
     this.draftSavedMessage = '';
     this.draftForm.setValue({
       title: draft.title,
+      appointmentDate: draft.appointmentDate,
       category: draft.category,
       notes: draft.notes,
     });
