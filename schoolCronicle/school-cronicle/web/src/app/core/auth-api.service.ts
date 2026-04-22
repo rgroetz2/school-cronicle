@@ -239,6 +239,9 @@ export class AuthApiService {
           images: [],
         });
       }
+      if (target.status === 'submitted') {
+        return of(target);
+      }
 
       target.title = input.title.trim();
       target.appointmentDate = input.appointmentDate.trim();
@@ -330,6 +333,9 @@ export class AuthApiService {
     if (!draft) {
       return of(undefined);
     }
+    if (draft.status === 'submitted') {
+      return of(draft);
+    }
 
     draft.images = [
       ...draft.images,
@@ -351,6 +357,9 @@ export class AuthApiService {
     if (!draft) {
       return of(undefined);
     }
+    if (draft.status === 'submitted') {
+      return of(draft);
+    }
 
     draft.images = draft.images.filter((image) => image.id !== imageId);
     this.writeDummyDrafts(drafts);
@@ -360,6 +369,10 @@ export class AuthApiService {
   deleteDraft(draftId: string): Observable<boolean> {
     if (this.hasDummySession()) {
       const drafts = this.readDummyDrafts();
+      const target = drafts.find((draft) => draft.id === draftId);
+      if (target?.status === 'submitted') {
+        return of(false);
+      }
       const nextDrafts = drafts.filter((draft) => draft.id !== draftId);
       this.writeDummyDrafts(nextDrafts);
       return of(nextDrafts.length !== drafts.length);

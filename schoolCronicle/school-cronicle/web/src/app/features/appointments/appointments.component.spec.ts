@@ -368,7 +368,15 @@ describe('AppointmentsComponent', () => {
             status: 'submitted',
             submittedAt: new Date().toISOString(),
             createdAt: new Date().toISOString(),
-            images: [],
+            images: [
+              {
+                id: 'img-submitted',
+                name: 'submitted-proof.png',
+                mimeType: 'image/png',
+                dataUrl: 'data:image/png;base64,AAA',
+                addedAt: new Date().toISOString(),
+              },
+            ],
           },
         ],
       },
@@ -379,6 +387,12 @@ describe('AppointmentsComponent', () => {
 
     const html = fixture.nativeElement as HTMLElement;
     expect(html.textContent).toContain('Submitted appointments are read-only. Image changes are disabled.');
+    expect(html.textContent).toContain('Submitted appointments are read-only.');
+    expect(html.textContent).toContain('Submitted at');
+    expect(html.textContent).toContain('submitted-proof.png');
+    expect(html.textContent).not.toContain('Delete selected draft');
+    expect(html.textContent).not.toContain('Save draft');
+    expect(html.textContent).not.toContain('Remove');
     expect(fixture.componentInstance.canSubmit).toBe(false);
     expect(fixture.componentInstance.isSelectedDraftSubmitted).toBe(true);
   });

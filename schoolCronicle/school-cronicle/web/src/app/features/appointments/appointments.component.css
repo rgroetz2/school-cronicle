@@ -175,6 +175,35 @@ button {
   margin-top: 0.3rem;
 }
 
+.readonly-grid {
+  margin: 0.8rem 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.8rem;
+}
+
+.readonly-grid div {
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--surface-muted);
+  padding: 0.55rem 0.65rem;
+}
+
+.readonly-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.readonly-grid dt {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.readonly-grid dd {
+  margin: 0.2rem 0 0;
+}
+
 .file-input {
   margin-bottom: 0.8rem;
 }

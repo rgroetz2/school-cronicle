@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-22T04:42:08+0200
-last_updated: 2026-04-22T16:18:00+0200
+last_updated: 2026-04-22T16:24:00+0200
 project: schoolCronicle
 project_key: NOKEY
 tracking_system: file-system
@@ -64,7 +64,7 @@ development_status:
   epic-4: in-progress
   4-1-submit-valid-appointment: review
   4-2-display-draft-vs-submitted-states: review
-  4-3-enforce-read-only-submitted-view: backlog
+  4-3-enforce-read-only-submitted-view: review
   epic-4-retrospective: optional
   epic-5: backlog
   5-1-enforce-school-scoped-authorization: backlog

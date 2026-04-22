@@ -218,6 +218,19 @@ export class AppointmentsController {
       });
     }
 
+    const existingDraft = this.appointmentsService.findDraftForTeacher(session.teacherId, draftId);
+    if (!existingDraft) {
+      throw new NotFoundException({
+        message: 'Draft not found.',
+      });
+    }
+    if (existingDraft.status === 'submitted') {
+      throw new ForbiddenException({
+        message: 'Submitted appointments are read-only.',
+        code: 'APPOINTMENT_READ_ONLY',
+      });
+    }
+
     const deletedDraft = this.appointmentsService.deleteDraftForTeacher(session.teacherId, draftId);
     if (!deletedDraft) {
       throw new NotFoundException({

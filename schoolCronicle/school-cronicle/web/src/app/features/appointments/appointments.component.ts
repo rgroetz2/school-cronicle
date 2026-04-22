@@ -111,6 +111,18 @@ interface ImageUploadStatus {
           <p class="state-pill">Select a draft to attach images.</p>
         } @else if (selectedDraft?.status === 'submitted') {
           <p class="state-pill warning">Submitted appointments are read-only. Image changes are disabled.</p>
+          @if (selectedDraftImages.length === 0) {
+            <p class="state-pill">No images attached.</p>
+          } @else {
+            <ul class="image-list">
+              @for (image of selectedDraftImages; track image.id) {
+                <li class="image-card">
+                  <img [src]="image.dataUrl" [alt]="image.name" width="84" height="84" />
+                  <span class="image-name">{{ image.name }}</span>
+                </li>
+              }
+            </ul>
+          }
         } @else {
           <input type="file" class="file-input" accept="image/*" multiple (change)="onImageSelected($event)" />
           <input
@@ -172,6 +184,31 @@ interface ImageUploadStatus {
         <section class="panel panel-wide form-panel" aria-label="Draft editor">
           <h3>Draft editor</h3>
           <p class="panel-copy">Create a new draft or update the currently selected one.</p>
+          @if (isSelectedDraftSubmitted && selectedDraft) {
+            <p class="state-pill warning">Submitted appointments are read-only.</p>
+            <dl class="readonly-grid">
+              <div>
+                <dt>Title</dt>
+                <dd>{{ selectedDraft.title }}</dd>
+              </div>
+              <div>
+                <dt>Appointment date</dt>
+                <dd>{{ selectedDraft.appointmentDate }}</dd>
+              </div>
+              <div>
+                <dt>Category</dt>
+                <dd>{{ selectedDraft.category }}</dd>
+              </div>
+              <div>
+                <dt>Submitted at</dt>
+                <dd>{{ selectedDraft.submittedAt ? (selectedDraft.submittedAt | date: 'yyyy-MM-dd HH:mm') : '-' }}</dd>
+              </div>
+              <div class="wide">
+                <dt>Notes</dt>
+                <dd>{{ selectedDraft.notes || 'No notes provided.' }}</dd>
+              </div>
+            </dl>
+          } @else {
           <form [formGroup]="draftForm" (ngSubmit)="createDraft()" novalidate>
             <label for="draft-title">Title *</label>
             <input id="draft-title" formControlName="title" type="text" />
@@ -225,6 +262,7 @@ interface ImageUploadStatus {
               </button>
             </div>
           </form>
+          }
         </section>
       </div>
 
