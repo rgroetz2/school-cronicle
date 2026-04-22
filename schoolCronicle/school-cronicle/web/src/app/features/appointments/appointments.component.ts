@@ -129,9 +129,15 @@ import { AppointmentDraft, AuthApiService, DraftImage } from '../../core/auth-ap
       @if (imageMessage) {
         <p role="status">{{ imageMessage }}</p>
       }
+      @if (deleteMessage) {
+        <p role="status">{{ deleteMessage }}</p>
+      }
 
       <button type="button" (click)="signOut()" [disabled]="isSigningOut">
         {{ isSigningOut ? 'Signing out...' : 'Sign out' }}
+      </button>
+      <button type="button" (click)="deleteSelectedDraft()" [disabled]="!selectedDraftId || isDeletingDraft">
+        {{ isDeletingDraft ? 'Deleting draft...' : 'Delete selected draft' }}
       </button>
     </main>
   `,
@@ -145,12 +151,14 @@ export class AppointmentsComponent {
   isCreatingDraft = false;
   isSavingDraft = false;
   isSubmittingDraft = false;
+  isDeletingDraft = false;
   isLoadingDrafts = false;
   draftCreatedMessage = '';
   openedDraftMessage = '';
   draftSavedMessage = '';
   draftSubmitMessage = '';
   imageMessage = '';
+  deleteMessage = '';
   selectedDraftId: string | null = null;
   categories: string[] = [];
   drafts: AppointmentDraft[] = [];
@@ -222,6 +230,7 @@ export class AppointmentsComponent {
     this.draftSavedMessage = '';
     this.draftSubmitMessage = '';
     this.imageMessage = '';
+    this.deleteMessage = '';
     this.draftForm.markAllAsTouched();
 
     if (this.draftForm.invalid || this.isCreatingDraft || this.isSavingDraft) {
@@ -394,6 +403,39 @@ export class AppointmentsComponent {
         this.imageMessage = 'Image removed.';
       },
     });
+  }
+
+  deleteSelectedDraft(): void {
+    this.deleteMessage = '';
+    if (!this.selectedDraftId || this.isDeletingDraft) {
+      return;
+    }
+
+    if (!globalThis.confirm('Delete this draft? This cannot be undone.')) {
+      return;
+    }
+
+    const draftId = this.selectedDraftId;
+    this.isDeletingDraft = true;
+    this.authApiService
+      .deleteDraft(draftId)
+      .pipe(finalize(() => (this.isDeletingDraft = false)))
+      .subscribe({
+        next: (deleted) => {
+          if (!deleted) {
+            this.deleteMessage = 'Draft could not be deleted.';
+            return;
+          }
+
+          this.drafts = this.drafts.filter((draft) => draft.id !== draftId);
+          this.selectedDraftId = null;
+          this.draftForm.reset({ title: '', appointmentDate: '', category: '', notes: '' });
+          this.deleteMessage = 'Draft deleted.';
+        },
+        error: () => {
+          this.deleteMessage = 'Draft deletion failed.';
+        },
+      });
   }
 
   private loadDrafts(): void {

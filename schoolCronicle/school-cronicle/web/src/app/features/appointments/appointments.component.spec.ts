@@ -342,4 +342,52 @@ describe('AppointmentsComponent', () => {
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Image removed.');
   });
+
+  it('deletes selected draft after confirmation and updates list', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
+
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-40',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Delete draft',
+            appointmentDate: '2026-05-03',
+            category: 'meeting',
+            notes: '',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.openDraft('draft-40');
+    fixture.detectChanges();
+
+    fixture.componentInstance.deleteSelectedDraft();
+
+    const deleteRequest = httpTesting.expectOne('/api/appointments/drafts/draft-40');
+    expect(deleteRequest.request.method).toBe('DELETE');
+    deleteRequest.flush({
+      data: {
+        deleted: true,
+        draftId: 'draft-40',
+      },
+    });
+
+    fixture.detectChanges();
+    expect(confirmSpy).toHaveBeenCalled();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Draft deleted.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('No drafts yet. Create one below to get started.');
+    confirmSpy.mockRestore();
+  });
 });

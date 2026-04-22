@@ -416,4 +416,94 @@ describe('AppointmentsController integration', () => {
       message: 'Authentication required.',
     });
   });
+
+  it('deletes a teacher-owned draft and removes it from list', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Delete me',
+        appointmentDate: '2026-05-10',
+        category: 'meeting',
+        notes: '',
+      }),
+    });
+    const createBody = await createResponse.json();
+
+    const deleteResponse = await fetch(`${baseUrl}/api/appointments/drafts/${createBody.data.draft.id}`, {
+      method: 'DELETE',
+      headers: {
+        cookie: sessionCookie ?? '',
+      },
+    });
+    expect(deleteResponse.status).toBe(200);
+    expect(await deleteResponse.json()).toMatchObject({
+      data: {
+        deleted: true,
+        draftId: createBody.data.draft.id,
+      },
+    });
+
+    const listResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      headers: {
+        cookie: sessionCookie ?? '',
+      },
+    });
+    const listBody = await listResponse.json();
+    expect(listResponse.status).toBe(200);
+    expect(listBody.data.drafts.some((draft: { id: string }) => draft.id === createBody.data.draft.id)).toBe(false);
+  });
+
+  it('rejects unauthenticated draft deletion requests', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const deleteResponse = await fetch(`${baseUrl}/api/appointments/drafts/non-existent`, {
+      method: 'DELETE',
+    });
+    expect(deleteResponse.status).toBe(401);
+    expect(await deleteResponse.json()).toMatchObject({
+      message: 'Authentication required.',
+    });
+  });
 });

@@ -77,4 +77,14 @@ export class AppointmentsService {
 
     return missing;
   }
+
+  deleteDraftForTeacher(teacherId: string, draftId: string): AppointmentDraft | undefined {
+    const draftIndex = this.drafts.findIndex((item) => item.id === draftId && item.teacherId === teacherId);
+    if (draftIndex < 0) {
+      return undefined;
+    }
+
+    const [deletedDraft] = this.drafts.splice(draftIndex, 1);
+    return deletedDraft;
+  }
 }

@@ -69,6 +69,13 @@ interface SubmitDraftResponse {
   };
 }
 
+interface DeleteDraftResponse {
+  data: {
+    deleted: boolean;
+    draftId: string;
+  };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -309,6 +316,19 @@ export class AuthApiService {
     draft.images = draft.images.filter((image) => image.id !== imageId);
     this.writeDummyDrafts(drafts);
     return of(draft);
+  }
+
+  deleteDraft(draftId: string): Observable<boolean> {
+    if (this.hasDummySession()) {
+      const drafts = this.readDummyDrafts();
+      const nextDrafts = drafts.filter((draft) => draft.id !== draftId);
+      this.writeDummyDrafts(nextDrafts);
+      return of(nextDrafts.length !== drafts.length);
+    }
+
+    return this.http
+      .delete<DeleteDraftResponse>(`/api/appointments/drafts/${draftId}`)
+      .pipe(map((response) => response.data.deleted));
   }
 
   private readDummyDrafts(): AppointmentDraft[] {

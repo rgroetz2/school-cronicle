@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   NotFoundException,
@@ -179,6 +180,32 @@ export class AppointmentsController {
     return {
       data: {
         categories: this.appointmentsService.listCategories(),
+      },
+    };
+  }
+
+  @Delete('drafts/:draftId')
+  deleteDraft(@Param('draftId') draftId: string, @Req() req: Request) {
+    const sessionId = extractSessionIdFromCookieHeader(req.headers.cookie);
+    const session = this.sessionService.getSession(sessionId);
+
+    if (!session) {
+      throw new UnauthorizedException({
+        message: 'Authentication required.',
+      });
+    }
+
+    const deletedDraft = this.appointmentsService.deleteDraftForTeacher(session.teacherId, draftId);
+    if (!deletedDraft) {
+      throw new NotFoundException({
+        message: 'Draft not found.',
+      });
+    }
+
+    return {
+      data: {
+        deleted: true,
+        draftId: deletedDraft.id,
       },
     };
   }
