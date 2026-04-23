@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AppointmentDraft, AuthApiService, DraftImage } from '../../core/auth-api.service';
+import { PitchDemoModeService } from '../../core/pitch-demo-mode.service';
 
 type ImageUploadState = 'queued' | 'uploading' | 'attached' | 'failed';
 
@@ -32,6 +33,17 @@ type FilterLifecycleState = 'all' | 'needs_attention' | 'ready_to_submit' | 'sub
           </p>
         </div>
         <div class="header-actions">
+          @if (pitchDemoModeEnabled) {
+            <button
+              type="button"
+              class="ghost"
+              (click)="onResetPitchDemo()"
+              [disabled]="isResettingDemoData"
+              aria-label="Reset demo data to canonical seed"
+            >
+              {{ isResettingDemoData ? 'Resetting demo…' : 'Reset demo data' }}
+            </button>
+          }
           <button type="button" class="ghost" (click)="openPrivacySummary()">Privacy summary</button>
           <button type="button" class="ghost" (click)="signOut()" [disabled]="isSigningOut">
             {{ isSigningOut ? 'Signing out...' : 'Sign out' }}
@@ -378,6 +390,9 @@ type FilterLifecycleState = 'all' | 'needs_attention' | 'ready_to_submit' | 'sub
       </div>
 
       <section class="status-stack" aria-label="System status">
+        @if (demoResetMessage) {
+          <p class="state-pill success" role="status">{{ demoResetMessage }}</p>
+        }
         @if (draftCreatedMessage) {
           <p class="state-pill success" role="status">{{ draftCreatedMessage }}</p>
         }
@@ -414,6 +429,7 @@ export class AppointmentsComponent {
   private static readonly MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
   private static readonly ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
   private readonly authApiService = inject(AuthApiService);
+  private readonly pitchDemoModeService = inject(PitchDemoModeService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -429,6 +445,8 @@ export class AppointmentsComponent {
   draftSubmitMessage = '';
   imageMessage = '';
   deleteMessage = '';
+  demoResetMessage = '';
+  isResettingDemoData = false;
   showAdvancedFilters = false;
   imageUploadStatuses: ImageUploadStatus[] = [];
   replacingUploadId: string | null = null;
@@ -459,6 +477,10 @@ export class AppointmentsComponent {
     guardianName: new FormControl(''),
     location: new FormControl(''),
   });
+
+  get pitchDemoModeEnabled(): boolean {
+    return this.pitchDemoModeService.isEnabled();
+  }
 
   constructor() {
     this.loadTeacherProfile();
@@ -640,6 +662,51 @@ export class AppointmentsComponent {
         },
         error: () => {
           void this.router.navigateByUrl('/login');
+        },
+      });
+  }
+
+  onResetPitchDemo(): void {
+    this.demoResetMessage = '';
+    this.draftCreatedMessage = '';
+    this.draftSavedMessage = '';
+    this.draftSubmitMessage = '';
+    this.imageMessage = '';
+    this.deleteMessage = '';
+    if (this.isResettingDemoData) {
+      return;
+    }
+
+    this.isResettingDemoData = true;
+    this.authApiService
+      .resetPitchDemoData()
+      .pipe(finalize(() => (this.isResettingDemoData = false)))
+      .subscribe({
+        next: (result) => {
+          if (!this.authApiService.usesDummyClientStore()) {
+            this.demoResetMessage =
+              'Demo reset only applies to the in-browser demo store. API sessions are unchanged—use local demo sign-in to restore seed data.';
+            return;
+          }
+          if (result.draftCount === 0) {
+            this.demoResetMessage = 'Demo reset completed but no seed rows were applied.';
+            return;
+          }
+
+          this.selectedDraftId = null;
+          this.imageUploadStatuses = [];
+          this.draftForm.reset({
+            title: '',
+            appointmentDate: '',
+            category: '',
+            notes: '',
+            classGrade: '',
+            guardianName: '',
+            location: '',
+          });
+          this.loadDrafts();
+          this.loadTeacherProfile();
+          this.demoResetMessage = `Demo dataset ${result.version} restored (${result.draftCount} appointments).`;
         },
       });
   }

@@ -6,6 +6,8 @@ import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { AppointmentsComponent } from './appointments.component';
 import { AuthApiService } from '../../core/auth-api.service';
+import { DEMO_SEED_VERSION } from '../../core/demo-seed';
+import { PitchDemoModeService } from '../../core/pitch-demo-mode.service';
 
 describe('AppointmentsComponent', () => {
   beforeEach(async () => {
@@ -1344,5 +1346,111 @@ describe('AppointmentsComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Draft deleted.');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('No drafts yet. Create one below to get started.');
     confirmSpy.mockRestore();
+  });
+
+  describe('pitch demo reset UI', () => {
+    beforeEach(async () => {
+      TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({
+        imports: [AppointmentsComponent],
+        providers: [
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          provideRouter([]),
+          { provide: PitchDemoModeService, useValue: { isEnabled: () => true } },
+        ],
+      }).compileComponents();
+    });
+
+    afterEach(() => {
+      TestBed.resetTestingModule();
+    });
+
+    it('shows demo reset when pitch demo mode is on and explains API-only sessions', () => {
+      const fixture = TestBed.createComponent(AppointmentsComponent);
+      const httpTesting = TestBed.inject(HttpTestingController);
+      httpTesting.expectOne('/api/appointments/categories').flush({
+        data: { categories: ['meeting', 'consultation', 'progress'] },
+      });
+      httpTesting.expectOne('/api/appointments/drafts').flush({
+        data: { drafts: [] },
+      });
+      fixture.detectChanges();
+
+      const resetButton = Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll('.header-actions button'),
+      ).find((button) => button.textContent?.includes('Reset demo data')) as HTMLButtonElement | undefined;
+      expect(resetButton).toBeTruthy();
+      resetButton?.click();
+      fixture.detectChanges();
+
+      const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+      expect(text).toContain('in-browser demo store');
+    });
+  });
+
+  describe('pitch demo reset with dummy session', () => {
+    const memoryStore: Record<string, string> = {};
+
+    beforeEach(async () => {
+      TestBed.resetTestingModule();
+      for (const key of Object.keys(memoryStore)) {
+        delete memoryStore[key];
+      }
+      vi.stubGlobal('localStorage', {
+        getItem: (key: string) => memoryStore[key] ?? null,
+        setItem: (key: string, value: string) => {
+          memoryStore[key] = value;
+        },
+        removeItem: (key: string) => {
+          delete memoryStore[key];
+        },
+        clear: () => {
+          for (const key of Object.keys(memoryStore)) {
+            delete memoryStore[key];
+          }
+        },
+        key: (index: number) => Object.keys(memoryStore)[index] ?? null,
+        get length() {
+          return Object.keys(memoryStore).length;
+        },
+      });
+      globalThis.localStorage.setItem('sc_dummy_session', 'active');
+
+      await TestBed.configureTestingModule({
+        imports: [AppointmentsComponent],
+        providers: [
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          provideRouter([]),
+          { provide: PitchDemoModeService, useValue: { isEnabled: () => true } },
+        ],
+      }).compileComponents();
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      TestBed.resetTestingModule();
+    });
+
+    it('restores canonical seed drafts without HTTP list calls', async () => {
+      const fixture = TestBed.createComponent(AppointmentsComponent);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.drafts.length).toBe(0);
+
+      fixture.componentInstance.onResetPitchDemo();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.drafts.map((d) => d.id).sort()).toEqual(
+        ['demo-seed-attention-1', 'demo-seed-filters-1', 'demo-seed-ready-1', 'demo-seed-submitted-1'].sort(),
+      );
+      const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+      expect(text).toContain(DEMO_SEED_VERSION);
+      expect(text).toContain('restored');
+    });
   });
 });

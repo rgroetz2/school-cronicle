@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable, of, timeout } from 'rxjs';
+import { buildDemoSeedDrafts, buildDemoSeedProfile, DEMO_SEED_VERSION } from './demo-seed';
 
 interface SignInResponse {
   data: {
@@ -442,6 +443,44 @@ export class AuthApiService {
     };
     this.writePrivacyAuditEvent(event);
     return of(event);
+  }
+
+  /**
+   * True when the in-browser dummy store is active (local demo / pitch path).
+   */
+  usesDummyClientStore(): boolean {
+    return this.hasDummySession();
+  }
+
+  /**
+   * Clears dummy drafts/profile/privacy events and restores the canonical pitch seed.
+   * No-op when not in a dummy session (API-backed sessions are unchanged).
+   */
+  resetPitchDemoData(): Observable<{ version: string; draftCount: number }> {
+    if (!this.hasDummySession()) {
+      return of({ version: DEMO_SEED_VERSION, draftCount: 0 });
+    }
+
+    this.clearDummyTenantState();
+    const drafts = buildDemoSeedDrafts();
+    this.writeDummyDrafts(drafts);
+    this.writeTeacherProfile(buildDemoSeedProfile());
+    return of({ version: DEMO_SEED_VERSION, draftCount: drafts.length });
+  }
+
+  private clearDummyTenantState(): void {
+    const storage = this.getStorage();
+    if (storage) {
+      storage.removeItem(AuthApiService.DUMMY_DRAFTS_KEY);
+      storage.removeItem(AuthApiService.DUMMY_PROFILE_KEY);
+      storage.removeItem(AuthApiService.DUMMY_PRIVACY_EVENTS_KEY);
+    }
+    this.inMemoryDummyDrafts = [];
+    this.inMemoryDummyProfile = {
+      displayName: 'Teacher Account',
+      contactEmail: 'teacher@school.local',
+    };
+    this.inMemoryPrivacyEvents = [];
   }
 
   private readDummyDrafts(): AppointmentDraft[] {

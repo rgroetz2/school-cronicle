@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-22T04:42:08+0200
-last_updated: 2026-04-22T19:02:00+0200
+last_updated: 2026-04-23T07:25:00+0200
 project: schoolCronicle
 project_key: NOKEY
 tracking_system: file-system
@@ -88,3 +88,6 @@ development_status:
   px2-1-build-dedicated-filter-panel: review
   px2-2-add-new-optional-metadata-filters: review
   px3-1-add-optional-fields-to-appointment-model: review
+  epic-px4: in-progress
+  px4-1-add-demo-data-seed-reset-flow: review
+  px4-2-define-7-minute-teacher-demo-path: backlog
