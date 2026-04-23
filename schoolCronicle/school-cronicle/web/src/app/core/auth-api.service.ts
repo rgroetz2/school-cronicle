@@ -142,6 +142,15 @@ interface UpsertContactResponse {
   };
 }
 
+interface ChronicleExportResponse {
+  data: {
+    fileName: string;
+    mimeType: string;
+    base64: string;
+    exportedAppointmentIds: string[];
+  };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -571,6 +580,21 @@ export class AuthApiService {
     return this.http
       .patch<UpsertContactResponse>(`/api/contacts/${contactId}`, input)
       .pipe(map((response) => response.data.contact));
+  }
+
+  exportChronicle(appointmentIds: string[]): Observable<ChronicleExportResponse['data']> {
+    if (this.hasDummySession()) {
+      return of({
+        fileName: `chronicle-${new Date().toISOString().slice(0, 10)}.docx`,
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        base64: '',
+        exportedAppointmentIds: [],
+      });
+    }
+
+    return this.http
+      .post<ChronicleExportResponse>('/api/appointments/chronicle/export', { appointmentIds })
+      .pipe(map((response) => response.data));
   }
 
   getTeacherProfile(): Observable<TeacherProfile> {

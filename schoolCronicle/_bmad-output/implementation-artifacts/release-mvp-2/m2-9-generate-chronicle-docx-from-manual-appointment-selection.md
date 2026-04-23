@@ -1,6 +1,6 @@
 # Story M2.9: Generate Chronicle .docx from Manual Appointment Selection
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -17,16 +17,16 @@ so that I can build a first chronicle draft with editorial control.
 
 ## Tasks / Subtasks
 
-- [ ] Build manual selection flow for chronicle export (AC: 1)
-  - [ ] Allow selecting/deselecting eligible appointment entries.
-  - [ ] Validate selection state before export action.
-- [ ] Implement export API/service for `.docx` generation (AC: 1, 2)
-  - [ ] Accept selected appointment IDs and resolve required linked content.
-  - [ ] Return generated file artifact/stream with stable metadata.
-- [ ] Map export payload content for narrative, participants, printable media (AC: 2)
-  - [ ] Include only printable-marked media.
-  - [ ] Ensure ordering and section grouping are deterministic.
-- [ ] Add tests for selection flow and export payload integrity.
+- [x] Build manual selection flow for chronicle export (AC: 1)
+  - [x] Allow selecting/deselecting eligible appointment entries.
+  - [x] Validate selection state before export action.
+- [x] Implement export API/service for `.docx` generation (AC: 1, 2)
+  - [x] Accept selected appointment IDs and resolve required linked content.
+  - [x] Return generated file artifact/stream with stable metadata.
+- [x] Map export payload content for narrative, participants, printable media (AC: 2)
+  - [x] Include only printable-marked media.
+  - [x] Ensure ordering and section grouping are deterministic.
+- [x] Add tests for selection flow and export payload integrity.
 
 ## Dev Notes
 
@@ -49,4 +49,17 @@ gpt-5.3-codex
 
 ### Completion Notes List
 
+- Added manual chronicle selection controls in appointments list for export-eligible records.
+- Implemented `POST /api/appointments/chronicle/export` endpoint with selection validation and school/teacher-scoped resolution.
+- Added `.docx` generation service using `docx` package; response returns stable file metadata and base64 artifact.
+- Export content includes title/date/category/status, narrative text, participants, and printable-only image names.
+- Applied deterministic ordering by appointment date then id in export payload mapping.
+- Added integration coverage for chronicle export artifact generation.
+
 ### File List
+
+- `school-cronicle/api/src/modules/appointments/appointments.service.ts`
+- `school-cronicle/api/src/modules/appointments/appointments.controller.ts`
+- `school-cronicle/api/src/modules/appointments/appointments.controller.integration.spec.ts`
+- `school-cronicle/web/src/app/core/auth-api.service.ts`
+- `school-cronicle/web/src/app/features/appointments/appointments.component.ts`

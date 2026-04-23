@@ -158,6 +158,12 @@
   background: #fff;
 }
 
+.chronicle-select-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .appointments-grid {
   border: 1px solid var(--border);
   border-radius: 0.7rem;
@@ -167,7 +173,7 @@
 
 .grid-header {
   display: grid;
-  grid-template-columns: 2fr 1.2fr 1.2fr 1fr 1.5fr;
+  grid-template-columns: 0.55fr 2fr 1.2fr 1.2fr 1fr 1.5fr;
   border-bottom: 1px solid var(--border);
   background: #f1f5f9;
   font-size: 0.84rem;
@@ -220,8 +226,14 @@
 }
 
 .draft-grid-row {
-  grid-template-columns: 2fr 1.2fr 1.2fr 1fr 1.5fr;
+  grid-template-columns: 0.55fr 2fr 1.2fr 1.2fr 1fr 1.5fr;
   gap: 0;
+}
+
+.grid-cell-select {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .draft-title {

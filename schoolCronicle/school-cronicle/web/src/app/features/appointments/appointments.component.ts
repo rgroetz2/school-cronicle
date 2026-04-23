@@ -78,7 +78,21 @@ interface DemoStep {
           <p class="panel-copy">One unified list for draft and submitted appointments. Use "Create appointment" to add a new one.</p>
         <div class="filter-actions">
           <button type="button" class="primary" (click)="openCreateModal()">Create appointment</button>
+          <button
+            type="button"
+            class="ghost"
+            (click)="exportChronicle()"
+            [disabled]="selectedChronicleAppointmentIds.length === 0 || isExportingChronicle"
+          >
+            {{ isExportingChronicle ? 'Exporting chronicle...' : 'Export chronicle (.docx)' }}
+          </button>
         </div>
+        @if (selectedChronicleAppointmentIds.length > 0) {
+          <p class="state-pill">
+            Chronicle selection: {{ selectedChronicleAppointmentIds.length }} selected
+            <button type="button" class="ghost inline" (click)="clearChronicleSelection()">Clear</button>
+          </p>
+        }
         <div class="filter-panel" aria-label="Appointment filters">
           <h4>Filter list</h4>
           <form [formGroup]="filterForm">
@@ -162,6 +176,7 @@ interface DemoStep {
         } @else {
           <div class="appointments-grid" role="table" aria-label="Appointments grid">
             <div class="grid-header" role="row">
+              <span class="grid-cell grid-cell-select" aria-hidden="true"></span>
               <span class="grid-cell">Title</span>
               <span class="grid-cell">Category</span>
               <span class="grid-cell">Date</span>
@@ -171,12 +186,25 @@ interface DemoStep {
           <ul class="draft-list">
             @for (draft of filteredDrafts; track draft.id) {
               <li>
-                <button
-                  type="button"
+                <div
                   class="draft-button draft-grid-row"
-                  (click)="openDraft(draft.id)"
+                  role="button"
+                  tabindex="0"
                   [attr.aria-pressed]="selectedDraftId === draft.id"
+                  (click)="openDraft(draft.id)"
+                  (keydown.enter)="openDraft(draft.id)"
                 >
+                  <span class="grid-cell grid-cell-select" (click)="$event.stopPropagation()">
+                    @if (isChronicleExportEligible(draft)) {
+                      <input
+                        type="checkbox"
+                        [checked]="selectedChronicleAppointmentIds.includes(draft.id)"
+                        (change)="toggleChronicleSelection(draft.id)"
+                      />
+                    } @else {
+                      -
+                    }
+                  </span>
                   <span class="grid-cell">{{ draft.title }}</span>
                   <span class="grid-cell">{{ draft.category }}</span>
                   <span class="grid-cell">{{ draft.appointmentDate }}</span>
@@ -190,10 +218,7 @@ interface DemoStep {
                     (draft.editedAfterSubmitAt ? draft.editedAfterSubmitAt : draft.submittedAt ? draft.submittedAt : draft.createdAt)
                       | date: 'yyyy-MM-dd HH:mm'
                   }}</span>
-                </button>
-                @if ((draft.participants?.length ?? 0) > 0) {
-                  <div class="participant-meta">Participants: {{ formatParticipantSummary(draft) }}</div>
-                }
+                </div>
               </li>
             }
           </ul>
@@ -398,6 +423,7 @@ export class AppointmentsComponent {
   isSavingDraft = false;
   isSubmittingDraft = false;
   isDeletingDraft = false;
+  isExportingChronicle = false;
   isLoadingDrafts = false;
   isLoadingContacts = false;
   isSavingContact = false;
@@ -418,6 +444,7 @@ export class AppointmentsComponent {
   pendingParticipantContactId = '';
   selectedParticipantContactIds: string[] = [];
   participantLimitMessage = '';
+  selectedChronicleAppointmentIds: string[] = [];
   categories: string[] = [];
   drafts: AppointmentDraft[] = [];
   contacts: SchoolContact[] = [];
@@ -980,6 +1007,53 @@ export class AppointmentsComponent {
     }
     const firstTwo = participants.slice(0, 2).map((participant) => participant.name).join(', ');
     return `${firstTwo} +${participants.length - 2}`;
+  }
+
+  isChronicleExportEligible(draft: AppointmentDraft): boolean {
+    return draft.status === 'submitted' || draft.chronicleExportEligible === true;
+  }
+
+  toggleChronicleSelection(draftId: string): void {
+    if (this.selectedChronicleAppointmentIds.includes(draftId)) {
+      this.selectedChronicleAppointmentIds = this.selectedChronicleAppointmentIds.filter((id) => id !== draftId);
+      return;
+    }
+    this.selectedChronicleAppointmentIds = [...this.selectedChronicleAppointmentIds, draftId];
+  }
+
+  clearChronicleSelection(): void {
+    this.selectedChronicleAppointmentIds = [];
+  }
+
+  exportChronicle(): void {
+    if (this.selectedChronicleAppointmentIds.length === 0 || this.isExportingChronicle) {
+      return;
+    }
+    this.isExportingChronicle = true;
+    this.draftSavedMessage = '';
+    this.authApiService
+      .exportChronicle(this.selectedChronicleAppointmentIds)
+      .pipe(finalize(() => (this.isExportingChronicle = false)))
+      .subscribe({
+        next: (artifact) => {
+          const byteCharacters = globalThis.atob(artifact.base64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let index = 0; index < byteCharacters.length; index += 1) {
+            byteNumbers[index] = byteCharacters.charCodeAt(index);
+          }
+          const blob = new Blob([new Uint8Array(byteNumbers)], { type: artifact.mimeType });
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = artifact.fileName;
+          anchor.click();
+          URL.revokeObjectURL(url);
+          this.draftSavedMessage = `Chronicle exported: ${artifact.fileName}`;
+        },
+        error: () => {
+          this.draftSavedMessage = 'Chronicle export failed.';
+        },
+      });
   }
 
   saveContact(): void {

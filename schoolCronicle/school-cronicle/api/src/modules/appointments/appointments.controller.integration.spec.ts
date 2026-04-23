@@ -1250,6 +1250,74 @@ describe('AppointmentsController integration', () => {
     });
   });
 
+  it('exports selected eligible appointments as docx artifact', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Eligible submission',
+        appointmentDate: '2026-08-01',
+        category: 'meeting',
+      }),
+    });
+    const draftId = (await createResponse.json()).data.draft.id as string;
+
+    await fetch(`${baseUrl}/api/appointments/drafts/${draftId}/submit`, {
+      method: 'POST',
+      headers: {
+        cookie: sessionCookie ?? '',
+      },
+    });
+
+    const exportResponse = await fetch(`${baseUrl}/api/appointments/chronicle/export`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        appointmentIds: [draftId],
+      }),
+    });
+    expect(exportResponse.status).toBe(201);
+    const exportBody = await exportResponse.json();
+    expect(exportBody.data).toMatchObject({
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      exportedAppointmentIds: [draftId],
+    });
+    expect(typeof exportBody.data.fileName).toBe('string');
+    expect(typeof exportBody.data.base64).toBe('string');
+    expect(exportBody.data.base64.length).toBeGreaterThan(10);
+  });
+
   it('applies retention rules and audits draft/submission cleanup', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],

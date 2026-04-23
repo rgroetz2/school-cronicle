@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Document, HeadingLevel, Packer, Paragraph, TextRun } from 'docx';
 import { randomUUID } from 'node:crypto';
 import {
   AttachDraftImageDto,
@@ -55,6 +56,13 @@ export interface RetentionRunResult {
   failures: RetentionFailure[];
 }
 
+export interface ChronicleExportArtifact {
+  fileName: string;
+  mimeType: string;
+  base64: string;
+  exportedAppointmentIds: string[];
+}
+
 @Injectable()
 export class AppointmentsService {
   private readonly drafts: AppointmentDraft[] = [];
@@ -93,6 +101,79 @@ export class AppointmentsService {
     return this.drafts
       .filter((draft) => draft.teacherId === teacherId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  async exportChronicleDocxForTeacher(
+    teacherId: string,
+    selectedAppointmentIds: string[],
+  ): Promise<ChronicleExportArtifact> {
+    const selectedIdSet = new Set(selectedAppointmentIds);
+    const selectedDrafts = this.drafts
+      .filter((draft) => draft.teacherId === teacherId && selectedIdSet.has(draft.id))
+      .filter((draft) => draft.status === 'submitted' || draft.chronicleExportEligible === true)
+      .sort((a, b) => {
+        const byDate = a.appointmentDate.localeCompare(b.appointmentDate);
+        if (byDate !== 0) {
+          return byDate;
+        }
+        return a.id.localeCompare(b.id);
+      });
+
+    const paragraphs: Paragraph[] = [
+      new Paragraph({
+        text: 'School Chronicle Export',
+        heading: HeadingLevel.HEADING_1,
+      }),
+      new Paragraph({
+        children: [
+          new TextRun(`Exported at: ${new Date().toISOString()}`),
+        ],
+      }),
+      new Paragraph(''),
+    ];
+
+    for (const draft of selectedDrafts) {
+      paragraphs.push(
+        new Paragraph({
+          text: draft.title,
+          heading: HeadingLevel.HEADING_2,
+        }),
+      );
+      paragraphs.push(new Paragraph(`Date: ${draft.appointmentDate}`));
+      paragraphs.push(new Paragraph(`Category: ${draft.category}`));
+      paragraphs.push(new Paragraph(`Status: ${draft.status}`));
+      if (draft.notes.trim()) {
+        paragraphs.push(new Paragraph(`Narrative: ${draft.notes.trim()}`));
+      }
+      if ((draft.participants ?? []).length > 0) {
+        paragraphs.push(
+          new Paragraph(
+            `Participants: ${(draft.participants ?? []).map((participant) => `${participant.name} (${participant.role})`).join(', ')}`,
+          ),
+        );
+      }
+      const printableImages = (draft.images ?? []).filter((image) => image.printableInChronicle);
+      paragraphs.push(new Paragraph(`Printable images: ${printableImages.length}`));
+      for (const image of printableImages) {
+        paragraphs.push(new Paragraph(`- ${image.name}`));
+      }
+      paragraphs.push(new Paragraph(''));
+    }
+
+    const document = new Document({
+      sections: [
+        {
+          children: paragraphs,
+        },
+      ],
+    });
+    const buffer = await Packer.toBuffer(document);
+    return {
+      fileName: `chronicle-${new Date().toISOString().slice(0, 10)}.docx`,
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      base64: buffer.toString('base64'),
+      exportedAppointmentIds: selectedDrafts.map((draft) => draft.id),
+    };
   }
 
   updateDraftForTeacher(
