@@ -253,8 +253,11 @@ interface DemoStep {
                   <p class="field-error">Category is required.</p>
                 }
 
-                <label for="modal-draft-notes">Notes</label>
+                <label for="modal-draft-notes">{{ isSpecialEventDraft ? 'Narrative description *' : 'Notes' }}</label>
                 <textarea id="modal-draft-notes" formControlName="notes"></textarea>
+                @if (isSpecialEventDraft && !(draftForm.controls.notes.value ?? '').trim()) {
+                  <p class="field-error">Narrative description is required for special events.</p>
+                }
 
                 <label for="modal-draft-class-grade">Class/grade</label>
                 <input id="modal-draft-class-grade" formControlName="classGrade" type="text" />
@@ -303,6 +306,31 @@ interface DemoStep {
                 }
                 @if (participantLimitMessage) {
                   <p class="field-error">{{ participantLimitMessage }}</p>
+                }
+
+                @if (isSpecialEventDraft) {
+                  <label for="modal-special-event-media">Optional media/documents (images)</label>
+                  <input
+                    id="modal-special-event-media"
+                    type="file"
+                    class="file-input"
+                    accept="image/*"
+                    multiple
+                    (change)="onImageSelected($event)"
+                  />
+                  @if (selectedDraftImages.length === 0) {
+                    <p class="state-pill">No media attached yet.</p>
+                  } @else {
+                    <ul class="image-list">
+                      @for (image of selectedDraftImages; track image.id) {
+                        <li class="image-card">
+                          <img [src]="image.dataUrl" [alt]="image.name" width="84" height="84" />
+                          <span class="image-name">{{ image.name }}</span>
+                          <button type="button" class="ghost danger" (click)="removeImage(image.id)">Remove</button>
+                        </li>
+                      }
+                    </ul>
+                  }
                 }
 
                 <div class="form-actions">
@@ -489,6 +517,9 @@ export class AppointmentsComponent {
     if (!(this.draftForm.controls.category.value ?? '').trim()) {
       missing.push('category');
     }
+    if ((this.draftForm.controls.category.value ?? '').trim() === 'special_event' && !(this.draftForm.controls.notes.value ?? '').trim()) {
+      missing.push('notes');
+    }
 
     return missing;
   }
@@ -642,6 +673,10 @@ export class AppointmentsComponent {
     return this.drafts.find((draft) => draft.id === this.selectedDraftId)?.images ?? [];
   }
 
+  get isSpecialEventDraft(): boolean {
+    return (this.draftForm.controls.category.value ?? '').trim() === 'special_event';
+  }
+
   get availableParticipantContacts(): SchoolContact[] {
     return this.contacts.filter((contact) => !this.selectedParticipantContactIds.includes(contact.id));
   }
@@ -791,6 +826,11 @@ export class AppointmentsComponent {
     const classGrade = this.draftForm.controls.classGrade.value ?? '';
     const guardianName = this.draftForm.controls.guardianName.value ?? '';
     const location = this.draftForm.controls.location.value ?? '';
+
+    if (category.trim() === 'special_event' && !notes.trim()) {
+      this.draftSavedMessage = 'Narrative description is required for special events.';
+      return;
+    }
 
     if (this.selectedDraftId) {
       this.isSavingDraft = true;

@@ -28,6 +28,7 @@ export interface AppointmentDraft {
   editedAfterSubmitAt?: string;
   editedAfterSubmitBy?: string;
   participants?: AppointmentParticipant[];
+  chronicleExportEligible?: boolean;
   images: DraftImage[];
 }
 

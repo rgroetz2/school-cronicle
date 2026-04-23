@@ -88,6 +88,12 @@ export class AppointmentsController {
         code: 'APPOINTMENT_INVALID_CATEGORY',
       });
     }
+    if (category === 'special_event' && !notes) {
+      throw new BadRequestException({
+        message: 'Narrative description is required for special events.',
+        code: 'APPOINTMENT_SPECIAL_EVENT_NOTES_REQUIRED',
+      });
+    }
 
     const sessionId = extractSessionIdFromCookieHeader(req.headers.cookie);
     const session = this.sessionService.getSession(sessionId);
@@ -151,6 +157,12 @@ export class AppointmentsController {
       throw new BadRequestException({
         message: 'Category must be one of the allowed values.',
         code: 'APPOINTMENT_INVALID_CATEGORY',
+      });
+    }
+    if (category === 'special_event' && !notes) {
+      throw new BadRequestException({
+        message: 'Narrative description is required for special events.',
+        code: 'APPOINTMENT_SPECIAL_EVENT_NOTES_REQUIRED',
       });
     }
 

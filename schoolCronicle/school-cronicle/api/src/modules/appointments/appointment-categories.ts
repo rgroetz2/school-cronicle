@@ -1,4 +1,4 @@
-export const APPOINTMENT_CATEGORIES = ['meeting', 'consultation', 'progress'] as const;
+export const APPOINTMENT_CATEGORIES = ['meeting', 'consultation', 'progress', 'special_event'] as const;
 
 export type AppointmentCategory = (typeof APPOINTMENT_CATEGORIES)[number];
 

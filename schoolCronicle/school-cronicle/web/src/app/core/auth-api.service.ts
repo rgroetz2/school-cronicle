@@ -50,6 +50,7 @@ export interface AppointmentDraft {
   editedAfterSubmitAt?: string;
   editedAfterSubmitBy?: string;
   participants?: AppointmentParticipant[];
+  chronicleExportEligible?: boolean;
   images: DraftImage[];
 }
 
@@ -149,7 +150,7 @@ export class AuthApiService {
   private static readonly DUMMY_PROFILE_KEY = 'sc_dummy_profile';
   private static readonly DUMMY_PRIVACY_EVENTS_KEY = 'sc_dummy_privacy_events';
   private static readonly DUMMY_CONTACTS_KEY = 'sc_dummy_contacts';
-  private static readonly DUMMY_CATEGORIES = ['meeting', 'consultation', 'progress'];
+  private static readonly DUMMY_CATEGORIES = ['meeting', 'consultation', 'progress', 'special_event'];
   private static readonly DUMMY_CONTACT_ROLES: SchoolContactRole[] = ['teacher', 'parent', 'staff', 'partner'];
   private static readonly SIGN_IN_TIMEOUT_MS = 10000;
   private readonly http = inject(HttpClient);
@@ -274,6 +275,7 @@ export class AuthApiService {
           .map((contactId) => contacts.find((contact) => contact.id === contactId))
           .filter((contact): contact is SchoolContact => Boolean(contact))
           .map((contact) => ({ contactId: contact.id, name: contact.name, role: contact.role })),
+        chronicleExportEligible: input.category.trim() === 'special_event',
         status: 'draft',
         createdAt: new Date().toISOString(),
         images: [],
@@ -318,6 +320,7 @@ export class AuthApiService {
           guardianName: input.guardianName?.trim() || undefined,
           location: input.location?.trim() || undefined,
           participants: [],
+          chronicleExportEligible: input.category.trim() === 'special_event',
           status: 'draft',
           createdAt: new Date().toISOString(),
           images: [],
@@ -330,6 +333,7 @@ export class AuthApiService {
       target.classGrade = input.classGrade?.trim() || undefined;
       target.guardianName = input.guardianName?.trim() || undefined;
       target.location = input.location?.trim() || undefined;
+      target.chronicleExportEligible = input.category.trim() === 'special_event';
       if (Array.isArray(input.participantContactIds)) {
         const contacts = this.readDummyContacts();
         target.participants = input.participantContactIds
@@ -666,6 +670,7 @@ export class AuthApiService {
       participants: Array.isArray(draft.participants)
         ? draft.participants.filter((item) => Boolean(item?.contactId && item?.name && item?.role))
         : [],
+      chronicleExportEligible: draft.category === 'special_event',
       images: Array.isArray(draft.images) ? draft.images : [],
     };
   }

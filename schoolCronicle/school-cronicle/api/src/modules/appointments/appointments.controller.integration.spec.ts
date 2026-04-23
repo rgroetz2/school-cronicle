@@ -1081,6 +1081,70 @@ describe('AppointmentsController integration', () => {
     });
   });
 
+  it('requires narrative notes for special event category and marks export eligibility', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const blockedResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Townhall reorganization',
+        appointmentDate: '2026-06-20',
+        category: 'special_event',
+      }),
+    });
+    expect(blockedResponse.status).toBe(400);
+    expect(await blockedResponse.json()).toMatchObject({
+      code: 'APPOINTMENT_SPECIAL_EVENT_NOTES_REQUIRED',
+    });
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Townhall reorganization',
+        appointmentDate: '2026-06-20',
+        category: 'special_event',
+        notes: 'Chronicle narrative for special event.',
+      }),
+    });
+    const createBody = await createResponse.json();
+    expect(createResponse.status).toBe(201);
+    expect(createBody.data.draft).toMatchObject({
+      category: 'special_event',
+      chronicleExportEligible: true,
+    });
+  });
+
   it('applies retention rules and audits draft/submission cleanup', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],

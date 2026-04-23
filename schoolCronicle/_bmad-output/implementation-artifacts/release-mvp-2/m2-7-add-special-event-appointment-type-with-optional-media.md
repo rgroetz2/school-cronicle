@@ -1,6 +1,6 @@
 # Story M2.7: Add Special Event Appointment Type with Optional Media
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -18,17 +18,17 @@ so that chronicle-relevant milestones are captured consistently.
 
 ## Tasks / Subtasks
 
-- [ ] Extend appointment type taxonomy with "Special Event" (AC: 1)
-  - [ ] Update validation and type mappings in UI/API.
-  - [ ] Preserve compatibility with existing appointment types.
-- [ ] Add special-event form handling in modal/editor (AC: 1)
-  - [ ] Ensure required fields and narrative support.
-  - [ ] Keep create/edit UX consistent with existing flow.
-- [ ] Enable optional media/document attachment rules (AC: 2)
-  - [ ] Reuse existing media validation pipelines where possible.
-  - [ ] Ensure attach/remove behavior is resilient.
-- [ ] Mark special events export-eligible in selection pipeline (AC: 3)
-- [ ] Add tests for type behavior, fields, and export eligibility.
+- [x] Extend appointment type taxonomy with "Special Event" (AC: 1)
+  - [x] Update validation and type mappings in UI/API.
+  - [x] Preserve compatibility with existing appointment types.
+- [x] Add special-event form handling in modal/editor (AC: 1)
+  - [x] Ensure required fields and narrative support.
+  - [x] Keep create/edit UX consistent with existing flow.
+- [x] Enable optional media/document attachment rules (AC: 2)
+  - [x] Reuse existing media validation pipelines where possible.
+  - [x] Ensure attach/remove behavior is resilient.
+- [x] Mark special events export-eligible in selection pipeline (AC: 3)
+- [x] Add tests for type behavior, fields, and export eligibility.
 
 ## Dev Notes
 
@@ -51,4 +51,19 @@ gpt-5.3-codex
 
 ### Completion Notes List
 
+- Added `special_event` to appointment category taxonomy and propagated it through API and dummy client category lists.
+- Added special-event validation requiring narrative notes for create/update flows in both API and UI.
+- Added special-event modal handling with contextual narrative labeling and required guidance.
+- Reused existing image attachment pipeline in modal for special events as optional media.
+- Added `chronicleExportEligible` draft field and set it true for `special_event` records in API/client normalization.
+- Added integration test coverage for required narrative and export-eligibility behavior.
+
 ### File List
+
+- `school-cronicle/api/src/modules/appointments/appointment-categories.ts`
+- `school-cronicle/api/src/modules/appointments/appointment.types.ts`
+- `school-cronicle/api/src/modules/appointments/appointments.service.ts`
+- `school-cronicle/api/src/modules/appointments/appointments.controller.ts`
+- `school-cronicle/api/src/modules/appointments/appointments.controller.integration.spec.ts`
+- `school-cronicle/web/src/app/core/auth-api.service.ts`
+- `school-cronicle/web/src/app/features/appointments/appointments.component.ts`

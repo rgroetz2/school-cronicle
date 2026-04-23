@@ -77,6 +77,7 @@ export class AppointmentsService {
       category: input.category,
       notes: input.notes?.trim() ?? '',
       participants: [],
+      chronicleExportEligible: input.category === 'special_event',
       status: 'draft',
       createdAt: new Date().toISOString(),
       images: [],
@@ -106,6 +107,7 @@ export class AppointmentsService {
     draft.appointmentDate = input.appointmentDate;
     draft.category = input.category;
     draft.notes = input.notes?.trim() ?? '';
+    draft.chronicleExportEligible = input.category === 'special_event';
     if (Array.isArray(input.participantContactIds)) {
       draft.participants = [];
     }
@@ -151,6 +153,9 @@ export class AppointmentsService {
     }
     if (!draft.category.trim()) {
       missing.push('category');
+    }
+    if (draft.category === 'special_event' && !draft.notes.trim()) {
+      missing.push('notes');
     }
 
     return missing;
