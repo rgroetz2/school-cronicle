@@ -1,6 +1,6 @@
 # Story M2.5: Create School-Wide Contacts Directory
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -17,16 +17,16 @@ so that I can quickly attach the right people to appointments.
 
 ## Tasks / Subtasks
 
-- [ ] Design and add contacts domain model (AC: 1, 2)
-  - [ ] Include required fields and type/role classification.
-  - [ ] Enforce school-scope isolation for contact records.
-- [ ] Implement contacts CRUD API and validations (AC: 1, 2)
-  - [ ] Validate required fields and contact format constraints.
-  - [ ] Handle duplicate/near-duplicate contact behavior consistently.
-- [ ] Build contacts management UI flow (AC: 1, 2)
-  - [ ] Allow create/edit with clear required markers.
-  - [ ] Provide role/type options matching allowed taxonomy.
-- [ ] Add tests for model, API, and UI flows.
+- [x] Design and add contacts domain model (AC: 1, 2)
+  - [x] Include required fields and type/role classification.
+  - [x] Enforce school-scope isolation for contact records.
+- [x] Implement contacts CRUD API and validations (AC: 1, 2)
+  - [x] Validate required fields and contact format constraints.
+  - [x] Handle duplicate/near-duplicate contact behavior consistently.
+- [x] Build contacts management UI flow (AC: 1, 2)
+  - [x] Allow create/edit with clear required markers.
+  - [x] Provide role/type options matching allowed taxonomy.
+- [x] Add tests for model, API, and UI flows.
 
 ## Dev Notes
 
@@ -49,4 +49,23 @@ gpt-5.3-codex
 
 ### Completion Notes List
 
+- Added new contacts domain model and role taxonomy for `teacher`, `parent`, `staff`, and `partner`.
+- Implemented `/api/contacts` CRUD endpoints with auth/session checks, required-field validation, role/email validation, and duplicate detection by school-scoped email+phone.
+- Added contacts module wiring in API app bootstrap.
+- Extended web `AuthApiService` with contact listing/creation/updating and dummy-store parity.
+- Added a contacts directory panel in appointments workspace with required create/edit form and contact list refresh/edit flow.
+- Added focused integration and component tests for contact create/edit behavior and duplicate handling.
+
 ### File List
+
+- `school-cronicle/api/src/modules/contacts/contact.types.ts`
+- `school-cronicle/api/src/modules/contacts/contact-roles.ts`
+- `school-cronicle/api/src/modules/contacts/contacts.service.ts`
+- `school-cronicle/api/src/modules/contacts/contacts.controller.ts`
+- `school-cronicle/api/src/modules/contacts/contacts.module.ts`
+- `school-cronicle/api/src/modules/contacts/contacts.controller.integration.spec.ts`
+- `school-cronicle/api/src/app/app.module.ts`
+- `school-cronicle/web/src/app/core/auth-api.service.ts`
+- `school-cronicle/web/src/app/features/appointments/appointments.component.ts`
+- `school-cronicle/web/src/app/features/appointments/appointments.component.css`
+- `school-cronicle/web/src/app/features/appointments/appointments.component.spec.ts`

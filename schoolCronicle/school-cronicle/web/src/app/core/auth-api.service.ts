@@ -58,6 +58,27 @@ export interface TeacherProfile {
   contactEmail: string;
 }
 
+export type SchoolContactRole = 'teacher' | 'parent' | 'staff' | 'partner';
+
+export interface SchoolContact {
+  id: string;
+  schoolId: string;
+  createdByTeacherId: string;
+  name: string;
+  role: SchoolContactRole;
+  email?: string;
+  phone?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpsertSchoolContactInput {
+  name: string;
+  role: SchoolContactRole;
+  email?: string;
+  phone?: string;
+}
+
 export interface PrivacyRequestAuditEvent {
   id: string;
   type: 'erasure' | 'restriction';
@@ -99,6 +120,18 @@ interface DeleteDraftResponse {
   };
 }
 
+interface ListContactsResponse {
+  data: {
+    contacts: SchoolContact[];
+  };
+}
+
+interface UpsertContactResponse {
+  data: {
+    contact: SchoolContact;
+  };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -107,7 +140,9 @@ export class AuthApiService {
   private static readonly DUMMY_DRAFTS_KEY = 'sc_dummy_drafts';
   private static readonly DUMMY_PROFILE_KEY = 'sc_dummy_profile';
   private static readonly DUMMY_PRIVACY_EVENTS_KEY = 'sc_dummy_privacy_events';
+  private static readonly DUMMY_CONTACTS_KEY = 'sc_dummy_contacts';
   private static readonly DUMMY_CATEGORIES = ['meeting', 'consultation', 'progress'];
+  private static readonly DUMMY_CONTACT_ROLES: SchoolContactRole[] = ['teacher', 'parent', 'staff', 'partner'];
   private static readonly SIGN_IN_TIMEOUT_MS = 10000;
   private readonly http = inject(HttpClient);
   private inMemoryDummySession = false;
@@ -117,6 +152,7 @@ export class AuthApiService {
     contactEmail: 'teacher@school.local',
   };
   private inMemoryPrivacyEvents: PrivacyRequestAuditEvent[] = [];
+  private inMemoryDummyContacts: SchoolContact[] = [];
 
   signIn(email: string, password: string): Observable<SignInResponse['data']> {
     const normalizedEmail = email.trim().toLowerCase();
@@ -423,6 +459,62 @@ export class AuthApiService {
       .pipe(map((response) => response.data.deleted));
   }
 
+  listContactRoles(): SchoolContactRole[] {
+    return [...AuthApiService.DUMMY_CONTACT_ROLES];
+  }
+
+  listContacts(): Observable<SchoolContact[]> {
+    if (this.hasDummySession()) {
+      return of(this.readDummyContacts());
+    }
+
+    return this.http.get<ListContactsResponse>('/api/contacts').pipe(map((response) => response.data.contacts));
+  }
+
+  createContact(input: UpsertSchoolContactInput): Observable<SchoolContact> {
+    if (this.hasDummySession()) {
+      const contacts = this.readDummyContacts();
+      const now = new Date().toISOString();
+      const contact: SchoolContact = {
+        id: `contact-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        schoolId: 'school-1',
+        createdByTeacherId: 'teacher-1',
+        name: input.name.trim(),
+        role: input.role,
+        email: input.email?.trim().toLowerCase() || undefined,
+        phone: input.phone?.trim() || undefined,
+        createdAt: now,
+        updatedAt: now,
+      };
+      contacts.push(contact);
+      this.writeDummyContacts(contacts);
+      return of(contact);
+    }
+
+    return this.http.post<UpsertContactResponse>('/api/contacts', input).pipe(map((response) => response.data.contact));
+  }
+
+  updateContact(contactId: string, input: UpsertSchoolContactInput): Observable<SchoolContact> {
+    if (this.hasDummySession()) {
+      const contacts = this.readDummyContacts();
+      const target = contacts.find((contact) => contact.id === contactId);
+      if (!target) {
+        return this.createContact(input);
+      }
+      target.name = input.name.trim();
+      target.role = input.role;
+      target.email = input.email?.trim().toLowerCase() || undefined;
+      target.phone = input.phone?.trim() || undefined;
+      target.updatedAt = new Date().toISOString();
+      this.writeDummyContacts(contacts);
+      return of(target);
+    }
+
+    return this.http
+      .patch<UpsertContactResponse>(`/api/contacts/${contactId}`, input)
+      .pipe(map((response) => response.data.contact));
+  }
+
   getTeacherProfile(): Observable<TeacherProfile> {
     return of(this.readTeacherProfile());
   }
@@ -476,6 +568,7 @@ export class AuthApiService {
       storage.removeItem(AuthApiService.DUMMY_DRAFTS_KEY);
       storage.removeItem(AuthApiService.DUMMY_PROFILE_KEY);
       storage.removeItem(AuthApiService.DUMMY_PRIVACY_EVENTS_KEY);
+      storage.removeItem(AuthApiService.DUMMY_CONTACTS_KEY);
     }
     this.inMemoryDummyDrafts = [];
     this.inMemoryDummyProfile = {
@@ -483,6 +576,7 @@ export class AuthApiService {
       contactEmail: 'teacher@school.local',
     };
     this.inMemoryPrivacyEvents = [];
+    this.inMemoryDummyContacts = [];
   }
 
   private readDummyDrafts(): AppointmentDraft[] {
@@ -512,6 +606,32 @@ export class AuthApiService {
     }
 
     storage.setItem(AuthApiService.DUMMY_DRAFTS_KEY, JSON.stringify(drafts));
+  }
+
+  private readDummyContacts(): SchoolContact[] {
+    const storage = this.getStorage();
+    if (!storage) {
+      return [...this.inMemoryDummyContacts];
+    }
+    const serialized = storage.getItem(AuthApiService.DUMMY_CONTACTS_KEY);
+    if (!serialized) {
+      return [];
+    }
+    try {
+      const parsed = JSON.parse(serialized) as SchoolContact[];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private writeDummyContacts(contacts: SchoolContact[]): void {
+    const storage = this.getStorage();
+    if (!storage) {
+      this.inMemoryDummyContacts = [...contacts];
+      return;
+    }
+    storage.setItem(AuthApiService.DUMMY_CONTACTS_KEY, JSON.stringify(contacts));
   }
 
   private normalizeDraftImages(draft: AppointmentDraft): AppointmentDraft {

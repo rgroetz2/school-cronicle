@@ -5,6 +5,7 @@ import { LoginComponent } from './features/auth/login.component';
 import { DashboardHomeComponent } from './features/dashboard/dashboard-home.component';
 import { DashboardShellComponent } from './features/dashboard/dashboard-shell.component';
 import { WorkspacePlaceholderComponent } from './features/dashboard/workspace-placeholder.component';
+import { ContactsComponent } from './features/contacts/contacts.component';
 import { PrivacySummaryComponent } from './features/privacy/privacy-summary.component';
 
 export const appRoutes: Route[] = [
@@ -29,6 +30,10 @@ export const appRoutes: Route[] = [
       {
         path: 'appointments',
         component: AppointmentsComponent,
+      },
+      {
+        path: 'contacts',
+        component: ContactsComponent,
       },
       {
         path: 'drafts',

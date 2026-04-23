@@ -4,6 +4,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 interface DashboardNavItem {
   label: string;
   path: string;
+  fragment?: string;
 }
 
 @Component({
@@ -24,6 +25,7 @@ interface DashboardNavItem {
               <li>
                 <a
                   [routerLink]="item.path"
+                  [fragment]="item.fragment"
                   routerLinkActive="active"
                   [routerLinkActiveOptions]="{ exact: true }"
                   (click)="isMenuOpen = false"
@@ -59,8 +61,7 @@ export class DashboardShellComponent {
   readonly navItems: DashboardNavItem[] = [
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'Appointments', path: '/appointments' },
-    { label: 'Drafts', path: '/drafts' },
-    { label: 'Submitted', path: '/submitted' },
+    { label: 'Contacts', path: '/contacts' },
     { label: 'Privacy', path: '/privacy' },
     { label: 'Help', path: '/help' },
   ];

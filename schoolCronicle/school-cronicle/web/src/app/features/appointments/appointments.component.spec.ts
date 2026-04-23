@@ -170,6 +170,107 @@ describe('AppointmentsComponent', () => {
     httpTesting.verify();
   });
 
+  it('creates and edits a school contact from contacts directory panel', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: { drafts: [] },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.contactForm.setValue({
+      name: 'Marta Parent',
+      role: 'parent',
+      email: 'marta.parent@school.local',
+      phone: '+41-79-123-45-67',
+    });
+    fixture.componentInstance.saveContact();
+    const createContactRequest = httpTesting.expectOne('/api/contacts');
+    expect(createContactRequest.request.method).toBe('POST');
+    createContactRequest.flush({
+      data: {
+        contact: {
+          id: 'contact-1',
+          schoolId: 'school-1',
+          createdByTeacherId: 'teacher-1',
+          name: 'Marta Parent',
+          role: 'parent',
+          email: 'marta.parent@school.local',
+          phone: '+41-79-123-45-67',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    });
+    httpTesting.expectOne('/api/contacts').flush({
+      data: {
+        contacts: [
+          {
+            id: 'contact-1',
+            schoolId: 'school-1',
+            createdByTeacherId: 'teacher-1',
+            name: 'Marta Parent',
+            role: 'parent',
+            email: 'marta.parent@school.local',
+            phone: '+41-79-123-45-67',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+
+    fixture.componentInstance.openContactForEdit('contact-1');
+    fixture.componentInstance.contactForm.patchValue({
+      name: 'Marta Parent Updated',
+      role: 'partner',
+    });
+    fixture.componentInstance.saveContact();
+    const updateContactRequest = httpTesting.expectOne('/api/contacts/contact-1');
+    expect(updateContactRequest.request.method).toBe('PATCH');
+    updateContactRequest.flush({
+      data: {
+        contact: {
+          id: 'contact-1',
+          schoolId: 'school-1',
+          createdByTeacherId: 'teacher-1',
+          name: 'Marta Parent Updated',
+          role: 'partner',
+          email: 'marta.parent@school.local',
+          phone: '+41-79-123-45-67',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    });
+    httpTesting.expectOne('/api/contacts').flush({
+      data: {
+        contacts: [
+          {
+            id: 'contact-1',
+            schoolId: 'school-1',
+            createdByTeacherId: 'teacher-1',
+            name: 'Marta Parent Updated',
+            role: 'partner',
+            email: 'marta.parent@school.local',
+            phone: '+41-79-123-45-67',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+
+    fixture.detectChanges();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('School contacts directory');
+    expect(text).toContain('Contact updated: Marta Parent Updated');
+    httpTesting.verify();
+  });
+
   it('shows contextual guidance for required fields and image formats', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);

@@ -133,12 +133,21 @@
 
 .draft-list,
 .image-list,
-.missing-list {
+.missing-list,
+.contact-list {
   margin: 0;
   padding: 0;
   list-style: none;
   display: grid;
   gap: 0.65rem;
+}
+
+.contact-button {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
 }
 
 .appointments-grid {

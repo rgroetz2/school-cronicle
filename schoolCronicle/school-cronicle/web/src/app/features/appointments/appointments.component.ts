@@ -4,7 +4,13 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
-import { AppointmentDraft, AuthApiService, DraftImage } from '../../core/auth-api.service';
+import {
+  AppointmentDraft,
+  AuthApiService,
+  DraftImage,
+  SchoolContact,
+  SchoolContactRole,
+} from '../../core/auth-api.service';
 import { PitchDemoModeService } from '../../core/pitch-demo-mode.service';
 
 type ImageUploadState = 'queued' | 'uploading' | 'attached' | 'failed';
@@ -193,89 +199,6 @@ interface DemoStep {
         </section>
         </section>
 
-        <section class="zone zone-media" aria-labelledby="media-zone-heading">
-          <header class="zone-header">
-            <h3 id="media-zone-heading">Media and attachments</h3>
-            <p class="panel-copy">Add and manage images separately from core draft editing to keep focus.</p>
-          </header>
-        <section class="panel" aria-labelledby="draft-images-heading">
-          <h3 id="draft-images-heading">Attached images</h3>
-          <p class="panel-copy">Attach reference photos up to 2 MB each for local draft context.</p>
-          <p class="guidance-text">Accepted formats: JPEG, PNG, WebP. Maximum file size: 2 MB per image.</p>
-        @if (!selectedDraftId) {
-          <p class="state-pill">Select a draft to attach images.</p>
-        } @else if (selectedDraft?.status === 'submitted') {
-          <p class="state-pill warning">Submitted appointments are read-only. Image changes are disabled.</p>
-          @if (selectedDraftImages.length === 0) {
-            <p class="state-pill">No images attached.</p>
-          } @else {
-            <ul class="image-list">
-              @for (image of selectedDraftImages; track image.id) {
-                <li class="image-card">
-                  <img [src]="image.dataUrl" [alt]="image.name" width="84" height="84" />
-                  <span class="image-name">{{ image.name }}</span>
-                </li>
-              }
-            </ul>
-          }
-        } @else {
-          <input type="file" class="file-input" accept="image/*" multiple (change)="onImageSelected($event)" />
-          <input
-            #replaceFileInput
-            type="file"
-            class="visually-hidden"
-            accept="image/*"
-            (change)="onReplacementSelected($event)"
-          />
-          @if (imageUploadStatuses.length > 0) {
-            <ul class="upload-status-list" aria-label="Attachment status list">
-              @for (upload of imageUploadStatuses; track upload.id) {
-                <li class="upload-status">
-                  <span class="upload-name">{{ upload.name }}</span>
-                  <span
-                    class="upload-state"
-                    [class.success]="upload.state === 'attached'"
-                    [class.warning]="upload.state === 'failed'"
-                  >
-                    {{ upload.state }}
-                  </span>
-                  @if (upload.detail) {
-                    <span class="upload-detail">{{ upload.detail }}</span>
-                  }
-                  @if (upload.state === 'failed') {
-                    <div class="upload-actions">
-                      <button type="button" class="ghost danger" (click)="removeFailedUpload(upload.id)">
-                        Remove failed
-                      </button>
-                      <button
-                        type="button"
-                        class="ghost"
-                        (click)="startReplaceFailedUpload(upload.id, replaceFileInput)"
-                      >
-                        Replace file
-                      </button>
-                    </div>
-                  }
-                </li>
-              }
-            </ul>
-          }
-          @if (selectedDraftImages.length === 0) {
-            <p class="state-pill">No images attached yet.</p>
-          } @else {
-            <ul class="image-list">
-              @for (image of selectedDraftImages; track image.id) {
-                <li class="image-card">
-                  <img [src]="image.dataUrl" [alt]="image.name" width="84" height="84" />
-                  <span class="image-name">{{ image.name }}</span>
-                  <button type="button" class="ghost danger" (click)="removeImage(image.id)">Remove</button>
-                </li>
-              }
-            </ul>
-          }
-        }
-        </section>
-        </section>
       </div>
 
       @if (isEditorModalOpen) {
@@ -298,9 +221,9 @@ interface DemoStep {
               @if (selectedDraft?.editedAfterSubmitAt) {
                 <p class="state-pill">
                   Last edited after submit:
-                  {{ selectedDraft.editedAfterSubmitAt | date: 'yyyy-MM-dd HH:mm' }}
-                  @if (selectedDraft.editedAfterSubmitBy) {
-                    by {{ selectedDraft.editedAfterSubmitBy }}
+                  {{ selectedDraft?.editedAfterSubmitAt | date: 'yyyy-MM-dd HH:mm' }}
+                  @if (selectedDraft?.editedAfterSubmitBy) {
+                    by {{ selectedDraft?.editedAfterSubmitBy }}
                   }
                 </p>
               }
@@ -367,39 +290,6 @@ interface DemoStep {
         </div>
       }
 
-      <section class="status-stack" aria-label="System status">
-        @if (demoResetMessage) {
-          <p class="state-pill success" role="status">{{ demoResetMessage }}</p>
-        }
-        @if (draftCreatedMessage) {
-          <p class="state-pill success" role="status">{{ draftCreatedMessage }}</p>
-        }
-        @if (openedDraftMessage) {
-          <p class="state-pill" role="status">{{ openedDraftMessage }}</p>
-        }
-        @if (draftSavedMessage) {
-          <p class="state-pill success" role="status">{{ draftSavedMessage }}</p>
-        }
-        @if (draftSubmitMessage) {
-          <p class="state-pill" [class.warning]="draftSubmitMessage.includes('blocked')" role="status">
-            {{ draftSubmitMessage }}
-          </p>
-        }
-        @if (imageMessage) {
-          <p class="state-pill" [class.warning]="imageMessage.includes('too large')" role="status">
-            {{ imageMessage }}
-          </p>
-        }
-        @if (deleteMessage) {
-          <p
-            class="state-pill"
-            [class.warning]="deleteMessage.includes('failed') || deleteMessage.includes('could not')"
-            role="status"
-          >
-            {{ deleteMessage }}
-          </p>
-        }
-      </section>
     </main>
   `,
 })
@@ -417,6 +307,8 @@ export class AppointmentsComponent {
   isSubmittingDraft = false;
   isDeletingDraft = false;
   isLoadingDrafts = false;
+  isLoadingContacts = false;
+  isSavingContact = false;
   isEditorModalOpen = false;
   draftCreatedMessage = '';
   openedDraftMessage = '';
@@ -425,6 +317,7 @@ export class AppointmentsComponent {
   imageMessage = '';
   deleteMessage = '';
   demoResetMessage = '';
+  contactSavedMessage = '';
   isResettingDemoData = false;
   showAdvancedFilters = false;
   imageUploadStatuses: ImageUploadStatus[] = [];
@@ -432,6 +325,9 @@ export class AppointmentsComponent {
   selectedDraftId: string | null = null;
   categories: string[] = [];
   drafts: AppointmentDraft[] = [];
+  contacts: SchoolContact[] = [];
+  selectedContactId: string | null = null;
+  readonly contactRoleOptions: SchoolContactRole[] = this.authApiService.listContactRoles();
   teacherDisplayName = 'Teacher Account';
   activeListContext: 'all' | 'drafts' | 'submitted' | 'attention' = 'all';
   readonly demoPathTargetDuration = '6m 45s';
@@ -496,6 +392,13 @@ export class AppointmentsComponent {
     location: new FormControl(''),
   });
 
+  readonly contactForm = new FormGroup({
+    name: new FormControl('', [Validators.required]),
+    role: new FormControl<SchoolContactRole | ''>('', [Validators.required]),
+    email: new FormControl('', [Validators.email]),
+    phone: new FormControl(''),
+  });
+
   get pitchDemoModeEnabled(): boolean {
     return this.pitchDemoModeService.isEnabled();
   }
@@ -508,6 +411,7 @@ export class AppointmentsComponent {
     this.loadTeacherProfile();
     this.loadCategories();
     this.loadDrafts();
+    this.loadContacts();
     this.route.queryParamMap.subscribe((params) => {
       const view = params.get('view');
       this.activeListContext =
@@ -905,6 +809,68 @@ export class AppointmentsComponent {
     this.isEditorModalOpen = false;
   }
 
+  saveContact(): void {
+    this.contactSavedMessage = '';
+    this.contactForm.markAllAsTouched();
+    if (this.contactForm.invalid || this.isSavingContact) {
+      return;
+    }
+
+    const payload = {
+      name: this.contactForm.controls.name.value ?? '',
+      role: (this.contactForm.controls.role.value ?? '') as SchoolContactRole,
+      email: this.contactForm.controls.email.value ?? '',
+      phone: this.contactForm.controls.phone.value ?? '',
+    };
+
+    this.isSavingContact = true;
+    const request$ = this.selectedContactId
+      ? this.authApiService.updateContact(this.selectedContactId, payload)
+      : this.authApiService.createContact(payload);
+    request$
+      .pipe(finalize(() => (this.isSavingContact = false)))
+      .subscribe({
+        next: (contact) => {
+          this.contactSavedMessage = this.selectedContactId
+            ? `Contact updated: ${contact.name}`
+            : `Contact created: ${contact.name}`;
+          this.clearContactSelection();
+          this.loadContacts();
+        },
+        error: () => {
+          this.contactSavedMessage = 'Contact save failed.';
+        },
+      });
+  }
+
+  openContactForEdit(contactId: string): void {
+    const contact = this.contacts.find((entry) => entry.id === contactId);
+    if (!contact) {
+      return;
+    }
+    this.selectedContactId = contact.id;
+    this.contactForm.setValue({
+      name: contact.name,
+      role: contact.role,
+      email: contact.email ?? '',
+      phone: contact.phone ?? '',
+    });
+  }
+
+  clearContactSelection(): void {
+    this.selectedContactId = null;
+    this.contactForm.reset({
+      name: '',
+      role: '',
+      email: '',
+      phone: '',
+    });
+  }
+
+  refreshContacts(): void {
+    this.loadContacts();
+  }
+
   submitDraft(): void {
     this.draftSubmitMessage = '';
     if (!this.selectedDraftId || this.isSubmittingDraft || !this.canSubmit) {
@@ -1095,6 +1061,21 @@ export class AppointmentsComponent {
         this.categories = [];
       },
     });
+  }
+
+  private loadContacts(): void {
+    this.isLoadingContacts = true;
+    this.authApiService
+      .listContacts()
+      .pipe(finalize(() => (this.isLoadingContacts = false)))
+      .subscribe({
+        next: (contacts) => {
+          this.contacts = contacts;
+        },
+        error: () => {
+          this.contacts = [];
+        },
+      });
   }
 
   private loadTeacherProfile(): void {
