@@ -17,8 +17,10 @@ import type { Request } from 'express';
 import { AuthSessionGuard } from '../auth/auth-session.guard';
 import { extractSessionIdFromCookieHeader } from '../auth/auth-cookie.util';
 import { SessionService } from '../auth/session.service';
+import { ContactsService } from '../contacts/contacts.service';
 import { AppointmentsService } from './appointments.service';
 import {
+  AppointmentParticipant,
   AttachDraftImageDto,
   CreateAppointmentDraftDto,
   UpdateAppointmentDraftDto,
@@ -32,6 +34,7 @@ import {
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const BASE64_DATA_URL_PATTERN = /^data:([a-z]+\/[a-z0-9.+-]+);base64,/i;
+const MAX_PARTICIPANTS_PER_APPOINTMENT = 3;
 
 function isValidAppointmentDate(value: string): boolean {
   if (!ISO_DATE_PATTERN.test(value)) {
@@ -48,6 +51,7 @@ export class AppointmentsController {
   constructor(
     private readonly appointmentsService: AppointmentsService,
     private readonly sessionService: SessionService,
+    private readonly contactsService: ContactsService,
   ) {}
 
   @Post('drafts')
@@ -56,6 +60,15 @@ export class AppointmentsController {
     const appointmentDate = body.appointmentDate?.trim();
     const category = body.category?.trim();
     const notes = body.notes?.trim();
+    const participantContactIds = Array.isArray(body.participantContactIds)
+      ? body.participantContactIds.filter((id): id is string => typeof id === 'string').map((id) => id.trim()).filter(Boolean)
+      : [];
+    if (participantContactIds.length > MAX_PARTICIPANTS_PER_APPOINTMENT) {
+      throw new BadRequestException({
+        message: `A maximum of ${MAX_PARTICIPANTS_PER_APPOINTMENT} participants can be assigned to an appointment.`,
+        code: 'APPOINTMENT_PARTICIPANT_LIMIT_EXCEEDED',
+      });
+    }
 
     if (!title || !appointmentDate || !category) {
       throw new BadRequestException({
@@ -84,13 +97,16 @@ export class AppointmentsController {
         message: 'Authentication required.',
       });
     }
+    const participants = this.resolveParticipants('school-1', participantContactIds);
 
     const draft = this.appointmentsService.createDraft(session.teacherId, 'school-1', {
       title,
       appointmentDate,
       category,
       notes,
+      participantContactIds,
     });
+    this.appointmentsService.setParticipantsForTeacher(session.teacherId, draft.id, participants);
 
     return {
       data: {
@@ -109,6 +125,15 @@ export class AppointmentsController {
     const appointmentDate = body.appointmentDate?.trim();
     const category = body.category?.trim();
     const notes = body.notes?.trim();
+    const participantContactIds = Array.isArray(body.participantContactIds)
+      ? body.participantContactIds.filter((id): id is string => typeof id === 'string').map((id) => id.trim()).filter(Boolean)
+      : [];
+    if (participantContactIds.length > MAX_PARTICIPANTS_PER_APPOINTMENT) {
+      throw new BadRequestException({
+        message: `A maximum of ${MAX_PARTICIPANTS_PER_APPOINTMENT} participants can be assigned to an appointment.`,
+        code: 'APPOINTMENT_PARTICIPANT_LIMIT_EXCEEDED',
+      });
+    }
 
     if (!title || !appointmentDate || !category) {
       throw new BadRequestException({
@@ -137,6 +162,7 @@ export class AppointmentsController {
         message: 'Authentication required.',
       });
     }
+    const participants = this.resolveParticipants('school-1', participantContactIds);
 
     const existingDraft = this.appointmentsService.findDraftForTeacher(session.teacherId, draftId);
     if (!existingDraft) {
@@ -149,8 +175,16 @@ export class AppointmentsController {
       appointmentDate,
       category,
       notes,
+      participantContactIds,
     });
     if (!draft) {
+      throw new NotFoundException({
+        message: 'Draft not found.',
+      });
+    }
+    this.appointmentsService.setParticipantsForTeacher(session.teacherId, draftId, participants);
+    const refreshedDraft = this.appointmentsService.findDraftForTeacher(session.teacherId, draftId);
+    if (!refreshedDraft) {
       throw new NotFoundException({
         message: 'Draft not found.',
       });
@@ -158,9 +192,36 @@ export class AppointmentsController {
 
     return {
       data: {
-        draft,
+        draft: refreshedDraft,
       },
     };
+  }
+
+  private resolveParticipants(schoolId: string, participantContactIds: string[]): AppointmentParticipant[] {
+    if (participantContactIds.length === 0) {
+      return [];
+    }
+    const participants: AppointmentParticipant[] = [];
+    const seen = new Set<string>();
+    for (const contactId of participantContactIds) {
+      if (seen.has(contactId)) {
+        continue;
+      }
+      seen.add(contactId);
+      const contact = this.contactsService.findContactForSchool(schoolId, contactId);
+      if (!contact) {
+        throw new BadRequestException({
+          message: `Participant contact not found in school scope: ${contactId}`,
+          code: 'APPOINTMENT_PARTICIPANT_NOT_FOUND',
+        });
+      }
+      participants.push({
+        contactId: contact.id,
+        name: contact.name,
+        role: contact.role,
+      });
+    }
+    return participants;
   }
 
   @Get('drafts')
@@ -215,12 +276,6 @@ export class AppointmentsController {
     if (!existingDraft) {
       throw new NotFoundException({
         message: 'Draft not found.',
-      });
-    }
-    if (existingDraft.status === 'submitted') {
-      throw new ForbiddenException({
-        message: 'Submitted appointments are read-only.',
-        code: 'APPOINTMENT_READ_ONLY',
       });
     }
 

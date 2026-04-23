@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import {
   AttachDraftImageDto,
   AppointmentDraft,
+  AppointmentParticipant,
   CreateAppointmentDraftDto,
   DraftImage,
   UpdateAppointmentDraftDto,
@@ -75,6 +76,7 @@ export class AppointmentsService {
       appointmentDate: input.appointmentDate,
       category: input.category,
       notes: input.notes?.trim() ?? '',
+      participants: [],
       status: 'draft',
       createdAt: new Date().toISOString(),
       images: [],
@@ -104,6 +106,26 @@ export class AppointmentsService {
     draft.appointmentDate = input.appointmentDate;
     draft.category = input.category;
     draft.notes = input.notes?.trim() ?? '';
+    if (Array.isArray(input.participantContactIds)) {
+      draft.participants = [];
+    }
+    if (draft.status === 'submitted') {
+      draft.editedAfterSubmitAt = new Date().toISOString();
+      draft.editedAfterSubmitBy = teacherId;
+    }
+    return draft;
+  }
+
+  setParticipantsForTeacher(
+    teacherId: string,
+    draftId: string,
+    participants: AppointmentParticipant[],
+  ): AppointmentDraft | undefined {
+    const draft = this.findDraftForTeacher(teacherId, draftId);
+    if (!draft) {
+      return undefined;
+    }
+    draft.participants = participants;
     if (draft.status === 'submitted') {
       draft.editedAfterSubmitAt = new Date().toISOString();
       draft.editedAfterSubmitBy = teacherId;

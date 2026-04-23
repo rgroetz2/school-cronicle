@@ -8,6 +8,12 @@ export interface DraftImage {
   addedAt: string;
 }
 
+export interface AppointmentParticipant {
+  contactId: string;
+  name: string;
+  role: string;
+}
+
 export interface AppointmentDraft {
   id: string;
   teacherId: string;
@@ -21,6 +27,7 @@ export interface AppointmentDraft {
   submittedAt?: string;
   editedAfterSubmitAt?: string;
   editedAfterSubmitBy?: string;
+  participants?: AppointmentParticipant[];
   images: DraftImage[];
 }
 
@@ -29,6 +36,7 @@ export interface CreateAppointmentDraftDto {
   appointmentDate: string;
   category: AppointmentCategory;
   notes?: string;
+  participantContactIds?: string[];
 }
 
 export interface UpdateAppointmentDraftDto {
@@ -36,6 +44,7 @@ export interface UpdateAppointmentDraftDto {
   appointmentDate: string;
   category: AppointmentCategory;
   notes?: string;
+  participantContactIds?: string[];
 }
 
 export interface AttachDraftImageDto {

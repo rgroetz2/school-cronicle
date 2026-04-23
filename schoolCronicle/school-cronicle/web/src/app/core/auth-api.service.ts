@@ -24,6 +24,13 @@ export interface CreateDraftInput {
   classGrade?: string;
   guardianName?: string;
   location?: string;
+  participantContactIds?: string[];
+}
+
+export interface AppointmentParticipant {
+  contactId: string;
+  name: string;
+  role: string;
 }
 
 export interface AppointmentDraft {
@@ -42,6 +49,7 @@ export interface AppointmentDraft {
   submittedAt?: string;
   editedAfterSubmitAt?: string;
   editedAfterSubmitBy?: string;
+  participants?: AppointmentParticipant[];
   images: DraftImage[];
 }
 
@@ -250,6 +258,7 @@ export class AuthApiService {
 
   createDraft(input: CreateDraftInput): Observable<AppointmentDraft> {
     if (this.hasDummySession()) {
+      const contacts = this.readDummyContacts();
       const draft: AppointmentDraft = {
         id: `draft-${Date.now()}`,
         teacherId: 'teacher-1',
@@ -261,6 +270,10 @@ export class AuthApiService {
         classGrade: input.classGrade?.trim() || undefined,
         guardianName: input.guardianName?.trim() || undefined,
         location: input.location?.trim() || undefined,
+        participants: (input.participantContactIds ?? [])
+          .map((contactId) => contacts.find((contact) => contact.id === contactId))
+          .filter((contact): contact is SchoolContact => Boolean(contact))
+          .map((contact) => ({ contactId: contact.id, name: contact.name, role: contact.role })),
         status: 'draft',
         createdAt: new Date().toISOString(),
         images: [],
@@ -304,6 +317,7 @@ export class AuthApiService {
           classGrade: input.classGrade?.trim() || undefined,
           guardianName: input.guardianName?.trim() || undefined,
           location: input.location?.trim() || undefined,
+          participants: [],
           status: 'draft',
           createdAt: new Date().toISOString(),
           images: [],
@@ -316,6 +330,13 @@ export class AuthApiService {
       target.classGrade = input.classGrade?.trim() || undefined;
       target.guardianName = input.guardianName?.trim() || undefined;
       target.location = input.location?.trim() || undefined;
+      if (Array.isArray(input.participantContactIds)) {
+        const contacts = this.readDummyContacts();
+        target.participants = input.participantContactIds
+          .map((contactId) => contacts.find((contact) => contact.id === contactId))
+          .filter((contact): contact is SchoolContact => Boolean(contact))
+          .map((contact) => ({ contactId: contact.id, name: contact.name, role: contact.role }));
+      }
       if (target.status === 'submitted') {
         target.editedAfterSubmitAt = new Date().toISOString();
         target.editedAfterSubmitBy = target.teacherId;
@@ -445,10 +466,6 @@ export class AuthApiService {
   deleteDraft(draftId: string): Observable<boolean> {
     if (this.hasDummySession()) {
       const drafts = this.readDummyDrafts();
-      const target = drafts.find((draft) => draft.id === draftId);
-      if (target?.status === 'submitted') {
-        return of(false);
-      }
       const nextDrafts = drafts.filter((draft) => draft.id !== draftId);
       this.writeDummyDrafts(nextDrafts);
       return of(nextDrafts.length !== drafts.length);
@@ -646,6 +663,9 @@ export class AuthApiService {
       classGrade: typeof draft.classGrade === 'string' ? draft.classGrade.trim() || undefined : undefined,
       guardianName: typeof draft.guardianName === 'string' ? draft.guardianName.trim() || undefined : undefined,
       location: typeof draft.location === 'string' ? draft.location.trim() || undefined : undefined,
+      participants: Array.isArray(draft.participants)
+        ? draft.participants.filter((item) => Boolean(item?.contactId && item?.name && item?.role))
+        : [],
       images: Array.isArray(draft.images) ? draft.images : [],
     };
   }

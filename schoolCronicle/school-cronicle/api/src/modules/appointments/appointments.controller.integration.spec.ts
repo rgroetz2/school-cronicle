@@ -875,7 +875,7 @@ describe('AppointmentsController integration', () => {
     });
   });
 
-  it('blocks draft deletion when appointment is already submitted', async () => {
+  it('allows deletion when appointment is already submitted', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -929,10 +929,155 @@ describe('AppointmentsController integration', () => {
       },
     });
 
-    expect(deleteResponse.status).toBe(403);
+    expect(deleteResponse.status).toBe(200);
     expect(await deleteResponse.json()).toMatchObject({
-      message: 'Submitted appointments are read-only.',
-      code: 'APPOINTMENT_READ_ONLY',
+      data: {
+        deleted: true,
+        draftId: createBody.data.draft.id,
+      },
+    });
+  });
+
+  it('links participants from contacts on create and update', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const contactResponse = await fetch(`${baseUrl}/api/contacts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        name: 'Mila Parent',
+        role: 'parent',
+      }),
+    });
+    const contactBody = await contactResponse.json();
+    const contactId = contactBody.data.contact.id as string;
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Trip planning',
+        appointmentDate: '2026-05-20',
+        category: 'meeting',
+        participantContactIds: [contactId],
+      }),
+    });
+    const createBody = await createResponse.json();
+    expect(createBody.data.draft.participants).toEqual([
+      {
+        contactId,
+        name: 'Mila Parent',
+        role: 'parent',
+      },
+    ]);
+
+    const updateResponse = await fetch(`${baseUrl}/api/appointments/drafts/${createBody.data.draft.id}`, {
+      method: 'PATCH',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Trip planning updated',
+        appointmentDate: '2026-05-21',
+        category: 'meeting',
+        notes: '',
+        participantContactIds: [],
+      }),
+    });
+    const updateBody = await updateResponse.json();
+    expect(updateBody.data.draft.participants).toEqual([]);
+  });
+
+  it('blocks assignment of more than 3 participants', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const contactIds: string[] = [];
+    for (const idx of [1, 2, 3, 4]) {
+      const response = await fetch(`${baseUrl}/api/contacts`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          cookie: sessionCookie ?? '',
+        },
+        body: JSON.stringify({
+          name: `Contact ${idx}`,
+          role: 'parent',
+        }),
+      });
+      const body = await response.json();
+      contactIds.push(body.data.contact.id as string);
+    }
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Trip planning',
+        appointmentDate: '2026-05-20',
+        category: 'meeting',
+        participantContactIds: contactIds,
+      }),
+    });
+
+    expect(createResponse.status).toBe(400);
+    expect(await createResponse.json()).toMatchObject({
+      code: 'APPOINTMENT_PARTICIPANT_LIMIT_EXCEEDED',
     });
   });
 

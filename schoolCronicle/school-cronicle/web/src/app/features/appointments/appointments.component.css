@@ -150,6 +150,14 @@
   color: var(--text-muted);
 }
 
+.participant-meta {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: 0.2rem 0.6rem 0.45rem;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+
 .appointments-grid {
   border: 1px solid var(--border);
   border-radius: 0.7rem;

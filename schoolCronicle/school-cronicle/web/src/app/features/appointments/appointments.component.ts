@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -35,7 +35,7 @@ interface DemoStep {
 
 @Component({
   selector: 'app-appointments',
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, FormsModule, DatePipe],
   styleUrl: './appointments.component.css',
   template: `
     <main class="workspace">
@@ -75,9 +75,9 @@ interface DemoStep {
 
           <section class="panel" aria-labelledby="appointments-list-heading">
           <h3 id="appointments-list-heading">Your appointments</h3>
-          <p class="panel-copy">One unified list for draft and submitted appointments.</p>
+          <p class="panel-copy">One unified list for draft and submitted appointments. Use "Create appointment" to add a new one.</p>
         <div class="filter-actions">
-          <button type="button" class="ghost" (click)="openCreateModal()">Create appointment</button>
+          <button type="button" class="primary" (click)="openCreateModal()">Create appointment</button>
         </div>
         <div class="filter-panel" aria-label="Appointment filters">
           <h4>Filter list</h4>
@@ -191,6 +191,9 @@ interface DemoStep {
                       | date: 'yyyy-MM-dd HH:mm'
                   }}</span>
                 </button>
+                @if ((draft.participants?.length ?? 0) > 0) {
+                  <div class="participant-meta">Participants: {{ formatParticipantSummary(draft) }}</div>
+                }
               </li>
             }
           </ul>
@@ -262,6 +265,46 @@ interface DemoStep {
                 <label for="modal-draft-location">Location</label>
                 <input id="modal-draft-location" formControlName="location" type="text" />
 
+                <label for="modal-participant-select">Participants</label>
+                <div class="form-actions">
+                  <select
+                    id="modal-participant-select"
+                    [(ngModel)]="pendingParticipantContactId"
+                    [ngModelOptions]="{ standalone: true }"
+                  >
+                    <option value="">Select participant</option>
+                    @for (contact of availableParticipantContacts; track contact.id) {
+                      <option [value]="contact.id">
+                        {{ contact.name }} | {{ contact.role }} | {{ contact.email || '-' }} | {{ contact.phone || '-' }}
+                      </option>
+                    }
+                  </select>
+                  <button
+                    type="button"
+                    class="ghost"
+                    (click)="addSelectedParticipant()"
+                    [disabled]="!pendingParticipantContactId"
+                  >
+                    Add participant
+                  </button>
+                </div>
+                @if (selectedParticipants.length > 0) {
+                  <ul class="contact-list">
+                    @for (participant of selectedParticipants; track participant.id) {
+                      <li>
+                        <button type="button" class="contact-button" (click)="removeParticipant(participant.id)">
+                          Remove | {{ participant.name }} | {{ participant.role }} | {{ participant.email || '-' }} | {{ participant.phone || '-' }}
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="state-pill">No participants selected.</p>
+                }
+                @if (participantLimitMessage) {
+                  <p class="field-error">{{ participantLimitMessage }}</p>
+                }
+
                 <div class="form-actions">
                   <button type="submit" class="primary" [disabled]="isCreatingDraft || isSavingDraft">
                     {{
@@ -283,6 +326,14 @@ interface DemoStep {
                     >
                       {{ isSubmittingDraft ? 'Submitting...' : 'Submit appointment' }}
                     </button>
+                    <button
+                      type="button"
+                      class="ghost danger"
+                      (click)="deleteSelectedDraft()"
+                      [disabled]="isDeletingDraft"
+                    >
+                      {{ isDeletingDraft ? 'Deleting...' : 'Delete appointment' }}
+                    </button>
                   }
                 </div>
               </form>
@@ -296,6 +347,7 @@ interface DemoStep {
 export class AppointmentsComponent {
   private static readonly MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
   private static readonly ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+  private static readonly MAX_PARTICIPANTS_PER_APPOINTMENT = 3;
   private readonly authApiService = inject(AuthApiService);
   private readonly pitchDemoModeService = inject(PitchDemoModeService);
   private readonly route = inject(ActivatedRoute);
@@ -323,6 +375,9 @@ export class AppointmentsComponent {
   imageUploadStatuses: ImageUploadStatus[] = [];
   replacingUploadId: string | null = null;
   selectedDraftId: string | null = null;
+  pendingParticipantContactId = '';
+  selectedParticipantContactIds: string[] = [];
+  participantLimitMessage = '';
   categories: string[] = [];
   drafts: AppointmentDraft[] = [];
   contacts: SchoolContact[] = [];
@@ -479,6 +534,7 @@ export class AppointmentsComponent {
           draft.classGrade ?? '',
           draft.guardianName ?? '',
           draft.location ?? '',
+          ...(draft.participants ?? []).map((participant) => `${participant.name} ${participant.role}`),
         ]
           .join(' ')
           .toLowerCase();
@@ -584,6 +640,19 @@ export class AppointmentsComponent {
     }
 
     return this.drafts.find((draft) => draft.id === this.selectedDraftId)?.images ?? [];
+  }
+
+  get availableParticipantContacts(): SchoolContact[] {
+    return this.contacts.filter((contact) => !this.selectedParticipantContactIds.includes(contact.id));
+  }
+
+  get selectedParticipants(): SchoolContact[] {
+    if (this.selectedParticipantContactIds.length === 0) {
+      return [];
+    }
+    return this.selectedParticipantContactIds
+      .map((contactId) => this.contacts.find((contact) => contact.id === contactId))
+      .filter((contact): contact is SchoolContact => Boolean(contact));
   }
 
   get failedImageUploadCount(): number {
@@ -734,6 +803,7 @@ export class AppointmentsComponent {
           classGrade,
           guardianName,
           location,
+          participantContactIds: this.selectedParticipantContactIds,
         })
         .pipe(finalize(() => (this.isSavingDraft = false)))
         .subscribe({
@@ -748,7 +818,16 @@ export class AppointmentsComponent {
 
     this.isCreatingDraft = true;
     this.authApiService
-      .createDraft({ title, appointmentDate, category, notes, classGrade, guardianName, location })
+      .createDraft({
+        title,
+        appointmentDate,
+        category,
+        notes,
+        classGrade,
+        guardianName,
+        location,
+        participantContactIds: this.selectedParticipantContactIds,
+      })
       .pipe(finalize(() => (this.isCreatingDraft = false)))
       .subscribe({
         next: (draft) => {
@@ -775,6 +854,9 @@ export class AppointmentsComponent {
     }
 
     this.selectedDraftId = draft.id;
+    this.selectedParticipantContactIds = (draft.participants ?? []).map((participant) => participant.contactId);
+    this.pendingParticipantContactId = '';
+    this.participantLimitMessage = '';
     this.imageUploadStatuses = [];
     this.openedDraftMessage = `Opened appointment ${draftId}`;
     this.draftSavedMessage = '';
@@ -792,6 +874,9 @@ export class AppointmentsComponent {
 
   openCreateModal(): void {
     this.selectedDraftId = null;
+    this.selectedParticipantContactIds = [];
+    this.pendingParticipantContactId = '';
+    this.participantLimitMessage = '';
     this.imageUploadStatuses = [];
     this.draftForm.reset({
       title: '',
@@ -807,6 +892,38 @@ export class AppointmentsComponent {
 
   closeEditorModal(): void {
     this.isEditorModalOpen = false;
+  }
+
+  addSelectedParticipant(): void {
+    const contactId = this.pendingParticipantContactId.trim();
+    if (!contactId) {
+      return;
+    }
+    this.participantLimitMessage = '';
+    if (this.selectedParticipantContactIds.includes(contactId)) {
+      this.pendingParticipantContactId = '';
+      return;
+    }
+    if (this.selectedParticipantContactIds.length >= AppointmentsComponent.MAX_PARTICIPANTS_PER_APPOINTMENT) {
+      this.participantLimitMessage = `Maximum ${AppointmentsComponent.MAX_PARTICIPANTS_PER_APPOINTMENT} participants per appointment.`;
+      return;
+    }
+    this.selectedParticipantContactIds = [...this.selectedParticipantContactIds, contactId];
+    this.pendingParticipantContactId = '';
+  }
+
+  removeParticipant(contactId: string): void {
+    this.participantLimitMessage = '';
+    this.selectedParticipantContactIds = this.selectedParticipantContactIds.filter((id) => id !== contactId);
+  }
+
+  formatParticipantSummary(draft: AppointmentDraft): string {
+    const participants = draft.participants ?? [];
+    if (participants.length <= 2) {
+      return participants.map((participant) => participant.name).join(', ');
+    }
+    const firstTwo = participants.slice(0, 2).map((participant) => participant.name).join(', ');
+    return `${firstTwo} +${participants.length - 2}`;
   }
 
   saveContact(): void {
@@ -997,7 +1114,7 @@ export class AppointmentsComponent {
       return;
     }
 
-    if (!globalThis.confirm('Delete this draft? This cannot be undone.')) {
+    if (!globalThis.confirm('Delete this appointment? This cannot be undone.')) {
       return;
     }
 
@@ -1009,7 +1126,7 @@ export class AppointmentsComponent {
       .subscribe({
         next: (deleted) => {
           if (!deleted) {
-            this.deleteMessage = 'Draft could not be deleted.';
+            this.deleteMessage = 'Appointment could not be deleted.';
             return;
           }
 
@@ -1025,10 +1142,10 @@ export class AppointmentsComponent {
             guardianName: '',
             location: '',
           });
-          this.deleteMessage = 'Draft deleted.';
+          this.deleteMessage = 'Appointment deleted.';
         },
         error: () => {
-          this.deleteMessage = 'Draft deletion failed.';
+          this.deleteMessage = 'Appointment deletion failed.';
         },
       });
   }

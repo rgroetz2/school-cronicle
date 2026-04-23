@@ -170,6 +170,82 @@ describe('AppointmentsComponent', () => {
     httpTesting.verify();
   });
 
+  it('sends selected participant contacts when saving appointment', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: { drafts: [] },
+    });
+    httpTesting.expectOne('/api/contacts').flush({
+      data: {
+        contacts: [
+          {
+            id: 'contact-1',
+            schoolId: 'school-1',
+            createdByTeacherId: 'teacher-1',
+            name: 'Mila Parent',
+            role: 'parent',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    fixture.componentInstance.openCreateModal();
+    fixture.componentInstance.pendingParticipantContactId = 'contact-1';
+    fixture.componentInstance.addSelectedParticipant();
+    fixture.componentInstance.draftForm.setValue({
+      title: 'Trip planning',
+      appointmentDate: '2026-05-20',
+      category: 'meeting',
+      notes: '',
+      classGrade: '',
+      guardianName: '',
+      location: '',
+    });
+
+    fixture.componentInstance.createDraft();
+    const request = httpTesting.expectOne('/api/appointments/drafts');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body.participantContactIds).toEqual(['contact-1']);
+  });
+
+  it('limits participant selection to 3 contacts', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: { drafts: [] },
+    });
+    httpTesting.expectOne('/api/contacts').flush({
+      data: {
+        contacts: [
+          { id: 'c1', schoolId: 'school-1', createdByTeacherId: 'teacher-1', name: 'A', role: 'parent' },
+          { id: 'c2', schoolId: 'school-1', createdByTeacherId: 'teacher-1', name: 'B', role: 'parent' },
+          { id: 'c3', schoolId: 'school-1', createdByTeacherId: 'teacher-1', name: 'C', role: 'parent' },
+          { id: 'c4', schoolId: 'school-1', createdByTeacherId: 'teacher-1', name: 'D', role: 'parent' },
+        ],
+      },
+    });
+    fixture.componentInstance.openCreateModal();
+    fixture.componentInstance.pendingParticipantContactId = 'c1';
+    fixture.componentInstance.addSelectedParticipant();
+    fixture.componentInstance.pendingParticipantContactId = 'c2';
+    fixture.componentInstance.addSelectedParticipant();
+    fixture.componentInstance.pendingParticipantContactId = 'c3';
+    fixture.componentInstance.addSelectedParticipant();
+    fixture.componentInstance.pendingParticipantContactId = 'c4';
+    fixture.componentInstance.addSelectedParticipant();
+
+    expect(fixture.componentInstance.selectedParticipantContactIds).toEqual(['c1', 'c2', 'c3']);
+    expect(fixture.componentInstance.participantLimitMessage).toContain('Maximum 3 participants');
+  });
+
   it('creates and edits a school contact from contacts directory panel', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
