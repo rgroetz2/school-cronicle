@@ -18,6 +18,8 @@ import {
 const RETENTION_DRAFT_MAX_AGE_DAYS = 30;
 const RETENTION_SUBMITTED_MAX_AGE_DAYS = 365;
 const RETENTION_RETRY_DELAY_MS = 60_000;
+const MAX_UPLOADED_IMAGES = 5;
+const MAX_PRINTABLE_IMAGES = 3;
 
 interface RetentionConfig {
   draftMaxAgeDays: number;
@@ -77,6 +79,7 @@ export class AppointmentsService {
       category: input.category,
       notes: input.notes?.trim() ?? '',
       participants: [],
+      chronicleExportEligible: input.category === 'special_event',
       status: 'draft',
       createdAt: new Date().toISOString(),
       images: [],
@@ -106,6 +109,7 @@ export class AppointmentsService {
     draft.appointmentDate = input.appointmentDate;
     draft.category = input.category;
     draft.notes = input.notes?.trim() ?? '';
+    draft.chronicleExportEligible = input.category === 'special_event';
     if (Array.isArray(input.participantContactIds)) {
       draft.participants = [];
     }
@@ -152,6 +156,9 @@ export class AppointmentsService {
     if (!draft.category.trim()) {
       missing.push('category');
     }
+    if (draft.category === 'special_event' && !draft.notes.trim()) {
+      missing.push('notes');
+    }
 
     return missing;
   }
@@ -192,6 +199,9 @@ export class AppointmentsService {
     if (draft.status === 'submitted') {
       return undefined;
     }
+    if (draft.images.length >= MAX_UPLOADED_IMAGES) {
+      return undefined;
+    }
 
     draft.images = [
       ...draft.images,
@@ -201,8 +211,33 @@ export class AppointmentsService {
         mimeType: image.mimeType.trim(),
         dataUrl: image.dataUrl.trim(),
         addedAt: new Date().toISOString(),
+        printableInChronicle: false,
       },
     ];
+    return draft;
+  }
+
+  setImagePrintableForTeacher(
+    teacherId: string,
+    draftId: string,
+    imageId: string,
+    printable: boolean,
+  ): AppointmentDraft | undefined {
+    const draft = this.findDraftForTeacher(teacherId, draftId);
+    if (!draft || draft.status === 'submitted') {
+      return undefined;
+    }
+    const target = draft.images.find((image) => image.id === imageId);
+    if (!target) {
+      return undefined;
+    }
+    if (printable) {
+      const printableCount = draft.images.filter((image) => image.printableInChronicle).length;
+      if (!target.printableInChronicle && printableCount >= MAX_PRINTABLE_IMAGES) {
+        return undefined;
+      }
+    }
+    target.printableInChronicle = printable;
     return draft;
   }
 

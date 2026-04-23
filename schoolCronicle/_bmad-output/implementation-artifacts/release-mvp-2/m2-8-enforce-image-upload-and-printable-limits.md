@@ -1,6 +1,6 @@
 # Story M2.8: Enforce Image Upload and Printable Limits
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -18,16 +18,16 @@ so that chronicle output remains constrained and predictable.
 
 ## Tasks / Subtasks
 
-- [ ] Enforce max-5 upload policy in API and UI validation paths (AC: 1)
-  - [ ] Reject or block additional uploads beyond limit with clear feedback.
-  - [ ] Keep behavior deterministic across edit sessions.
-- [ ] Add printable flag and max-3 selection policy (AC: 2)
-  - [ ] Manual toggle/select behavior only; no automatic ranking.
-  - [ ] Enforce limit server-side as source of truth.
-- [ ] Surface printable-selection state in modal/list/export prep UI (AC: 3)
-  - [ ] Ensure selected printable items are clearly visible.
-  - [ ] Provide correction path when limit is exceeded.
-- [ ] Add tests for upload and printable constraints.
+- [x] Enforce max-5 upload policy in API and UI validation paths (AC: 1)
+  - [x] Reject or block additional uploads beyond limit with clear feedback.
+  - [x] Keep behavior deterministic across edit sessions.
+- [x] Add printable flag and max-3 selection policy (AC: 2)
+  - [x] Manual toggle/select behavior only; no automatic ranking.
+  - [x] Enforce limit server-side as source of truth.
+- [x] Surface printable-selection state in modal/list/export prep UI (AC: 3)
+  - [x] Ensure selected printable items are clearly visible.
+  - [x] Provide correction path when limit is exceeded.
+- [x] Add tests for upload and printable constraints.
 
 ## Dev Notes
 
@@ -51,4 +51,18 @@ gpt-5.3-codex
 
 ### Completion Notes List
 
+- Added image-level `printableInChronicle` flag to appointment image schema and normalized client model.
+- Enforced max 5 uploads per appointment in API (`APPOINTMENT_IMAGE_LIMIT_EXCEEDED`) and UI feedback path.
+- Added manual printable toggle endpoint and service behavior with server-side max 3 enforcement (`APPOINTMENT_PRINTABLE_LIMIT_EXCEEDED`).
+- Extended dummy client store to honor upload/printable limits and persist printable state.
+- Updated special-event modal media area to show uploaded/printable counters and explicit mark/unmark printable controls.
+- Added integration coverage for both upload and printable constraints.
+
 ### File List
+
+- `school-cronicle/api/src/modules/appointments/appointment.types.ts`
+- `school-cronicle/api/src/modules/appointments/appointments.service.ts`
+- `school-cronicle/api/src/modules/appointments/appointments.controller.ts`
+- `school-cronicle/api/src/modules/appointments/appointments.controller.integration.spec.ts`
+- `school-cronicle/web/src/app/core/auth-api.service.ts`
+- `school-cronicle/web/src/app/features/appointments/appointments.component.ts`

@@ -6,6 +6,7 @@ export interface DraftImage {
   mimeType: string;
   dataUrl: string;
   addedAt: string;
+  printableInChronicle?: boolean;
 }
 
 export interface AppointmentParticipant {
@@ -28,6 +29,7 @@ export interface AppointmentDraft {
   editedAfterSubmitAt?: string;
   editedAfterSubmitBy?: string;
   participants?: AppointmentParticipant[];
+  chronicleExportEligible?: boolean;
   images: DraftImage[];
 }
 

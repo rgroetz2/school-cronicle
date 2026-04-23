@@ -50,6 +50,7 @@ export interface AppointmentDraft {
   editedAfterSubmitAt?: string;
   editedAfterSubmitBy?: string;
   participants?: AppointmentParticipant[];
+  chronicleExportEligible?: boolean;
   images: DraftImage[];
 }
 
@@ -59,6 +60,7 @@ export interface DraftImage {
   mimeType: string;
   dataUrl: string;
   addedAt: string;
+  printableInChronicle?: boolean;
 }
 
 export interface TeacherProfile {
@@ -149,7 +151,7 @@ export class AuthApiService {
   private static readonly DUMMY_PROFILE_KEY = 'sc_dummy_profile';
   private static readonly DUMMY_PRIVACY_EVENTS_KEY = 'sc_dummy_privacy_events';
   private static readonly DUMMY_CONTACTS_KEY = 'sc_dummy_contacts';
-  private static readonly DUMMY_CATEGORIES = ['meeting', 'consultation', 'progress'];
+  private static readonly DUMMY_CATEGORIES = ['meeting', 'consultation', 'progress', 'special_event'];
   private static readonly DUMMY_CONTACT_ROLES: SchoolContactRole[] = ['teacher', 'parent', 'staff', 'partner'];
   private static readonly SIGN_IN_TIMEOUT_MS = 10000;
   private readonly http = inject(HttpClient);
@@ -274,6 +276,7 @@ export class AuthApiService {
           .map((contactId) => contacts.find((contact) => contact.id === contactId))
           .filter((contact): contact is SchoolContact => Boolean(contact))
           .map((contact) => ({ contactId: contact.id, name: contact.name, role: contact.role })),
+        chronicleExportEligible: input.category.trim() === 'special_event',
         status: 'draft',
         createdAt: new Date().toISOString(),
         images: [],
@@ -318,6 +321,7 @@ export class AuthApiService {
           guardianName: input.guardianName?.trim() || undefined,
           location: input.location?.trim() || undefined,
           participants: [],
+          chronicleExportEligible: input.category.trim() === 'special_event',
           status: 'draft',
           createdAt: new Date().toISOString(),
           images: [],
@@ -330,6 +334,7 @@ export class AuthApiService {
       target.classGrade = input.classGrade?.trim() || undefined;
       target.guardianName = input.guardianName?.trim() || undefined;
       target.location = input.location?.trim() || undefined;
+      target.chronicleExportEligible = input.category.trim() === 'special_event';
       if (Array.isArray(input.participantContactIds)) {
         const contacts = this.readDummyContacts();
         target.participants = input.participantContactIds
@@ -433,6 +438,9 @@ export class AuthApiService {
     if (draft.status === 'submitted') {
       return of(draft);
     }
+    if (draft.images.length >= 5) {
+      return of(draft);
+    }
 
     draft.images = [
       ...draft.images,
@@ -442,8 +450,41 @@ export class AuthApiService {
         mimeType: image.mimeType,
         dataUrl: image.dataUrl,
         addedAt: new Date().toISOString(),
+        printableInChronicle: false,
       },
     ];
+    this.writeDummyDrafts(drafts);
+    return of(draft);
+  }
+
+  setImagePrintable(
+    draftId: string,
+    imageId: string,
+    printable: boolean,
+  ): Observable<AppointmentDraft | undefined> {
+    if (!this.hasDummySession()) {
+      return this.http
+        .patch<CreateDraftResponse>(`/api/appointments/drafts/${draftId}/images/${imageId}/printable`, {
+          printable,
+        })
+        .pipe(map((response) => response.data.draft));
+    }
+    const drafts = this.readDummyDrafts();
+    const draft = drafts.find((item) => item.id === draftId);
+    if (!draft || draft.status === 'submitted') {
+      return of(draft);
+    }
+    const target = draft.images.find((image) => image.id === imageId);
+    if (!target) {
+      return of(draft);
+    }
+    if (printable) {
+      const printableCount = draft.images.filter((image) => image.printableInChronicle).length;
+      if (!target.printableInChronicle && printableCount >= 3) {
+        return of(draft);
+      }
+    }
+    target.printableInChronicle = printable;
     this.writeDummyDrafts(drafts);
     return of(draft);
   }
@@ -666,7 +707,13 @@ export class AuthApiService {
       participants: Array.isArray(draft.participants)
         ? draft.participants.filter((item) => Boolean(item?.contactId && item?.name && item?.role))
         : [],
-      images: Array.isArray(draft.images) ? draft.images : [],
+      chronicleExportEligible: draft.category === 'special_event',
+      images: Array.isArray(draft.images)
+        ? draft.images.map((image) => ({
+            ...image,
+            printableInChronicle: Boolean(image.printableInChronicle),
+          }))
+        : [],
     };
   }
 

@@ -253,8 +253,11 @@ interface DemoStep {
                   <p class="field-error">Category is required.</p>
                 }
 
-                <label for="modal-draft-notes">Notes</label>
+                <label for="modal-draft-notes">{{ isSpecialEventDraft ? 'Narrative description *' : 'Notes' }}</label>
                 <textarea id="modal-draft-notes" formControlName="notes"></textarea>
+                @if (isSpecialEventDraft && !(draftForm.controls.notes.value ?? '').trim()) {
+                  <p class="field-error">Narrative description is required for special events.</p>
+                }
 
                 <label for="modal-draft-class-grade">Class/grade</label>
                 <input id="modal-draft-class-grade" formControlName="classGrade" type="text" />
@@ -303,6 +306,43 @@ interface DemoStep {
                 }
                 @if (participantLimitMessage) {
                   <p class="field-error">{{ participantLimitMessage }}</p>
+                }
+
+                <label for="modal-appointment-media">Optional media/documents (images)</label>
+                <p class="state-pill">
+                  Uploaded: {{ selectedDraftImages.length }}/5 | Printable: {{ printableImageCount }}/3
+                </p>
+                <input
+                  id="modal-appointment-media"
+                  type="file"
+                  class="file-input"
+                  accept="image/*"
+                  multiple
+                  [disabled]="!selectedDraftId"
+                  (change)="onImageSelected($event)"
+                />
+                @if (!selectedDraftId) {
+                  <p class="state-pill">Save the appointment once before uploading images.</p>
+                }
+                @if (selectedDraftImages.length === 0) {
+                  <p class="state-pill">No media attached yet.</p>
+                } @else {
+                  <ul class="image-list">
+                    @for (image of selectedDraftImages; track image.id) {
+                      <li class="image-card">
+                        <img [src]="image.dataUrl" [alt]="image.name" width="84" height="84" />
+                        <span class="image-name">{{ image.name }}</span>
+                        <button
+                          type="button"
+                          class="ghost"
+                          (click)="togglePrintable(image.id)"
+                        >
+                          {{ image.printableInChronicle ? 'Unmark printable' : 'Mark printable' }}
+                        </button>
+                        <button type="button" class="ghost danger" (click)="removeImage(image.id)">Remove</button>
+                      </li>
+                    }
+                  </ul>
                 }
 
                 <div class="form-actions">
@@ -489,6 +529,9 @@ export class AppointmentsComponent {
     if (!(this.draftForm.controls.category.value ?? '').trim()) {
       missing.push('category');
     }
+    if ((this.draftForm.controls.category.value ?? '').trim() === 'special_event' && !(this.draftForm.controls.notes.value ?? '').trim()) {
+      missing.push('notes');
+    }
 
     return missing;
   }
@@ -642,6 +685,14 @@ export class AppointmentsComponent {
     return this.drafts.find((draft) => draft.id === this.selectedDraftId)?.images ?? [];
   }
 
+  get printableImageCount(): number {
+    return this.selectedDraftImages.filter((image) => image.printableInChronicle).length;
+  }
+
+  get isSpecialEventDraft(): boolean {
+    return (this.draftForm.controls.category.value ?? '').trim() === 'special_event';
+  }
+
   get availableParticipantContacts(): SchoolContact[] {
     return this.contacts.filter((contact) => !this.selectedParticipantContactIds.includes(contact.id));
   }
@@ -791,6 +842,11 @@ export class AppointmentsComponent {
     const classGrade = this.draftForm.controls.classGrade.value ?? '';
     const guardianName = this.draftForm.controls.guardianName.value ?? '';
     const location = this.draftForm.controls.location.value ?? '';
+
+    if (category.trim() === 'special_event' && !notes.trim()) {
+      this.draftSavedMessage = 'Narrative description is required for special events.';
+      return;
+    }
 
     if (this.selectedDraftId) {
       this.isSavingDraft = true;
@@ -1030,6 +1086,7 @@ export class AppointmentsComponent {
 
   onImageSelected(event: Event): void {
     if (!this.selectedDraftId) {
+      this.imageMessage = 'Save the appointment once before uploading images.';
       return;
     }
     if (this.isSelectedDraftSubmitted) {
@@ -1104,6 +1161,33 @@ export class AppointmentsComponent {
 
         this.replaceDraft(draft);
         this.imageMessage = 'Image removed.';
+      },
+    });
+  }
+
+  togglePrintable(imageId: string): void {
+    if (!this.selectedDraftId) {
+      return;
+    }
+    const image = this.selectedDraftImages.find((entry) => entry.id === imageId);
+    if (!image) {
+      return;
+    }
+    if (!image.printableInChronicle && this.printableImageCount >= 3) {
+      this.imageMessage = 'A maximum of 3 images can be marked printable.';
+      return;
+    }
+    this.authApiService.setImagePrintable(this.selectedDraftId, imageId, !image.printableInChronicle).subscribe({
+      next: (draft) => {
+        if (draft) {
+          this.replaceDraft(draft);
+          this.imageMessage = draft.images.find((entry) => entry.id === imageId)?.printableInChronicle
+            ? 'Image marked printable.'
+            : 'Image unmarked printable.';
+        }
+      },
+      error: () => {
+        this.imageMessage = 'Printable selection update failed.';
       },
     });
   }
@@ -1245,6 +1329,11 @@ export class AppointmentsComponent {
       }
 
       this.updateUploadStatus(uploadId, 'uploading');
+      if (this.selectedDraftImages.length >= 5) {
+        this.updateUploadStatus(uploadId, 'failed', 'Maximum 5 images per appointment.');
+        this.imageMessage = 'A maximum of 5 images can be uploaded per appointment.';
+        continue;
+      }
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = typeof reader.result === 'string' ? reader.result : '';

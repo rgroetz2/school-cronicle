@@ -1081,6 +1081,175 @@ describe('AppointmentsController integration', () => {
     });
   });
 
+  it('requires narrative notes for special event category and marks export eligibility', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const blockedResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Townhall reorganization',
+        appointmentDate: '2026-06-20',
+        category: 'special_event',
+      }),
+    });
+    expect(blockedResponse.status).toBe(400);
+    expect(await blockedResponse.json()).toMatchObject({
+      code: 'APPOINTMENT_SPECIAL_EVENT_NOTES_REQUIRED',
+    });
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Townhall reorganization',
+        appointmentDate: '2026-06-20',
+        category: 'special_event',
+        notes: 'Chronicle narrative for special event.',
+      }),
+    });
+    const createBody = await createResponse.json();
+    expect(createResponse.status).toBe(201);
+    expect(createBody.data.draft).toMatchObject({
+      category: 'special_event',
+      chronicleExportEligible: true,
+    });
+  });
+
+  it('enforces max 5 uploads and max 3 printable images', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Media limits',
+        appointmentDate: '2026-07-20',
+        category: 'special_event',
+        notes: 'Special event narrative',
+      }),
+    });
+    const draftId = (await createResponse.json()).data.draft.id as string;
+
+    const imageIds: string[] = [];
+    for (const index of [1, 2, 3, 4, 5]) {
+      const uploadResponse = await fetch(`${baseUrl}/api/appointments/drafts/${draftId}/images`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          cookie: sessionCookie ?? '',
+        },
+        body: JSON.stringify({
+          name: `img-${index}.png`,
+          mimeType: 'image/png',
+          dataUrl: 'data:image/png;base64,AAAA',
+        }),
+      });
+      const uploadBody = await uploadResponse.json();
+      imageIds.push(uploadBody.data.draft.images[uploadBody.data.draft.images.length - 1].id as string);
+    }
+
+    const blockedUpload = await fetch(`${baseUrl}/api/appointments/drafts/${draftId}/images`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        name: 'img-6.png',
+        mimeType: 'image/png',
+        dataUrl: 'data:image/png;base64,AAAA',
+      }),
+    });
+    expect(blockedUpload.status).toBe(400);
+    expect(await blockedUpload.json()).toMatchObject({
+      code: 'APPOINTMENT_IMAGE_LIMIT_EXCEEDED',
+    });
+
+    for (const imageId of imageIds.slice(0, 3)) {
+      const printableResponse = await fetch(`${baseUrl}/api/appointments/drafts/${draftId}/images/${imageId}/printable`, {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+          cookie: sessionCookie ?? '',
+        },
+        body: JSON.stringify({ printable: true }),
+      });
+      expect(printableResponse.status).toBe(200);
+    }
+
+    const blockedPrintable = await fetch(
+      `${baseUrl}/api/appointments/drafts/${draftId}/images/${imageIds[3]}/printable`,
+      {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+          cookie: sessionCookie ?? '',
+        },
+        body: JSON.stringify({ printable: true }),
+      },
+    );
+    expect(blockedPrintable.status).toBe(400);
+    expect(await blockedPrintable.json()).toMatchObject({
+      code: 'APPOINTMENT_PRINTABLE_LIMIT_EXCEEDED',
+    });
+  });
+
   it('applies retention rules and audits draft/submission cleanup', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],

@@ -35,6 +35,8 @@ import {
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const BASE64_DATA_URL_PATTERN = /^data:([a-z]+\/[a-z0-9.+-]+);base64,/i;
 const MAX_PARTICIPANTS_PER_APPOINTMENT = 3;
+const MAX_UPLOADED_IMAGES = 5;
+const MAX_PRINTABLE_IMAGES = 3;
 
 function isValidAppointmentDate(value: string): boolean {
   if (!ISO_DATE_PATTERN.test(value)) {
@@ -86,6 +88,12 @@ export class AppointmentsController {
       throw new BadRequestException({
         message: 'Category must be one of the allowed values.',
         code: 'APPOINTMENT_INVALID_CATEGORY',
+      });
+    }
+    if (category === 'special_event' && !notes) {
+      throw new BadRequestException({
+        message: 'Narrative description is required for special events.',
+        code: 'APPOINTMENT_SPECIAL_EVENT_NOTES_REQUIRED',
       });
     }
 
@@ -151,6 +159,12 @@ export class AppointmentsController {
       throw new BadRequestException({
         message: 'Category must be one of the allowed values.',
         code: 'APPOINTMENT_INVALID_CATEGORY',
+      });
+    }
+    if (category === 'special_event' && !notes) {
+      throw new BadRequestException({
+        message: 'Narrative description is required for special events.',
+        code: 'APPOINTMENT_SPECIAL_EVENT_NOTES_REQUIRED',
       });
     }
 
@@ -357,6 +371,12 @@ export class AppointmentsController {
         code: 'APPOINTMENT_READ_ONLY',
       });
     }
+    if (existingDraft.images.length >= MAX_UPLOADED_IMAGES) {
+      throw new BadRequestException({
+        message: `A maximum of ${MAX_UPLOADED_IMAGES} images can be uploaded per appointment.`,
+        code: 'APPOINTMENT_IMAGE_LIMIT_EXCEEDED',
+      });
+    }
 
     const draft = this.appointmentsService.attachImageToDraftForTeacher(session.teacherId, draftId, {
       name,
@@ -369,6 +389,62 @@ export class AppointmentsController {
       });
     }
 
+    return {
+      data: {
+        draft,
+      },
+    };
+  }
+
+  @Patch('drafts/:draftId/images/:imageId/printable')
+  setImagePrintable(
+    @Param('draftId') draftId: string,
+    @Param('imageId') imageId: string,
+    @Body() body: { printable?: boolean },
+    @Req() req: Request,
+  ) {
+    const printable = body.printable === true;
+    const sessionId = extractSessionIdFromCookieHeader(req.headers.cookie);
+    const session = this.sessionService.getSession(sessionId);
+    if (!session) {
+      throw new UnauthorizedException({
+        message: 'Authentication required.',
+      });
+    }
+    const existingDraft = this.appointmentsService.findDraftForTeacher(session.teacherId, draftId);
+    if (!existingDraft) {
+      throw new NotFoundException({
+        message: 'Draft not found.',
+      });
+    }
+    if (existingDraft.status === 'submitted') {
+      throw new ForbiddenException({
+        message: 'Submitted appointments are read-only.',
+        code: 'APPOINTMENT_READ_ONLY',
+      });
+    }
+    if (printable) {
+      const target = existingDraft.images.find((image) => image.id === imageId);
+      const printableCount = existingDraft.images.filter((image) => image.printableInChronicle).length;
+      if (!target) {
+        throw new NotFoundException({
+          message: 'Image not found.',
+        });
+      }
+      if (!target.printableInChronicle && printableCount >= MAX_PRINTABLE_IMAGES) {
+        throw new BadRequestException({
+          message: `A maximum of ${MAX_PRINTABLE_IMAGES} images can be marked printable.`,
+          code: 'APPOINTMENT_PRINTABLE_LIMIT_EXCEEDED',
+        });
+      }
+    }
+
+    const draft = this.appointmentsService.setImagePrintableForTeacher(session.teacherId, draftId, imageId, printable);
+    if (!draft) {
+      throw new NotFoundException({
+        message: 'Image not found.',
+      });
+    }
     return {
       data: {
         draft,
