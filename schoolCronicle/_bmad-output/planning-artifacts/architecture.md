@@ -685,3 +685,61 @@ No blocking issues found. Important gaps are documented as implementation-time c
 
 **First Implementation Priority:**
 Initialize workspace and scaffold the chosen Nx Angular+Nest structure, then implement auth/session + school-scope guard foundations before feature modules.
+
+## Release MVP 2 Architecture Addendum
+
+This addendum records architectural direction for new planning scope in **Release MVP 2**. It extends the existing baseline and does not imply implementation has started.
+
+### New Capability Areas
+
+- Unified appointment workspace (single list, search/filter, modal editing).
+- Submitted-record editing with indicator-only traceability.
+- School-wide contacts directory and participant linking.
+- Special-event capture as an appointment type.
+- Chronicle generation v1 to `.docx` from manual selection.
+- Media policy constraints (max uploads + printable subset).
+- Light UI refresh with neutral accessible color tokens.
+
+### Domain and Data Model Impacts
+
+- Extend `appointments` query model for unified list retrieval across draft/submitted states.
+- Add searchable/filterable fields index strategy (status, date, type/category, optional metadata).
+- Add participant linkage model (appointment-to-contact relation) with school-scope enforcement.
+- Add/extend `contacts` entity with minimum fields: `name`, `role`, `email`, `phone`.
+- Add appointment `type` support for "special event" classification and chronicle eligibility.
+- Add media flags:
+  - `isPrintable` boolean with max-3 constraint per appointment.
+  - max-5 media constraint per appointment.
+- Add submitted-edit indicator fields (e.g., `editedAfterSubmitAt`, `editedAfterSubmitBy`) without full version snapshots.
+
+### Service and API Boundary Impacts
+
+- Appointment list endpoint(s) must support unified retrieval + search + filter composition.
+- Modal edit flow reuses standard appointment update endpoint with policy checks for submitted records.
+- Contacts endpoints required for CRUD/search/select operations under school scope.
+- Participant assignment endpoints or appointment payload expansion needed for link/unlink operations.
+- Chronicle export endpoint requires:
+  - manual appointment selection payload,
+  - deterministic rendering contract,
+  - `.docx` output stream/artifact metadata response.
+
+### Policy and Validation Rules
+
+- Enforce media constraints at server boundary (source of truth):
+  - max 5 uploaded images per appointment,
+  - max 3 printable images per appointment,
+  - printable selection must be explicit.
+- Submitted edits are allowed in MVP 2, with mandatory indicator update on save.
+- No full audit-version timeline is required for this release scope (indicator-only governance).
+
+### UI Architecture Impacts
+
+- Introduce modal editor orchestration that preserves list context and filter state.
+- Apply token-based color refresh layer only; preserve existing navigation and interaction patterns.
+- Ensure accessibility parity after visual refresh (focus visibility, contrast, non-color semantics).
+
+### Operational and Delivery Notes
+
+- Chronicle generation may require a dedicated document-rendering utility/service in API layer.
+- Export template should be versioned to keep fixed-layout behavior stable across minor updates.
+- Test strategy should include deterministic layout checks for 0..3 printable images per section.

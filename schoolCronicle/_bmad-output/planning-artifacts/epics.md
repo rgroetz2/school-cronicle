@@ -53,6 +53,14 @@ FR29: The system applies configured retention rules to drafts, submissions, and 
 FR30: The system records an audit trail of materially significant actions on appointments and submissions.
 FR31: A teacher can access in-product guidance on required appointment fields and acceptable image formats.
 FR32: A teacher can see who to contact at the school for privacy or account issues.
+FR33: A teacher can view all of their appointments in one unified list with the most important fields visible at a glance.
+FR34: A teacher can search and filter appointments in the unified list view.
+FR35: A teacher can open any appointment from the list in a modal and edit all supported fields.
+FR36: When a submitted appointment is edited, the system shows a "last edited after submit" indicator.
+FR37: A teacher can manage and select participants from a school-wide contacts list (teachers, parents, staff, partners) with contact details.
+FR38: A teacher can capture chronicle-relevant special events as an appointment type, including optional media/documents.
+FR39: Authorized users can generate a chronicle draft as a Word document (.docx) from manually selected appointments using a fixed layout.
+FR40: Each appointment supports up to 5 uploaded images, and up to 3 images can be marked as printable for chronicle output.
 
 ### NonFunctional Requirements
 
@@ -137,6 +145,14 @@ FR29: Epic 6 - System applies retention rules to drafts/submissions/media.
 FR30: Epic 5 - System records audit trail of significant actions.
 FR31: Epic 6 - Teacher can access in-product guidance for fields/formats.
 FR32: Epic 6 - Teacher can view school privacy/account contact path.
+FR33: Epic M2.1 - Teacher sees all appointments in one unified list.
+FR34: Epic M2.1 - Teacher can search and filter unified appointment list.
+FR35: Epic M2.1 - Teacher can open/edit appointments in modal UI.
+FR36: Epic M2.1 - System shows last-edited-after-submit indicator.
+FR37: Epic M2.2 - Teacher can use school-wide contacts as participants.
+FR38: Epic M2.2 - Teacher can store special events as appointment type with optional media.
+FR39: Epic M2.3 - System can export manually selected appointments to chronicle .docx.
+FR40: Epic M2.3 - System enforces image upload/printable limits per appointment.
 
 ## Epic List
 
@@ -163,6 +179,22 @@ The system enforces school-scoped authorization, preserves appointment-image rel
 ### Epic 6: Privacy, Retention, and In-Product Guidance
 Teachers can access privacy/guidance surfaces, correction pathways, and school support contacts while the system enforces retention/privacy outcomes.
 **FRs covered:** FR26, FR27, FR28, FR29, FR31, FR32
+
+### Epic M2.1: Unified Appointment Workspace and Modal Editing
+Teachers can work from a single appointment list with search/filter tools and edit any appointment from a modal, including submitted items with a clear post-submit edit indicator.
+**FRs covered:** FR33, FR34, FR35, FR36
+
+### Epic M2.2: Contacts Directory, Participants, and Special Events
+Teachers can maintain and reuse school-wide contacts as appointment participants and store chronicle-worthy special events in the same operational flow.
+**FRs covered:** FR37, FR38
+
+### Epic M2.3: Chronicle Generation v1 and Image Policy
+Authorized users can export manually selected appointments to a fixed-layout Word chronicle draft while respecting image upload and printable limits.
+**FRs covered:** FR39, FR40
+
+### Epic M2.4: Visual Refresh and Accessible Color System
+The product gains a light visual refresh with a neutral, accessible color system that improves scanability without changing core interaction patterns.
+**FRs covered:** UX-DR14 (extension)
 
 <!-- Repeat for each epic in epics_list (N = 1, 2, 3...) -->
 
@@ -793,3 +825,182 @@ So that value is communicated quickly and consistently.
 **When** I follow the scripted path  
 **Then** I can show navigation, filtering, draft work, and submission readiness in under 7 minutes  
 **And** each step has a clear value message
+
+## Release MVP 2 Epic Track
+
+This track captures post-MVP feedback and defines new product capabilities for operational usability, participant management, chronicle output, and visual polish. It is planning-only and does not imply implementation has started.
+
+### Epic M2.1: Unified Appointment Workspace and Modal Editing
+
+Teachers can manage all of their appointments in one place with fast retrieval and direct modal editing.
+
+### Story M2.1: Build Unified "All Appointments" List View
+
+As a teacher,  
+I want one list containing all my appointments,  
+So that I do not need to switch between separate views to find my records.
+
+**Acceptance Criteria:**
+
+**Given** I am signed in  
+**When** I open the appointments workspace  
+**Then** I see one list containing my draft and submitted appointments  
+**And** each row shows key fields (title, date, type/category, status, last update)
+
+### Story M2.2: Add Search and Filter Controls to Unified List
+
+As a teacher,  
+I want to search and filter appointments,  
+So that I can quickly locate the exact record I need.
+
+**Acceptance Criteria:**
+
+**Given** the unified list view  
+**When** I use search and filters (status, date range, category/type, optional metadata)  
+**Then** the list updates consistently and quickly  
+**And** empty results show a clear no-match state with reset actions
+
+### Story M2.3: Open Appointment in Modal Editor from List
+
+As a teacher,  
+I want to open any appointment in a modal editor from the list,  
+So that I can review and update fields without losing list context.
+
+**Acceptance Criteria:**
+
+**Given** I click an appointment row  
+**When** the modal opens  
+**Then** all supported appointment fields are shown in editable form  
+**And** saving updates both modal data and list row state without full page navigation
+
+### Story M2.4: Enable Submitted Editing with Post-Submit Indicator
+
+As a teacher,  
+I want to edit submitted appointments and still see that they were changed after submission,  
+So that corrections are possible while chronology remains transparent.
+
+**Acceptance Criteria:**
+
+**Given** a submitted appointment  
+**When** I save a change in the modal  
+**Then** the change is persisted  
+**And** the appointment shows a "last edited after submit" indicator with timestamp and editor identity  
+**And** no full version-history workflow is required in MVP 2
+
+### Epic M2.2: Contacts Directory, Participants, and Special Events
+
+Teachers can assign participants from a shared school contacts directory and record chronicle-worthy special events in appointment workflows.
+
+### Story M2.5: Create School-Wide Contacts Directory
+
+As a teacher,  
+I want a reusable contacts directory for school participants,  
+So that I can quickly attach the right people to appointments.
+
+**Acceptance Criteria:**
+
+**Given** contact management access  
+**When** I create or edit a contact  
+**Then** required fields include name, role, email, and phone  
+**And** contact types support teachers, parents, staff, and partner participants
+
+### Story M2.6: Assign Participants to Appointments from Contacts
+
+As a teacher,  
+I want to link contacts to appointments as participants,  
+So that events/trips reflect who is involved.
+
+**Acceptance Criteria:**
+
+**Given** an appointment editor modal  
+**When** I add participants from the contacts list  
+**Then** selected contacts are linked to the appointment  
+**And** participant details are visible in list/detail contexts as secondary metadata
+
+### Story M2.7: Add Special Event Appointment Type with Optional Media
+
+As a teacher,  
+I want to record special events (e.g., retirements, town changes) as a dedicated appointment type,  
+So that chronicle-relevant milestones are captured consistently.
+
+**Acceptance Criteria:**
+
+**Given** appointment creation/editing  
+**When** I select "Special Event" type  
+**Then** I can capture title, date, category, and narrative description  
+**And** optional images/documents can be attached  
+**And** the event is eligible for chronicle export selection
+
+### Epic M2.3: Chronicle Generation v1 and Image Policy
+
+Authorized users can generate first-version chronicle documents from selected appointments with deterministic layout behavior.
+
+### Story M2.8: Enforce Image Upload and Printable Limits
+
+As a teacher,  
+I want clear image limits per appointment,  
+So that chronicle output remains constrained and predictable.
+
+**Acceptance Criteria:**
+
+**Given** appointment media upload  
+**When** I manage images  
+**Then** at most 5 images can be uploaded  
+**And** at most 3 images can be marked printable  
+**And** printable selection is manual and visible before export
+
+### Story M2.9: Generate Chronicle .docx from Manual Appointment Selection
+
+As an authorized user,  
+I want to select appointments manually and export them to Word,  
+So that I can build a first chronicle draft with editorial control.
+
+**Acceptance Criteria:**
+
+**Given** export access  
+**When** I manually select appointments and start export  
+**Then** the system generates a `.docx` file  
+**And** export content includes selected appointments, narrative text, participants, and printable images
+
+### Story M2.10: Apply Fixed Chronicle Layout Independent of Image Count
+
+As an editor,  
+I want consistent layout in every generated chronicle section,  
+So that output remains predictable even with varying media counts.
+
+**Acceptance Criteria:**
+
+**Given** generated chronicle sections  
+**When** appointments have 0, 1, 2, or 3 printable images  
+**Then** section structure and typography remain fixed  
+**And** image slots follow deterministic placement rules without layout drift
+
+### Epic M2.4: Visual Refresh and Accessible Color System
+
+The interface gains a light, accessibility-first visual polish with better color hierarchy and readability.
+
+### Story M2.11: Introduce Neutral Accessible Color Tokens
+
+As a user,  
+I want clearer color semantics that remain accessible,  
+So that I can scan statuses and actions quickly without visual strain.
+
+**Acceptance Criteria:**
+
+**Given** the design token/theme layer  
+**When** colors are refreshed  
+**Then** a neutral palette with accessible contrast is applied  
+**And** semantic usage for status, emphasis, and feedback is consistent across core screens
+
+### Story M2.12: Apply Light Visual Refresh to Core Views
+
+As a teacher,  
+I want a more modern and colorful (but calm) interface,  
+So that daily workflows feel clearer and more engaging.
+
+**Acceptance Criteria:**
+
+**Given** login, list, modal, filter, and summary views  
+**When** the refresh is applied  
+**Then** spacing, hierarchy, accent usage, and component styling are visibly improved  
+**And** interaction patterns remain familiar (no major structural redesign)

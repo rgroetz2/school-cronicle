@@ -501,3 +501,40 @@ Use **Angular Material** for:
 - **Focus management:** Move focus to dialog on open and restore on close; on inline errors, consider **focus first invalid** after failed submit (optional product choice—document in implementation).
 - **Images:** Meaningful **alt text** policy for thumbnails (filename or user description per product rules); decorative images marked `alt=""`.
 - **Units:** Use **rem**/theme spacing tokens; avoid fixed heights that clip enlarged text.
+
+## Release MVP 2 UX Addendum
+
+### Experience Extensions
+
+- Replace split appointment views with one unified "All Appointments" workspace.
+- Keep list context while editing by opening appointments in a modal editor.
+- Support contacts/participants and special-event content capture in the same workflow.
+- Provide first chronicle-export interaction based on manual appointment selection.
+
+### Information Architecture Updates
+
+- **Primary workspace:** Single list with key columns/metadata (title, date, type/category, status, last update).
+- **Findability:** Search input + filter controls in one predictable panel.
+- **Edit flow:** Row click opens modal; save/cancel returns user to the same list context.
+- **Submitted edits:** Keep records editable, but visibly mark "last edited after submit."
+
+### Interaction and State Rules
+
+- Modal form exposes all supported fields for both draft and submitted records.
+- Post-submit changes show timestamp + editor indicator in list and detail surfaces.
+- Participant assignment supports selecting contacts from a school-wide directory.
+- "Special Event" is treated as an appointment type, not a separate module.
+
+### Media and Chronicle UX Rules
+
+- Per appointment: max 5 uploaded images.
+- Printable image selection: user manually marks up to 3 images.
+- Chronicle export v1 uses manual appointment selection and generates `.docx`.
+- Chronicle section layout remains visually consistent for 0..3 printable images.
+
+### Visual Design Direction (MVP 2)
+
+- Apply a **light refresh** only (no major IA redesign).
+- Introduce neutral, accessible color accents to improve hierarchy and scanability.
+- Preserve WCAG-appropriate contrast and non-color-only feedback states.
+- Keep interaction patterns familiar to avoid relearning cost.

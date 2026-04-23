@@ -398,3 +398,39 @@ SchoolCronicle V1 is a **single-page web application** (SPA) aimed at authentica
 
 - **Export consumability:** School exports use a **versioned** schema or manifest so downstream chronicle tooling can detect format versions and remain stable across minor releases.
 - **Media handoff:** Export documentation specifies how image references resolve to retrievable media under school-controlled access, without breaking school isolation rules.
+
+## Release MVP 2 Addendum
+
+This addendum captures approved product direction for **Release MVP 2**. It extends V1 planning and does not imply implementation has started.
+
+### MVP 2 Goals
+
+- Unify appointment operations into one list-centric workspace.
+- Improve discoverability and edit speed through search/filter + modal editing.
+- Support richer event context via participant management and special-event capture.
+- Produce first chronicle draft output directly as `.docx` with consistent layout.
+- Apply a light, accessibility-first visual refresh.
+
+### MVP 2 Functional Extensions
+
+- **FR33:** One unified "all appointments" view with key fields.
+- **FR34:** Search and filter across appointment records.
+- **FR35:** Modal-based editing from list row click for all supported fields.
+- **FR36:** Submitted records remain editable; system shows "last edited after submit" indicator.
+- **FR37:** School-wide contacts directory (teachers, parents, staff, partners) with minimum contact data (name, role, email, phone).
+- **FR38:** Chronicle-worthy special events are supported as an appointment type with optional media/documents.
+- **FR39:** Chronicle export v1 generates `.docx` from **manual appointment selection**.
+- **FR40:** Per appointment media policy: max 5 uploaded images, max 3 manually selected printable images.
+
+### MVP 2 UX/Product Constraints
+
+- Submitted editing governance for MVP 2 is **indicator-only** (no full version history yet).
+- Chronicle section layout is fixed and deterministic regardless of 0..3 printable images.
+- Visual refresh is intentionally **lightweight**: neutral palette, improved hierarchy, accessibility-safe contrast.
+
+### MVP 2 Out of Scope
+
+- Full versioning/restore history for post-submit edits.
+- New standalone "special events module" (special events remain an appointment type).
+- Automatic quality-based printable-image selection.
+- Major navigation redesign or brand overhaul.
