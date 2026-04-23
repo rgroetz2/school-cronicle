@@ -19,6 +19,8 @@ export interface AppointmentDraft {
   status: 'draft' | 'submitted';
   createdAt: string;
   submittedAt?: string;
+  editedAfterSubmitAt?: string;
+  editedAfterSubmitBy?: string;
   images: DraftImage[];
 }
 

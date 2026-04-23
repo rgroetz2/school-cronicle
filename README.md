@@ -39,16 +39,26 @@ npm install
 
 ### 3) Run the applications
 
+Run commands from the Nx workspace at `schoolCronicle/school-cronicle`.
+
 Start web frontend:
 
 ```bash
-npx nx serve web
+cd schoolCronicle/school-cronicle
+env -u npm_config_devdir -u NPM_CONFIG_DEVDIR npx nx serve web
 ```
 
 Start API backend (new terminal):
 
 ```bash
-npx nx serve api
+cd schoolCronicle/school-cronicle
+env -u npm_config_devdir -u NPM_CONFIG_DEVDIR npx nx serve api
+```
+
+Web app URL (default):
+
+```text
+http://localhost:4200
 ```
 
 ### 4) Run tests and lint
@@ -64,6 +74,7 @@ npx nx lint api
 
 - If port conflicts occur, Nx will print alternatives in terminal output.
 - Some environments may fail on production web builds; for local development, `serve`, `test`, and `lint` are the primary workflows.
+- If you see `The current directory isn't part of an Nx workspace`, run `pwd` and confirm you are inside `schoolCronicle/school-cronicle` before running `npx nx ...`.
 
 ## Demo mode and demo data seed/reset
 

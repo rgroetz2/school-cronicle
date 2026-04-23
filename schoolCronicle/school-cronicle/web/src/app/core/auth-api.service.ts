@@ -40,6 +40,8 @@ export interface AppointmentDraft {
   status: 'draft' | 'submitted';
   createdAt: string;
   submittedAt?: string;
+  editedAfterSubmitAt?: string;
+  editedAfterSubmitBy?: string;
   images: DraftImage[];
 }
 
@@ -271,10 +273,6 @@ export class AuthApiService {
           images: [],
         });
       }
-      if (target.status === 'submitted') {
-        return of(target);
-      }
-
       target.title = input.title.trim();
       target.appointmentDate = input.appointmentDate.trim();
       target.category = input.category.trim();
@@ -282,6 +280,10 @@ export class AuthApiService {
       target.classGrade = input.classGrade?.trim() || undefined;
       target.guardianName = input.guardianName?.trim() || undefined;
       target.location = input.location?.trim() || undefined;
+      if (target.status === 'submitted') {
+        target.editedAfterSubmitAt = new Date().toISOString();
+        target.editedAfterSubmitBy = target.teacherId;
+      }
       this.writeDummyDrafts(drafts);
       return of(target);
     }
@@ -517,6 +519,10 @@ export class AuthApiService {
       ...draft,
       status: draft.status === 'submitted' ? 'submitted' : 'draft',
       submittedAt: draft.status === 'submitted' ? draft.submittedAt : undefined,
+      editedAfterSubmitAt:
+        draft.status === 'submitted' ? (draft.editedAfterSubmitAt?.trim() || undefined) : undefined,
+      editedAfterSubmitBy:
+        draft.status === 'submitted' ? (draft.editedAfterSubmitBy?.trim() || undefined) : undefined,
       classGrade: typeof draft.classGrade === 'string' ? draft.classGrade.trim() || undefined : undefined,
       guardianName: typeof draft.guardianName === 'string' ? draft.guardianName.trim() || undefined : undefined,
       location: typeof draft.location === 'string' ? draft.location.trim() || undefined : undefined,

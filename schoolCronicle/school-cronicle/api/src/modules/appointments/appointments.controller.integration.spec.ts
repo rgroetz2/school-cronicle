@@ -801,7 +801,7 @@ describe('AppointmentsController integration', () => {
     });
   });
 
-  it('blocks draft update when appointment is already submitted', async () => {
+  it('allows submitted appointment update and sets edited-after-submit indicator', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -862,10 +862,16 @@ describe('AppointmentsController integration', () => {
       }),
     });
 
-    expect(updateResponse.status).toBe(403);
+    expect(updateResponse.status).toBe(200);
     expect(await updateResponse.json()).toMatchObject({
-      message: 'Submitted appointments are read-only.',
-      code: 'APPOINTMENT_READ_ONLY',
+      data: {
+        draft: {
+          id: createBody.data.draft.id,
+          status: 'submitted',
+          title: 'Attempted update',
+          editedAfterSubmitBy: 'teacher-1',
+        },
+      },
     });
   });
 

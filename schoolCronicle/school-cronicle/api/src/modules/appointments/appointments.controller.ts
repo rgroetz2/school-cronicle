@@ -144,13 +144,6 @@ export class AppointmentsController {
         message: 'Draft not found.',
       });
     }
-    if (existingDraft.status === 'submitted') {
-      throw new ForbiddenException({
-        message: 'Submitted appointments are read-only.',
-        code: 'APPOINTMENT_READ_ONLY',
-      });
-    }
-
     const draft = this.appointmentsService.updateDraftForTeacher(session.teacherId, draftId, {
       title,
       appointmentDate,

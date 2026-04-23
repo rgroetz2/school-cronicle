@@ -99,14 +99,15 @@ export class AppointmentsService {
     if (!draft) {
       return undefined;
     }
-    if (draft.status === 'submitted') {
-      return undefined;
-    }
 
     draft.title = input.title;
     draft.appointmentDate = input.appointmentDate;
     draft.category = input.category;
     draft.notes = input.notes?.trim() ?? '';
+    if (draft.status === 'submitted') {
+      draft.editedAfterSubmitAt = new Date().toISOString();
+      draft.editedAfterSubmitBy = teacherId;
+    }
     return draft;
   }
 

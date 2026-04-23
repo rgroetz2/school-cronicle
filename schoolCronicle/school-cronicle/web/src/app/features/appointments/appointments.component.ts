@@ -60,36 +60,6 @@ interface DemoStep {
         </div>
       </header>
 
-      @if (pitchDemoModeEnabled) {
-        <section class="panel demo-script-panel" aria-label="Seven minute teacher demo path">
-          <h3>7-minute teacher demo path</h3>
-          <p class="panel-copy">
-            Reset demo data first, then use this script to tell a consistent story in under 7 minutes.
-          </p>
-          <p class="state-pill">
-            Target runtime: {{ demoPathTargetDuration }}. Completed steps: {{ completedDemoStepsCount }}/{{ demoPathSteps.length - 1 }}
-          </p>
-          <ol class="demo-step-list">
-            @for (step of demoPathSteps; track step.id) {
-              <li class="demo-step-item" [class.done]="isDemoStepDone(step.id)">
-                <header class="demo-step-header">
-                  <span class="demo-step-title">{{ step.title }}</span>
-                  <span class="demo-step-time">{{ step.timing }}</span>
-                  @if (step.id !== 'fallback') {
-                    <span class="demo-step-status">{{ isDemoStepDone(step.id) ? 'done' : 'pending' }}</span>
-                  }
-                </header>
-                <p class="demo-step-action"><strong>Show:</strong> {{ step.actionPrompt }}</p>
-                <p class="demo-step-value"><strong>Value:</strong> {{ step.valueMessage }}</p>
-              </li>
-            }
-          </ol>
-          <p class="panel-copy">
-            Fallback rule: if data drifts, reset demo data and skip directly to the next step to keep momentum.
-          </p>
-        </section>
-      }
-
       <div class="workspace-zones">
         <section class="zone zone-results" aria-labelledby="results-zone-heading">
           <header class="zone-header">
@@ -97,13 +67,24 @@ interface DemoStep {
             <p class="panel-copy">Use filters first, then open the draft you want to work on.</p>
           </header>
 
-          <section class="panel" aria-labelledby="draft-list-heading">
-          <h3 id="draft-list-heading">Your drafts</h3>
-          <p class="panel-copy">Choose a draft to continue editing and submission checks.</p>
+          <section class="panel" aria-labelledby="appointments-list-heading">
+          <h3 id="appointments-list-heading">Your appointments</h3>
+          <p class="panel-copy">One unified list for draft and submitted appointments.</p>
+        <div class="filter-actions">
+          <button type="button" class="ghost" (click)="openCreateModal()">Create appointment</button>
+        </div>
         <div class="filter-panel" aria-label="Appointment filters">
           <h4>Filter list</h4>
           <form [formGroup]="filterForm">
             <div class="filter-grid">
+              <label for="filter-search">Search</label>
+              <input
+                id="filter-search"
+                type="search"
+                formControlName="searchTerm"
+                placeholder="Search title, notes, status, metadata"
+              />
+
               <label for="filter-category">Category</label>
               <select id="filter-category" formControlName="category">
                 <option value="">All categories</option>
@@ -167,179 +148,48 @@ interface DemoStep {
           </p>
         }
         @if (isLoadingDrafts) {
-          <p class="state-pill loading">Loading drafts...</p>
+          <p class="state-pill loading">Loading appointments...</p>
         } @else if (filteredDrafts.length === 0) {
           <p class="state-pill">
-            {{ hasActiveFilters ? 'No appointments match current filters. Adjust or clear filters.' : 'No drafts yet. Create one below to get started.' }}
+            {{ hasActiveFilters ? 'No appointments match current filters. Adjust or clear filters.' : 'No appointments yet. Create one below to get started.' }}
           </p>
         } @else {
+          <div class="appointments-grid" role="table" aria-label="Appointments grid">
+            <div class="grid-header" role="row">
+              <span class="grid-cell">Title</span>
+              <span class="grid-cell">Category</span>
+              <span class="grid-cell">Date</span>
+              <span class="grid-cell">Status</span>
+              <span class="grid-cell">Last update</span>
+            </div>
           <ul class="draft-list">
             @for (draft of filteredDrafts; track draft.id) {
               <li>
                 <button
                   type="button"
-                  class="draft-button"
+                  class="draft-button draft-grid-row"
                   (click)="openDraft(draft.id)"
                   [attr.aria-pressed]="selectedDraftId === draft.id"
                 >
-                  <span class="draft-title">{{ draft.title }}</span>
-                  <span class="draft-meta">
-                    {{ draft.category }} - {{ draft.appointmentDate }} - {{ draft.status }}
-                    @if (draft.submittedAt) {
-                      (submitted {{ draft.submittedAt | date: 'yyyy-MM-dd HH:mm' }})
+                  <span class="grid-cell">{{ draft.title }}</span>
+                  <span class="grid-cell">{{ draft.category }}</span>
+                  <span class="grid-cell">{{ draft.appointmentDate }}</span>
+                  <span class="grid-cell">
+                    {{ draft.status }}
+                    @if (draft.editedAfterSubmitAt) {
+                      (edited after submit)
                     }
                   </span>
+                  <span class="grid-cell">{{
+                    (draft.editedAfterSubmitAt ? draft.editedAfterSubmitAt : draft.submittedAt ? draft.submittedAt : draft.createdAt)
+                      | date: 'yyyy-MM-dd HH:mm'
+                  }}</span>
                 </button>
               </li>
             }
           </ul>
+          </div>
         }
-        </section>
-        </section>
-
-        <section class="zone zone-detail" aria-labelledby="detail-zone-heading">
-          <header class="zone-header">
-            <h3 id="detail-zone-heading">Detail and editor</h3>
-            <p class="panel-copy">Review readiness and edit selected draft details in one focused area.</p>
-          </header>
-        <section class="panel" aria-labelledby="submit-readiness-heading">
-          <h3 id="submit-readiness-heading">Submit readiness</h3>
-          <p class="panel-copy">Required metadata: title, appointment date, and category.</p>
-          <ul class="guidance-list" aria-label="Submit guidance">
-            <li>Use a clear title so the entry is easy to identify later.</li>
-            <li>Set the appointment date in YYYY-MM-DD format.</li>
-            <li>Choose one category before trying to submit.</li>
-          </ul>
-        @if (!selectedDraftId) {
-          <p class="state-pill">Select a draft to evaluate submit readiness.</p>
-        }
-        @if (selectedDraft) {
-          <p class="state-pill">
-            Current status: {{ selectedDraft.status === 'submitted' ? 'Submitted' : 'Draft' }}
-          </p>
-          @if (selectedDraft.submittedAt) {
-            <p class="state-pill">Submitted at: {{ selectedDraft.submittedAt | date: 'yyyy-MM-dd HH:mm' }}</p>
-          }
-        }
-        @if (missingRequiredFields.length > 0) {
-          <p class="state-pill warning">Submission blocked. Missing metadata:</p>
-          <ul class="missing-list">
-            @for (field of missingRequiredFields; track field) {
-              <li>{{ field }}</li>
-            }
-          </ul>
-        }
-        @if (failedImageUploadCount > 0) {
-          <p class="state-pill warning">Submission blocked. Invalid image uploads:</p>
-          <ul class="missing-list">
-            @for (upload of imageUploadStatuses; track upload.id) {
-              @if (upload.state === 'failed') {
-                <li>{{ upload.name }}{{ upload.detail ? ': ' + upload.detail : '' }}</li>
-              }
-            }
-          </ul>
-        }
-        @if (selectedDraftId && missingRequiredFields.length === 0 && failedImageUploadCount === 0) {
-          <p class="state-pill success">All required metadata is complete.</p>
-        }
-        <button type="button" class="primary" (click)="submitDraft()" [disabled]="!canSubmit || isSubmittingDraft">
-          {{ isSubmittingDraft ? 'Submitting...' : 'Submit draft' }}
-        </button>
-        </section>
-        <section class="panel form-panel" aria-label="Draft editor">
-          <h3>Draft editor</h3>
-          <p class="panel-copy">Create a new draft or update the currently selected one.</p>
-          @if (isSelectedDraftSubmitted && selectedDraft) {
-            <p class="state-pill warning">Submitted appointments are read-only.</p>
-            <dl class="readonly-grid">
-              <div>
-                <dt>Title</dt>
-                <dd>{{ selectedDraft.title }}</dd>
-              </div>
-              <div>
-                <dt>Appointment date</dt>
-                <dd>{{ selectedDraft.appointmentDate }}</dd>
-              </div>
-              <div>
-                <dt>Category</dt>
-                <dd>{{ selectedDraft.category }}</dd>
-              </div>
-              <div>
-                <dt>Submitted at</dt>
-                <dd>{{ selectedDraft.submittedAt ? (selectedDraft.submittedAt | date: 'yyyy-MM-dd HH:mm') : '-' }}</dd>
-              </div>
-              <div class="wide">
-                <dt>Notes</dt>
-                <dd>{{ selectedDraft.notes || 'No notes provided.' }}</dd>
-              </div>
-            </dl>
-          } @else {
-          <form [formGroup]="draftForm" (ngSubmit)="createDraft()" novalidate>
-            <label for="draft-title">Title *</label>
-            <input id="draft-title" formControlName="title" type="text" />
-            <p class="field-hint">Required. Keep it short and specific (example: Parent meeting).</p>
-            @if (draftForm.controls.title.touched && draftForm.controls.title.invalid) {
-              <p class="field-error">Title is required.</p>
-            }
-
-            <label for="draft-date">Appointment date *</label>
-            <input id="draft-date" formControlName="appointmentDate" type="date" />
-            <p class="field-hint">Required. Select the calendar date for this appointment.</p>
-            @if (draftForm.controls.appointmentDate.touched && draftForm.controls.appointmentDate.invalid) {
-              <p class="field-error">Appointment date is required.</p>
-            }
-
-            <label for="draft-category">Category *</label>
-            <select id="draft-category" formControlName="category">
-              <option value="">Select category</option>
-              @for (category of categories; track category) {
-                <option [value]="category">{{ category }}</option>
-              }
-            </select>
-            <p class="field-hint">Required. Choose the category that best fits the appointment.</p>
-            @if (draftForm.controls.category.touched && draftForm.controls.category.invalid) {
-              <p class="field-error">Category is required.</p>
-            }
-
-            <label for="draft-notes">Notes</label>
-            <textarea id="draft-notes" formControlName="notes"></textarea>
-
-            <label for="draft-class-grade">Class/grade</label>
-            <input id="draft-class-grade" formControlName="classGrade" type="text" />
-
-            <label for="draft-guardian-name">Guardian name</label>
-            <input id="draft-guardian-name" formControlName="guardianName" type="text" />
-
-            <label for="draft-location">Location</label>
-            <input id="draft-location" formControlName="location" type="text" />
-
-            <div class="form-actions">
-              <button
-                type="submit"
-                class="primary"
-                [disabled]="isCreatingDraft || isSavingDraft || isSelectedDraftSubmitted"
-              >
-          {{
-            isSavingDraft
-              ? 'Saving draft...'
-              : isCreatingDraft
-                ? 'Creating draft...'
-                : selectedDraftId
-                  ? 'Save draft'
-                  : 'Create draft'
-          }}
-              </button>
-              <button
-                type="button"
-                class="ghost danger"
-                (click)="deleteSelectedDraft()"
-                [disabled]="!selectedDraftId || isDeletingDraft || isSelectedDraftSubmitted"
-              >
-                {{ isDeletingDraft ? 'Deleting draft...' : 'Delete selected draft' }}
-              </button>
-            </div>
-          </form>
-          }
         </section>
         </section>
 
@@ -428,6 +278,95 @@ interface DemoStep {
         </section>
       </div>
 
+      @if (isEditorModalOpen) {
+        <div class="modal-backdrop" role="presentation" (click)="closeEditorModal()">
+          <section
+            class="modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="editor-modal-title"
+            (click)="$event.stopPropagation()"
+          >
+            <header class="modal-header">
+              <h3 id="editor-modal-title">
+                {{ selectedDraftId ? 'Edit appointment' : 'Create appointment' }}
+              </h3>
+              <button type="button" class="ghost inline" (click)="closeEditorModal()">Close</button>
+            </header>
+
+            <form [formGroup]="draftForm" (ngSubmit)="createDraft()" novalidate>
+              @if (selectedDraft?.editedAfterSubmitAt) {
+                <p class="state-pill">
+                  Last edited after submit:
+                  {{ selectedDraft.editedAfterSubmitAt | date: 'yyyy-MM-dd HH:mm' }}
+                  @if (selectedDraft.editedAfterSubmitBy) {
+                    by {{ selectedDraft.editedAfterSubmitBy }}
+                  }
+                </p>
+              }
+                <label for="modal-draft-title">Title *</label>
+                <input id="modal-draft-title" formControlName="title" type="text" />
+                @if (draftForm.controls.title.touched && draftForm.controls.title.invalid) {
+                  <p class="field-error">Title is required.</p>
+                }
+
+                <label for="modal-draft-date">Appointment date *</label>
+                <input id="modal-draft-date" formControlName="appointmentDate" type="date" />
+                @if (draftForm.controls.appointmentDate.touched && draftForm.controls.appointmentDate.invalid) {
+                  <p class="field-error">Appointment date is required.</p>
+                }
+
+                <label for="modal-draft-category">Category *</label>
+                <select id="modal-draft-category" formControlName="category">
+                  <option value="">Select category</option>
+                  @for (category of categories; track category) {
+                    <option [value]="category">{{ category }}</option>
+                  }
+                </select>
+                @if (draftForm.controls.category.touched && draftForm.controls.category.invalid) {
+                  <p class="field-error">Category is required.</p>
+                }
+
+                <label for="modal-draft-notes">Notes</label>
+                <textarea id="modal-draft-notes" formControlName="notes"></textarea>
+
+                <label for="modal-draft-class-grade">Class/grade</label>
+                <input id="modal-draft-class-grade" formControlName="classGrade" type="text" />
+
+                <label for="modal-draft-guardian-name">Guardian name</label>
+                <input id="modal-draft-guardian-name" formControlName="guardianName" type="text" />
+
+                <label for="modal-draft-location">Location</label>
+                <input id="modal-draft-location" formControlName="location" type="text" />
+
+                <div class="form-actions">
+                  <button type="submit" class="primary" [disabled]="isCreatingDraft || isSavingDraft">
+                    {{
+                      isSavingDraft
+                        ? 'Saving appointment...'
+                        : isCreatingDraft
+                          ? 'Creating appointment...'
+                          : selectedDraftId
+                            ? 'Save appointment'
+                            : 'Create appointment'
+                    }}
+                  </button>
+                  @if (selectedDraftId) {
+                    <button
+                      type="button"
+                      class="ghost"
+                      (click)="submitDraft()"
+                      [disabled]="!canSubmit || isSubmittingDraft"
+                    >
+                      {{ isSubmittingDraft ? 'Submitting...' : 'Submit appointment' }}
+                    </button>
+                  }
+                </div>
+              </form>
+          </section>
+        </div>
+      }
+
       <section class="status-stack" aria-label="System status">
         @if (demoResetMessage) {
           <p class="state-pill success" role="status">{{ demoResetMessage }}</p>
@@ -478,6 +417,7 @@ export class AppointmentsComponent {
   isSubmittingDraft = false;
   isDeletingDraft = false;
   isLoadingDrafts = false;
+  isEditorModalOpen = false;
   draftCreatedMessage = '';
   openedDraftMessage = '';
   draftSavedMessage = '';
@@ -544,6 +484,7 @@ export class AppointmentsComponent {
   });
 
   readonly filterForm = new FormGroup({
+    searchTerm: new FormControl(''),
     category: new FormControl(''),
     status: new FormControl<'all' | 'draft' | 'submitted'>('all'),
     dateFrom: new FormControl(''),
@@ -614,6 +555,7 @@ export class AppointmentsComponent {
 
     const category = (this.filterForm.controls.category.value ?? '').trim();
     const status = this.filterForm.controls.status.value ?? 'all';
+    const searchTerm = (this.filterForm.controls.searchTerm.value ?? '').trim().toLowerCase();
     const dateFrom = this.filterForm.controls.dateFrom.value ?? '';
     const dateTo = this.filterForm.controls.dateTo.value ?? '';
     const hasImages = this.filterForm.controls.hasImages.value ?? 'all';
@@ -623,6 +565,23 @@ export class AppointmentsComponent {
     const locationFilter = (this.filterForm.controls.location.value ?? '').trim().toLowerCase();
 
     return filtered.filter((draft) => {
+      if (searchTerm) {
+        const searchableContent = [
+          draft.title,
+          draft.notes,
+          draft.category,
+          draft.appointmentDate,
+          draft.status,
+          draft.classGrade ?? '',
+          draft.guardianName ?? '',
+          draft.location ?? '',
+        ]
+          .join(' ')
+          .toLowerCase();
+        if (!searchableContent.includes(searchTerm)) {
+          return false;
+        }
+      }
       if (category && draft.category !== category) {
         return false;
       }
@@ -683,6 +642,7 @@ export class AppointmentsComponent {
   get hasActiveFilters(): boolean {
     const {
       category,
+      searchTerm,
       status,
       dateFrom,
       dateTo,
@@ -693,6 +653,7 @@ export class AppointmentsComponent {
       location,
     } = this.filterForm.getRawValue();
     return (
+      Boolean(searchTerm) ||
       Boolean(category) ||
       status !== 'all' ||
       Boolean(dateFrom) ||
@@ -820,6 +781,7 @@ export class AppointmentsComponent {
 
   resetFilters(): void {
     this.filterForm.reset({
+      searchTerm: '',
       category: '',
       status: 'all',
       dateFrom: '',
@@ -845,10 +807,7 @@ export class AppointmentsComponent {
     this.deleteMessage = '';
     this.draftForm.markAllAsTouched();
 
-    if (this.draftForm.invalid || this.isCreatingDraft || this.isSavingDraft || this.isSelectedDraftSubmitted) {
-      if (this.isSelectedDraftSubmitted) {
-        this.draftSavedMessage = 'Submitted appointments are read-only.';
-      }
+    if (this.draftForm.invalid || this.isCreatingDraft || this.isSavingDraft) {
       return;
     }
 
@@ -877,6 +836,7 @@ export class AppointmentsComponent {
           next: (draft) => {
             this.draftSavedMessage = `Draft saved: ${draft.title}`;
             this.loadDrafts();
+          this.closeEditorModal();
           },
         });
       return;
@@ -899,6 +859,7 @@ export class AppointmentsComponent {
             location: '',
           });
           this.loadDrafts();
+          this.closeEditorModal();
         },
       });
   }
@@ -911,7 +872,7 @@ export class AppointmentsComponent {
 
     this.selectedDraftId = draft.id;
     this.imageUploadStatuses = [];
-    this.openedDraftMessage = `Opened draft ${draftId}`;
+    this.openedDraftMessage = `Opened appointment ${draftId}`;
     this.draftSavedMessage = '';
     this.draftForm.setValue({
       title: draft.title,
@@ -922,6 +883,26 @@ export class AppointmentsComponent {
       guardianName: draft.guardianName ?? '',
       location: draft.location ?? '',
     });
+    this.isEditorModalOpen = true;
+  }
+
+  openCreateModal(): void {
+    this.selectedDraftId = null;
+    this.imageUploadStatuses = [];
+    this.draftForm.reset({
+      title: '',
+      appointmentDate: '',
+      category: '',
+      notes: '',
+      classGrade: '',
+      guardianName: '',
+      location: '',
+    });
+    this.isEditorModalOpen = true;
+  }
+
+  closeEditorModal(): void {
+    this.isEditorModalOpen = false;
   }
 
   submitDraft(): void {

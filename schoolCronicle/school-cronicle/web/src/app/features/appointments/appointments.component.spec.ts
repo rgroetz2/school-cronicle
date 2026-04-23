@@ -209,7 +209,7 @@ describe('AppointmentsComponent', () => {
     expect(text).toContain('Unsupported format. Use JPEG, PNG, or WebP.');
   });
 
-  it('renders clear workspace zones for list, detail, and media', () => {
+  it('renders clear workspace zones for list and media', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
     httpTesting.expectOne('/api/appointments/categories').flush({
@@ -222,7 +222,6 @@ describe('AppointmentsComponent', () => {
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('List and results');
-    expect(text).toContain('Detail and editor');
     expect(text).toContain('Media and attachments');
   });
 
@@ -298,9 +297,79 @@ describe('AppointmentsComponent', () => {
     button.click();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Opened draft draft-7');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('All required metadata is complete.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Opened appointment draft-7');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Edit appointment');
     httpTesting.verify();
+  });
+
+  it('opens create modal and creates appointment without route navigation', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: { drafts: [] },
+    });
+    fixture.detectChanges();
+
+    const createButton = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Create appointment'),
+    ) as HTMLButtonElement | undefined;
+    createButton?.click();
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Create appointment');
+
+    fixture.componentInstance.draftForm.setValue({
+      title: 'Modal created',
+      appointmentDate: '2026-06-01',
+      category: 'meeting',
+      notes: 'created from modal',
+      classGrade: '',
+      guardianName: '',
+      location: '',
+    });
+    fixture.componentInstance.createDraft();
+    const createRequest = httpTesting.expectOne('/api/appointments/drafts');
+    expect(createRequest.request.method).toBe('POST');
+    createRequest.flush({
+      data: {
+        draft: {
+          id: 'modal-1',
+          teacherId: 'teacher-1',
+          schoolId: 'school-1',
+          title: 'Modal created',
+          appointmentDate: '2026-06-01',
+          category: 'meeting',
+          notes: 'created from modal',
+          status: 'draft',
+          createdAt: new Date().toISOString(),
+          images: [],
+        },
+      },
+    });
+    const refreshRequest = httpTesting.expectOne('/api/appointments/drafts');
+    expect(refreshRequest.request.method).toBe('GET');
+    refreshRequest.flush({
+      data: {
+        drafts: [
+          {
+            id: 'modal-1',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Modal created',
+            appointmentDate: '2026-06-01',
+            category: 'meeting',
+            notes: 'created from modal',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+    expect(fixture.componentInstance.isEditorModalOpen).toBe(false);
   });
 
   it('applies dedicated filters and supports clear/reset behavior', () => {
@@ -366,6 +435,62 @@ describe('AppointmentsComponent', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance.filteredDrafts.length).toBe(2);
     expect(fixture.componentInstance.hasActiveFilters).toBe(false);
+  });
+
+  it('filters appointments by unified search term across key fields', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'search-1',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Townhall walkthrough',
+            appointmentDate: '2026-05-10',
+            category: 'meeting',
+            notes: 'Planning route',
+            classGrade: '7A',
+            guardianName: 'Miller',
+            location: 'Town Hall',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+          {
+            id: 'search-2',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Sports day',
+            appointmentDate: '2026-05-11',
+            category: 'progress',
+            notes: 'Field updates',
+            classGrade: '5B',
+            guardianName: 'Taylor',
+            location: 'Gym',
+            status: 'submitted',
+            submittedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.filterForm.patchValue({ searchTerm: 'town hall' });
+    fixture.detectChanges();
+    expect(fixture.componentInstance.filteredDrafts.length).toBe(1);
+    expect(fixture.componentInstance.filteredDrafts[0]?.id).toBe('search-1');
+
+    fixture.componentInstance.filterForm.patchValue({ searchTerm: 'submitted' });
+    fixture.detectChanges();
+    expect(fixture.componentInstance.filteredDrafts.length).toBe(1);
+    expect(fixture.componentInstance.filteredDrafts[0]?.id).toBe('search-2');
   });
 
   it('filters by class/grade, guardian name, and location metadata', () => {
@@ -677,11 +802,9 @@ describe('AppointmentsComponent', () => {
     expect(fixture.componentInstance.missingRequiredFields).toEqual([]);
     expect(fixture.componentInstance.canSubmit).toBe(true);
 
-    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('All required metadata is complete.');
-    expect(text).not.toContain('classGrade');
-    expect(text).not.toContain('guardianName');
-    expect(text).not.toContain('location');
+    expect(fixture.componentInstance.draftForm.value.classGrade).toBe('');
+    expect(fixture.componentInstance.draftForm.value.guardianName).toBe('');
+    expect(fixture.componentInstance.draftForm.value.location).toBe('');
   });
 
   it('allows submit when optional metadata is only partially filled', () => {
@@ -745,19 +868,10 @@ describe('AppointmentsComponent', () => {
     });
     fixture.detectChanges();
 
-    let submitButton = fixture.nativeElement.querySelector(
-      'section[aria-labelledby="submit-readiness-heading"] button',
-    ) as HTMLButtonElement;
-    expect(submitButton.disabled).toBe(true);
-
     fixture.componentInstance.openDraft('draft-20');
     fixture.detectChanges();
-    submitButton = fixture.nativeElement.querySelector(
-      'section[aria-labelledby="submit-readiness-heading"] button',
-    ) as HTMLButtonElement;
-    expect(submitButton.disabled).toBe(false);
-
-    submitButton.click();
+    expect(fixture.componentInstance.canSubmit).toBe(true);
+    fixture.componentInstance.submitDraft();
     const submitRequest = httpTesting.expectOne('/api/appointments/drafts/draft-20/submit');
     expect(submitRequest.request.method).toBe('POST');
     const submittedAt = new Date().toISOString();
@@ -786,6 +900,42 @@ describe('AppointmentsComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Draft submitted at');
     expect(fixture.componentInstance.isSelectedDraftSubmitted).toBe(true);
     httpTesting.verify();
+  });
+
+  it('shows submit appointment action in modal for selected draft', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: {
+        drafts: [
+          {
+            id: 'draft-submit-action',
+            teacherId: 'teacher-1',
+            schoolId: 'school-1',
+            title: 'Draft to submit',
+            appointmentDate: '2026-06-10',
+            category: 'meeting',
+            notes: '',
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            images: [],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.openDraft('draft-submit-action');
+    fixture.detectChanges();
+
+    const submitButton = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.modal-panel button')).find(
+      (button) => button.textContent?.includes('Submit appointment'),
+    ) as HTMLButtonElement | undefined;
+    expect(submitButton).toBeTruthy();
+    expect(submitButton?.disabled).toBe(false);
   });
 
   it('blocks submit while failed image uploads exist and unblocks after recovery', () => {
@@ -825,7 +975,7 @@ describe('AppointmentsComponent', () => {
     expect(fixture.componentInstance.canSubmit).toBe(true);
   });
 
-  it('blocks editing controls for submitted appointments', () => {
+  it('allows editing core fields for submitted appointments in modal', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
     httpTesting.expectOne('/api/appointments/categories').flush({
@@ -864,12 +1014,10 @@ describe('AppointmentsComponent', () => {
 
     const html = fixture.nativeElement as HTMLElement;
     expect(html.textContent).toContain('Submitted appointments are read-only. Image changes are disabled.');
-    expect(html.textContent).toContain('Submitted appointments are read-only.');
     expect(html.textContent).toContain('Submitted at');
     expect(html.textContent).toContain('submitted-proof.png');
-    expect(html.textContent).not.toContain('Delete selected draft');
-    expect(html.textContent).not.toContain('Save draft');
-    expect(html.textContent).not.toContain('Remove');
+    expect(html.textContent).toContain('Save appointment');
+    expect(html.textContent).toContain('Submit appointment');
     expect(fixture.componentInstance.canSubmit).toBe(false);
     expect(fixture.componentInstance.isSelectedDraftSubmitted).toBe(true);
   });
@@ -920,10 +1068,11 @@ describe('AppointmentsComponent', () => {
     expect(text).toContain('Submitted appointment');
     expect(text).toContain('draft');
     expect(text).toContain('submitted');
+    expect(text).toContain('Last update:');
     expect(text).toContain('submitted ');
   });
 
-  it('shows detail status and submitted timestamp for selected submitted entry', () => {
+  it('shows edited-after-submit indicator in modal for selected submitted entry', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
     const submittedAt = new Date('2026-06-02T10:30:00.000Z').toISOString();
@@ -944,6 +1093,8 @@ describe('AppointmentsComponent', () => {
             notes: '',
             status: 'submitted',
             submittedAt,
+            editedAfterSubmitAt: submittedAt,
+            editedAfterSubmitBy: 'teacher-1',
             createdAt: new Date().toISOString(),
             images: [],
           },
@@ -956,8 +1107,8 @@ describe('AppointmentsComponent', () => {
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('Current status: Submitted');
-    expect(text).toContain('Submitted at:');
+    expect(text).toContain('Last edited after submit:');
+    expect(text).toContain('by teacher-1');
   });
 
   it('shows attached images for selected draft and removes one', () => {
@@ -1360,7 +1511,7 @@ describe('AppointmentsComponent', () => {
     fixture.detectChanges();
     expect(confirmSpy).toHaveBeenCalled();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Draft deleted.');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('No drafts yet. Create one below to get started.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('No appointments yet. Create one below to get started.');
     confirmSpy.mockRestore();
   });
 
@@ -1404,7 +1555,7 @@ describe('AppointmentsComponent', () => {
       expect(text).toContain('in-browser demo store');
     });
 
-    it('renders scripted demo steps in order with value messages', () => {
+    it('does not render the 7-minute teacher demo path panel', () => {
       const fixture = TestBed.createComponent(AppointmentsComponent);
       const httpTesting = TestBed.inject(HttpTestingController);
       httpTesting.expectOne('/api/appointments/categories').flush({
@@ -1432,22 +1583,7 @@ describe('AppointmentsComponent', () => {
 
       const html = fixture.nativeElement as HTMLElement;
       const panelText = html.textContent ?? '';
-      expect(panelText).toContain('7-minute teacher demo path');
-      expect(panelText).toContain('1) Navigate from dashboard to workspace');
-      expect(panelText).toContain('2) Apply filters to narrow focus');
-      expect(panelText).toContain('3) Open and refine a draft');
-      expect(panelText).toContain('4) Confirm submit readiness');
-      expect(panelText).toContain('5) Recovery / skip path');
-      expect(panelText).toContain('Value:');
-      expect(panelText).toContain('Target runtime: 6m 45s');
-
-      fixture.componentInstance.filterForm.patchValue({ category: 'meeting' });
-      fixture.componentInstance.openDraft('demo-ready');
-      fixture.detectChanges();
-
-      const updatedText = (fixture.nativeElement as HTMLElement).textContent ?? '';
-      expect(updatedText).toContain('Teachers immediately see where to act next without hunting through menus.');
-      expect(fixture.componentInstance.completedDemoStepsCount).toBeGreaterThanOrEqual(2);
+      expect(panelText).not.toContain('7-minute teacher demo path');
     });
   });
 
