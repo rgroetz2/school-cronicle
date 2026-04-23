@@ -226,6 +226,22 @@ describe('AppointmentsComponent', () => {
     expect(text).toContain('Media and attachments');
   });
 
+  it('hides demo walkthrough when demo mode is off', () => {
+    TestBed.overrideProvider(PitchDemoModeService, { useValue: { isEnabled: () => false } });
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    httpTesting.expectOne('/api/appointments/categories').flush({
+      data: { categories: ['meeting', 'consultation', 'progress'] },
+    });
+    httpTesting.expectOne('/api/appointments/drafts').flush({
+      data: { drafts: [] },
+    });
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).not.toContain('7-minute teacher demo path');
+  });
+
   it('keeps advanced filters collapsed by default and toggles on demand', () => {
     const fixture = TestBed.createComponent(AppointmentsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
@@ -1386,6 +1402,52 @@ describe('AppointmentsComponent', () => {
 
       const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
       expect(text).toContain('in-browser demo store');
+    });
+
+    it('renders scripted demo steps in order with value messages', () => {
+      const fixture = TestBed.createComponent(AppointmentsComponent);
+      const httpTesting = TestBed.inject(HttpTestingController);
+      httpTesting.expectOne('/api/appointments/categories').flush({
+        data: { categories: ['meeting', 'consultation', 'progress'] },
+      });
+      httpTesting.expectOne('/api/appointments/drafts').flush({
+        data: {
+          drafts: [
+            {
+              id: 'demo-ready',
+              teacherId: 'teacher-1',
+              schoolId: 'school-1',
+              title: 'Ready draft',
+              appointmentDate: '2026-06-10',
+              category: 'meeting',
+              notes: '',
+              status: 'draft',
+              createdAt: new Date().toISOString(),
+              images: [],
+            },
+          ],
+        },
+      });
+      fixture.detectChanges();
+
+      const html = fixture.nativeElement as HTMLElement;
+      const panelText = html.textContent ?? '';
+      expect(panelText).toContain('7-minute teacher demo path');
+      expect(panelText).toContain('1) Navigate from dashboard to workspace');
+      expect(panelText).toContain('2) Apply filters to narrow focus');
+      expect(panelText).toContain('3) Open and refine a draft');
+      expect(panelText).toContain('4) Confirm submit readiness');
+      expect(panelText).toContain('5) Recovery / skip path');
+      expect(panelText).toContain('Value:');
+      expect(panelText).toContain('Target runtime: 6m 45s');
+
+      fixture.componentInstance.filterForm.patchValue({ category: 'meeting' });
+      fixture.componentInstance.openDraft('demo-ready');
+      fixture.detectChanges();
+
+      const updatedText = (fixture.nativeElement as HTMLElement).textContent ?? '';
+      expect(updatedText).toContain('Teachers immediately see where to act next without hunting through menus.');
+      expect(fixture.componentInstance.completedDemoStepsCount).toBeGreaterThanOrEqual(2);
     });
   });
 

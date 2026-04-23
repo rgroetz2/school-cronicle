@@ -17,6 +17,15 @@ interface ImageUploadStatus {
 }
 
 type FilterLifecycleState = 'all' | 'needs_attention' | 'ready_to_submit' | 'submitted';
+type DemoStepId = 'navigation' | 'filtering' | 'draft-work' | 'submit-readiness' | 'fallback';
+
+interface DemoStep {
+  id: DemoStepId;
+  title: string;
+  timing: string;
+  valueMessage: string;
+  actionPrompt: string;
+}
 
 @Component({
   selector: 'app-appointments',
@@ -50,6 +59,36 @@ type FilterLifecycleState = 'all' | 'needs_attention' | 'ready_to_submit' | 'sub
           </button>
         </div>
       </header>
+
+      @if (pitchDemoModeEnabled) {
+        <section class="panel demo-script-panel" aria-label="Seven minute teacher demo path">
+          <h3>7-minute teacher demo path</h3>
+          <p class="panel-copy">
+            Reset demo data first, then use this script to tell a consistent story in under 7 minutes.
+          </p>
+          <p class="state-pill">
+            Target runtime: {{ demoPathTargetDuration }}. Completed steps: {{ completedDemoStepsCount }}/{{ demoPathSteps.length - 1 }}
+          </p>
+          <ol class="demo-step-list">
+            @for (step of demoPathSteps; track step.id) {
+              <li class="demo-step-item" [class.done]="isDemoStepDone(step.id)">
+                <header class="demo-step-header">
+                  <span class="demo-step-title">{{ step.title }}</span>
+                  <span class="demo-step-time">{{ step.timing }}</span>
+                  @if (step.id !== 'fallback') {
+                    <span class="demo-step-status">{{ isDemoStepDone(step.id) ? 'done' : 'pending' }}</span>
+                  }
+                </header>
+                <p class="demo-step-action"><strong>Show:</strong> {{ step.actionPrompt }}</p>
+                <p class="demo-step-value"><strong>Value:</strong> {{ step.valueMessage }}</p>
+              </li>
+            }
+          </ol>
+          <p class="panel-copy">
+            Fallback rule: if data drifts, reset demo data and skip directly to the next step to keep momentum.
+          </p>
+        </section>
+      }
 
       <div class="workspace-zones">
         <section class="zone zone-results" aria-labelledby="results-zone-heading">
@@ -455,6 +494,44 @@ export class AppointmentsComponent {
   drafts: AppointmentDraft[] = [];
   teacherDisplayName = 'Teacher Account';
   activeListContext: 'all' | 'drafts' | 'submitted' | 'attention' = 'all';
+  readonly demoPathTargetDuration = '6m 45s';
+  readonly demoPathSteps: DemoStep[] = [
+    {
+      id: 'navigation',
+      title: '1) Navigate from dashboard to workspace',
+      timing: '1m 10s',
+      actionPrompt: 'Open Appointments and orient the audience to list, detail, and media zones.',
+      valueMessage: 'Teachers immediately see where to act next without hunting through menus.',
+    },
+    {
+      id: 'filtering',
+      title: '2) Apply filters to narrow focus',
+      timing: '1m 30s',
+      actionPrompt: 'Use category/status/metadata filters to reduce the list to relevant records.',
+      valueMessage: 'Fast filtering reduces cognitive load and surfaces the right appointment quickly.',
+    },
+    {
+      id: 'draft-work',
+      title: '3) Open and refine a draft',
+      timing: '2m 00s',
+      actionPrompt: 'Open one draft, review optional metadata, and show editability for in-progress work.',
+      valueMessage: 'Structured draft editing captures context early while keeping workflow flexible.',
+    },
+    {
+      id: 'submit-readiness',
+      title: '4) Confirm submit readiness',
+      timing: '1m 20s',
+      actionPrompt: 'Use the readiness panel to show required fields and submission confidence.',
+      valueMessage: 'Clear readiness signals prevent bad submissions and reduce downstream rework.',
+    },
+    {
+      id: 'fallback',
+      title: '5) Recovery / skip path',
+      timing: '0m 45s',
+      actionPrompt: 'If a step fails live, reset demo data and continue from the next scripted point.',
+      valueMessage: 'Presenter stays in control and keeps the narrative predictable under time pressure.',
+    },
+  ];
 
   readonly draftForm = new FormGroup({
     title: new FormControl('', [Validators.required]),
@@ -480,6 +557,10 @@ export class AppointmentsComponent {
 
   get pitchDemoModeEnabled(): boolean {
     return this.pitchDemoModeService.isEnabled();
+  }
+
+  get completedDemoStepsCount(): number {
+    return this.demoPathSteps.filter((step) => step.id !== 'fallback' && this.isDemoStepDone(step.id)).length;
   }
 
   constructor() {
@@ -709,6 +790,22 @@ export class AppointmentsComponent {
           this.demoResetMessage = `Demo dataset ${result.version} restored (${result.draftCount} appointments).`;
         },
       });
+  }
+
+  isDemoStepDone(stepId: DemoStepId): boolean {
+    if (stepId === 'navigation') {
+      return this.activeListContext !== 'all';
+    }
+    if (stepId === 'filtering') {
+      return this.hasActiveFilters;
+    }
+    if (stepId === 'draft-work') {
+      return Boolean(this.selectedDraftId);
+    }
+    if (stepId === 'submit-readiness') {
+      return Boolean(this.selectedDraftId) && this.missingRequiredFields.length === 0 && this.failedImageUploadCount === 0;
+    }
+    return false;
   }
 
   openPrivacySummary(): void {

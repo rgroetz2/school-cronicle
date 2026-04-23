@@ -75,6 +75,53 @@
   grid-column: 1 / -1;
 }
 
+.demo-script-panel {
+  margin-bottom: 1rem;
+}
+
+.demo-step-list {
+  margin: 0.8rem 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.demo-step-item {
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--surface-muted);
+  padding: 0.6rem 0.7rem;
+}
+
+.demo-step-item.done {
+  border-color: #86efac;
+}
+
+.demo-step-header {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.demo-step-title {
+  font-weight: 600;
+}
+
+.demo-step-time,
+.demo-step-status {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.demo-step-action,
+.demo-step-value {
+  margin: 0.2rem 0 0;
+  color: var(--text-muted);
+}
+
 .panel-copy {
   margin-top: 0.45rem;
   color: var(--text-muted);
