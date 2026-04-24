@@ -1145,6 +1145,7 @@ describe('AppointmentsController integration', () => {
     });
   });
 
+<<<<<<< HEAD
   it('enforces max 5 uploads and max 3 printable images', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
@@ -1318,6 +1319,8 @@ describe('AppointmentsController integration', () => {
     expect(exportBody.data.base64.length).toBeGreaterThan(10);
   });
 
+=======
+>>>>>>> 8d53f41dedad3f038dc5c50621c09648dd112e81
   it('applies retention rules and audits draft/submission cleanup', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
