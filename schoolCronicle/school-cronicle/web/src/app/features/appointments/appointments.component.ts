@@ -333,7 +333,6 @@ interface DemoStep {
                   <p class="field-error">{{ participantLimitMessage }}</p>
                 }
 
-<<<<<<< HEAD
                 <label for="modal-appointment-media">Optional media/documents (images)</label>
                 <p class="state-pill">
                   Uploaded: {{ selectedDraftImages.length }}/5 | Printable: {{ printableImageCount }}/3
@@ -369,31 +368,6 @@ interface DemoStep {
                       </li>
                     }
                   </ul>
-=======
-                @if (isSpecialEventDraft) {
-                  <label for="modal-special-event-media">Optional media/documents (images)</label>
-                  <input
-                    id="modal-special-event-media"
-                    type="file"
-                    class="file-input"
-                    accept="image/*"
-                    multiple
-                    (change)="onImageSelected($event)"
-                  />
-                  @if (selectedDraftImages.length === 0) {
-                    <p class="state-pill">No media attached yet.</p>
-                  } @else {
-                    <ul class="image-list">
-                      @for (image of selectedDraftImages; track image.id) {
-                        <li class="image-card">
-                          <img [src]="image.dataUrl" [alt]="image.name" width="84" height="84" />
-                          <span class="image-name">{{ image.name }}</span>
-                          <button type="button" class="ghost danger" (click)="removeImage(image.id)">Remove</button>
-                        </li>
-                      }
-                    </ul>
-                  }
->>>>>>> 8d53f41dedad3f038dc5c50621c09648dd112e81
                 }
 
                 <div class="form-actions">
@@ -738,13 +712,9 @@ export class AppointmentsComponent {
     return this.drafts.find((draft) => draft.id === this.selectedDraftId)?.images ?? [];
   }
 
-<<<<<<< HEAD
   get printableImageCount(): number {
     return this.selectedDraftImages.filter((image) => image.printableInChronicle).length;
   }
-
-=======
->>>>>>> 8d53f41dedad3f038dc5c50621c09648dd112e81
   get isSpecialEventDraft(): boolean {
     return (this.draftForm.controls.category.value ?? '').trim() === 'special_event';
   }

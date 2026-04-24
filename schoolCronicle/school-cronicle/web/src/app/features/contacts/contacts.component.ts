@@ -86,7 +86,7 @@ import { AuthApiService, SchoolContact, SchoolContactRole } from '../../core/aut
               <button type="button" class="ghost inline" (click)="closeModal()">Close</button>
             </header>
 
-            <form [formGroup]="contactForm" (ngSubmit)="saveContact()" novalidate>
+            <form [formGroup]="contactForm" novalidate>
               <label for="contact-name">Name *</label>
               <input id="contact-name" type="text" formControlName="name" />
 
@@ -103,13 +103,13 @@ import { AuthApiService, SchoolContact, SchoolContactRole } from '../../core/aut
 
               <label for="contact-phone">Phone</label>
               <input id="contact-phone" type="text" formControlName="phone" />
-
-              <div class="form-actions">
-                <button type="submit" class="primary" [disabled]="isSavingContact">
-                  {{ isSavingContact ? 'Saving...' : selectedContactId ? 'Save contact' : 'Create contact' }}
-                </button>
-              </div>
             </form>
+            <div class="form-actions contact-modal-footer">
+              <button type="button" class="primary" (click)="saveContact()" [disabled]="isSavingContact">
+                {{ isSavingContact ? 'Saving...' : 'Save contact' }}
+              </button>
+              <button type="button" class="ghost" (click)="closeModal()">Cancel</button>
+            </div>
           </section>
         </div>
       }

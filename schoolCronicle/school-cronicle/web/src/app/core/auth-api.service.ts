@@ -732,16 +732,12 @@ export class AuthApiService {
         ? draft.participants.filter((item) => Boolean(item?.contactId && item?.name && item?.role))
         : [],
       chronicleExportEligible: draft.category === 'special_event',
-<<<<<<< HEAD
       images: Array.isArray(draft.images)
         ? draft.images.map((image) => ({
             ...image,
             printableInChronicle: Boolean(image.printableInChronicle),
           }))
         : [],
-=======
-      images: Array.isArray(draft.images) ? draft.images : [],
->>>>>>> 8d53f41dedad3f038dc5c50621c09648dd112e81
     };
   }
 
