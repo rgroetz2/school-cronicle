@@ -61,14 +61,14 @@
   border: 1px solid var(--border);
   border-radius: 0.7rem;
   overflow: hidden;
-  background: #fff;
+  background: var(--surface);
 }
 
 .grid-header {
   display: grid;
   grid-template-columns: 1.5fr 1fr 1.6fr 1.2fr 1.2fr;
   border-bottom: 1px solid var(--border);
-  background: #f1f5f9;
+  background: var(--surface-subtle);
   font-size: 0.84rem;
   font-weight: 700;
   color: var(--text-muted);
@@ -98,7 +98,7 @@
   border: 0;
   border-bottom: 1px solid var(--border);
   border-radius: 0;
-  background: #fff;
+  background: var(--surface);
   padding: 0;
   text-align: left;
   display: grid;
@@ -107,7 +107,7 @@
 
 .contact-button[aria-pressed='true'],
 .contact-button:hover {
-  background: #eaf2ff;
+  background: var(--accent-muted);
 }
 
 .contact-grid-row {
@@ -131,7 +131,7 @@ input,
 select {
   border: 1px solid var(--border);
   padding: 0.6rem 0.75rem;
-  background: #fff;
+  background: var(--surface);
 }
 
 button {
@@ -149,7 +149,7 @@ button.primary {
 
 button.ghost {
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
 }
 
@@ -176,7 +176,7 @@ form {
   padding: 0.35rem 0.7rem;
   font-size: 0.85rem;
   width: fit-content;
-  background: #fff;
+  background: var(--surface);
 }
 
 .state-pill.loading {
@@ -184,8 +184,9 @@ form {
 }
 
 .state-pill.warning {
-  border-color: #f7d28a;
-  background: #fff8e8;
+  border-color: color-mix(in srgb, var(--warning-fg) 35%, white);
+  background: var(--warning-bg);
+  color: var(--warning-fg);
 }
 
 .status-stack {
@@ -220,6 +221,16 @@ form {
   margin-bottom: 0.75rem;
 }
 
+.modal-header-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.modal-header-actions .primary {
+  background: var(--accent);
+  color: #fff;
+}
+
 .contact-modal-footer {
   position: sticky;
   bottom: 0;
@@ -231,6 +242,6 @@ form {
 }
 
 .contact-modal-footer .primary {
-  background: #2563eb;
+  background: var(--accent);
   color: #fff;
 }

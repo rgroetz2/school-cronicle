@@ -80,7 +80,7 @@
   border: 1px solid var(--border);
   border-radius: 0.65rem;
   padding: 0.6rem 0.75rem;
-  background: #fff;
+  background: var(--surface);
   font: inherit;
 }
 
@@ -99,7 +99,7 @@
 
 .ghost {
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
   border-radius: 0.65rem;
   min-height: 2.65rem;

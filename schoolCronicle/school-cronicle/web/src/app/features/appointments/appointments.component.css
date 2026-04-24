@@ -40,7 +40,7 @@
 .zone {
   border: 1px solid var(--border);
   border-radius: 1rem;
-  background: #f8fafc;
+  background: var(--surface-muted);
   padding: 0.8rem;
   display: grid;
   gap: 0.8rem;
@@ -155,7 +155,7 @@
   color: var(--text-muted);
   padding: 0.2rem 0.6rem 0.45rem;
   border-bottom: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
 }
 
 .chronicle-select-control {
@@ -168,14 +168,14 @@
   border: 1px solid var(--border);
   border-radius: 0.7rem;
   overflow: hidden;
-  background: #fff;
+  background: var(--surface);
 }
 
 .grid-header {
   display: grid;
-  grid-template-columns: 0.55fr 2fr 1.2fr 1.2fr 1fr 1.5fr;
+  grid-template-columns: 0.55fr 2fr 1.2fr 1.2fr 1fr 0.8fr 1.5fr;
   border-bottom: 1px solid var(--border);
-  background: #f1f5f9;
+  background: var(--surface-subtle);
   font-size: 0.84rem;
   font-weight: 700;
   color: var(--text-muted);
@@ -204,7 +204,7 @@
   border: 0;
   border-bottom: 1px solid var(--border);
   border-radius: 0;
-  background: #fff;
+  background: var(--surface);
   padding: 0;
   text-align: left;
   display: grid;
@@ -217,16 +217,16 @@
 }
 
 .draft-button:hover {
-  border-color: #b9bec8;
-  background: #f8fafc;
+  border-color: var(--border-strong);
+  background: var(--surface-muted);
 }
 
 .draft-button[aria-pressed='true'] {
-  background: #eaf2ff;
+  background: var(--accent-muted);
 }
 
 .draft-grid-row {
-  grid-template-columns: 0.55fr 2fr 1.2fr 1.2fr 1fr 1.5fr;
+  grid-template-columns: 0.55fr 2fr 1.2fr 1.2fr 1fr 0.8fr 1.5fr;
   gap: 0;
 }
 
@@ -271,7 +271,7 @@ select,
 textarea {
   border: 1px solid var(--border);
   padding: 0.6rem 0.75rem;
-  background: #fff;
+  background: var(--surface);
 }
 
 textarea {
@@ -303,7 +303,7 @@ button {
 
 .ghost {
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
 }
 
@@ -315,8 +315,8 @@ button {
 }
 
 .ghost:hover:not([disabled]) {
-  border-color: #b9bec8;
-  background: #fafafb;
+  border-color: var(--border-strong);
+  background: var(--surface-muted);
 }
 
 .danger {
@@ -379,7 +379,7 @@ button {
   border: 1px solid var(--border);
   border-radius: 0.6rem;
   padding: 0.45rem 0.6rem;
-  background: #fff;
+  background: var(--surface);
 }
 
 .upload-name {
@@ -449,13 +449,13 @@ button {
 }
 
 .state-pill.success {
-  border-color: #86efac;
+  border-color: color-mix(in srgb, var(--success-fg) 25%, white);
   background: var(--success-bg);
   color: var(--success-fg);
 }
 
 .state-pill.warning {
-  border-color: #fcd34d;
+  border-color: color-mix(in srgb, var(--warning-fg) 35%, white);
   background: var(--warning-bg);
   color: var(--warning-fg);
 }

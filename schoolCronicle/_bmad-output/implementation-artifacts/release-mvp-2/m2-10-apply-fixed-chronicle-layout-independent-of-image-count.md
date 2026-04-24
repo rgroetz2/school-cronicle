@@ -1,6 +1,6 @@
 # Story M2.10: Apply Fixed Chronicle Layout Independent of Image Count
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -17,15 +17,15 @@ so that output remains predictable even with varying media counts.
 
 ## Tasks / Subtasks
 
-- [ ] Define fixed section template rules for chronicle `.docx` rendering (AC: 1, 2)
-  - [ ] Standardize heading, text, participant, and media placement regions.
-  - [ ] Define slot behavior for 0..3 printable images.
-- [ ] Implement deterministic renderer logic using fixed template (AC: 1, 2)
-  - [ ] Keep typography and spacing stable across cases.
-  - [ ] Prevent content shifts from variable media counts.
-- [ ] Validate output fidelity with golden samples (AC: 1, 2)
-  - [ ] Generate sample docs for 0/1/2/3 printable-image cases.
-  - [ ] Compare layout consistency and slot ordering.
+- [x] Define fixed section template rules for chronicle `.docx` rendering (AC: 1, 2)
+  - [x] Standardize heading, text, participant, and media placement regions.
+  - [x] Define slot behavior for 0..3 printable images.
+- [x] Implement deterministic renderer logic using fixed template (AC: 1, 2)
+  - [x] Keep typography and spacing stable across cases.
+  - [x] Prevent content shifts from variable media counts.
+- [x] Validate output fidelity with golden samples (AC: 1, 2)
+  - [x] Generate sample docs for 0/1/2/3 printable-image cases.
+  - [x] Compare layout consistency and slot ordering.
 
 ## Dev Notes
 
@@ -49,4 +49,12 @@ gpt-5.3-codex
 
 ### Completion Notes List
 
+- Introduced fixed chronicle section line renderer with explicit, stable regions: date, category, status, narrative, participants.
+- Added deterministic 3-slot image mapping (`Image slot 1..3`) with explicit `[empty]` placeholders for missing printable images.
+- Updated `.docx` export pipeline to use fixed section lines for every selected appointment section, preventing layout drift from variable image counts.
+- Added unit tests for 0/1/2/3 printable-image scenarios verifying consistent slot structure and ordering.
+
 ### File List
+
+- `school-cronicle/api/src/modules/appointments/appointments.service.ts`
+- `school-cronicle/api/src/modules/appointments/appointments.service.spec.ts`

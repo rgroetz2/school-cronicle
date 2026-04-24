@@ -53,11 +53,11 @@ button {
 
 input {
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
 }
 
 input:hover {
-  border-color: #c3c7d0;
+  border-color: var(--border-strong);
 }
 
 button {

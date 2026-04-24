@@ -1,16 +1,20 @@
 :root {
-  --bg: #f3f4f6;
+  --bg: #f5f6f8;
   --surface: #ffffff;
-  --surface-muted: #f8fafc;
-  --border: #d6d9df;
-  --text: #101828;
-  --text-muted: #475467;
-  --brand: #243041;
-  --brand-strong: #162131;
-  --focus: #344054;
-  --success-bg: #ecfdf3;
+  --surface-muted: #f0f2f5;
+  --surface-subtle: #e9edf2;
+  --border: #c8cfd8;
+  --border-strong: #aeb8c5;
+  --text: #111827;
+  --text-muted: #4b5563;
+  --brand: #334155;
+  --brand-strong: #1f2937;
+  --accent: #3b82f6;
+  --accent-muted: #dbeafe;
+  --focus: #1d4ed8;
+  --success-bg: #ecfdf5;
   --success-fg: #166534;
-  --warning-bg: #fffaeb;
+  --warning-bg: #fffbeb;
   --warning-fg: #92400e;
   --danger-bg: #fef2f2;
   --danger-fg: #991b1b;
@@ -30,7 +34,7 @@ body {
 }
 
 body {
-  background: radial-gradient(circle at top, #fcfcfd 0%, var(--bg) 60%);
+  background: radial-gradient(circle at top, #ffffff 0%, var(--bg) 58%);
   color: var(--text);
   font-family:
     Inter,

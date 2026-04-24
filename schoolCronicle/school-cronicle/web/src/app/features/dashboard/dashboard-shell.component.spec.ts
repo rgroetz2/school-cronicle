@@ -17,10 +17,11 @@ describe('DashboardShellComponent', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('Dashboard');
     expect(text).toContain('Appointments');
-    expect(text).toContain('Drafts');
-    expect(text).toContain('Submitted');
+    expect(text).toContain('Contacts');
     expect(text).toContain('Privacy');
     expect(text).toContain('Help');
+    expect(text).toContain('Latest changes');
+    expect(text).toContain('M2.11 Introduce neutral accessible color tokens');
   });
 
   it('toggles sidebar state from menu button', () => {

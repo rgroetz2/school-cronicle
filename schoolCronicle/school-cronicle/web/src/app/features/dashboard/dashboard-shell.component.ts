@@ -7,6 +7,11 @@ interface DashboardNavItem {
   fragment?: string;
 }
 
+interface ReleaseChangeItem {
+  title: string;
+  deliveredAt: string;
+}
+
 @Component({
   selector: 'app-dashboard-shell',
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
@@ -36,6 +41,18 @@ interface DashboardNavItem {
             }
           </ul>
         </nav>
+
+        <section class="release-notes" aria-label="Latest delivered changes">
+          <h3>Latest changes</h3>
+          <ul class="release-notes-list">
+            @for (change of latestChanges; track change.title) {
+              <li>
+                <span class="change-title">{{ change.title }}</span>
+                <span class="change-date">{{ change.deliveredAt }}</span>
+              </li>
+            }
+          </ul>
+        </section>
       </aside>
 
       <div class="content">
@@ -64,6 +81,12 @@ export class DashboardShellComponent {
     { label: 'Contacts', path: '/contacts' },
     { label: 'Privacy', path: '/privacy' },
     { label: 'Help', path: '/help' },
+  ];
+
+  readonly latestChanges: ReleaseChangeItem[] = [
+    { title: 'M2.11 Introduce neutral accessible color tokens', deliveredAt: 'Apr 2026' },
+    { title: 'M2.10 Apply fixed chronicle layout independent of image count', deliveredAt: 'Apr 2026' },
+    { title: 'M2.9 Generate chronicle .docx from manual appointment selection', deliveredAt: 'Apr 2026' },
   ];
 
   toggleMenu(): void {

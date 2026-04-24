@@ -83,7 +83,12 @@ import { AuthApiService, SchoolContact, SchoolContactRole } from '../../core/aut
           <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title" (click)="$event.stopPropagation()">
             <header class="modal-header">
               <h3 id="contact-modal-title">{{ selectedContactId ? 'Maintain contact' : 'Create contact' }}</h3>
-              <button type="button" class="ghost inline" (click)="closeModal()">Close</button>
+              <div class="modal-header-actions">
+                <button type="button" class="primary inline" (click)="saveContact()" [disabled]="isSavingContact">
+                  {{ isSavingContact ? 'Saving...' : 'Save contact' }}
+                </button>
+                <button type="button" class="ghost inline" (click)="closeModal()">Close</button>
+              </div>
             </header>
 
             <form [formGroup]="contactForm" novalidate>

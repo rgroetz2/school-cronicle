@@ -181,6 +181,7 @@ interface DemoStep {
               <span class="grid-cell">Category</span>
               <span class="grid-cell">Date</span>
               <span class="grid-cell">Status</span>
+              <span class="grid-cell">Images</span>
               <span class="grid-cell">Last update</span>
             </div>
           <ul class="draft-list">
@@ -214,6 +215,7 @@ interface DemoStep {
                       (edited after submit)
                     }
                   </span>
+                  <span class="grid-cell">{{ draft.images.length }}</span>
                   <span class="grid-cell">{{
                     (draft.editedAfterSubmitAt ? draft.editedAfterSubmitAt : draft.submittedAt ? draft.submittedAt : draft.createdAt)
                       | date: 'yyyy-MM-dd HH:mm'

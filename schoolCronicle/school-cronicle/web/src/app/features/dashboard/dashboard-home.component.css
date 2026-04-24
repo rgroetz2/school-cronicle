@@ -43,8 +43,8 @@
 }
 
 .summary-card:hover:not([disabled]) {
-  border-color: #b9bec8;
-  background: #f8fafc;
+  border-color: var(--border-strong);
+  background: var(--surface-muted);
 }
 
 .card-title {

@@ -21,6 +21,7 @@ const RETENTION_SUBMITTED_MAX_AGE_DAYS = 365;
 const RETENTION_RETRY_DELAY_MS = 60_000;
 const MAX_UPLOADED_IMAGES = 5;
 const MAX_PRINTABLE_IMAGES = 3;
+const CHRONICLE_IMAGE_SLOT_COUNT = 3;
 
 interface RetentionConfig {
   draftMaxAgeDays: number;
@@ -61,6 +62,25 @@ export interface ChronicleExportArtifact {
   mimeType: string;
   base64: string;
   exportedAppointmentIds: string[];
+}
+
+export function buildChronicleSectionLines(draft: AppointmentDraft): string[] {
+  const printableImages = (draft.images ?? []).filter((image) => image.printableInChronicle).slice(0, CHRONICLE_IMAGE_SLOT_COUNT);
+  const participants = (draft.participants ?? []).map((participant) => `${participant.name} (${participant.role})`).join(', ');
+
+  const lines: string[] = [
+    `Date: ${draft.appointmentDate}`,
+    `Category: ${draft.category}`,
+    `Status: ${draft.status}`,
+    `Narrative: ${draft.notes.trim() || '-'}`,
+    `Participants: ${participants || '-'}`,
+  ];
+
+  for (let slot = 0; slot < CHRONICLE_IMAGE_SLOT_COUNT; slot += 1) {
+    const image = printableImages[slot];
+    lines.push(`Image slot ${slot + 1}: ${image?.name ?? '[empty]'}`);
+  }
+  return lines;
 }
 
 @Injectable()
@@ -139,23 +159,8 @@ export class AppointmentsService {
           heading: HeadingLevel.HEADING_2,
         }),
       );
-      paragraphs.push(new Paragraph(`Date: ${draft.appointmentDate}`));
-      paragraphs.push(new Paragraph(`Category: ${draft.category}`));
-      paragraphs.push(new Paragraph(`Status: ${draft.status}`));
-      if (draft.notes.trim()) {
-        paragraphs.push(new Paragraph(`Narrative: ${draft.notes.trim()}`));
-      }
-      if ((draft.participants ?? []).length > 0) {
-        paragraphs.push(
-          new Paragraph(
-            `Participants: ${(draft.participants ?? []).map((participant) => `${participant.name} (${participant.role})`).join(', ')}`,
-          ),
-        );
-      }
-      const printableImages = (draft.images ?? []).filter((image) => image.printableInChronicle);
-      paragraphs.push(new Paragraph(`Printable images: ${printableImages.length}`));
-      for (const image of printableImages) {
-        paragraphs.push(new Paragraph(`- ${image.name}`));
+      for (const line of buildChronicleSectionLines(draft)) {
+        paragraphs.push(new Paragraph(line));
       }
       paragraphs.push(new Paragraph(''));
     }
