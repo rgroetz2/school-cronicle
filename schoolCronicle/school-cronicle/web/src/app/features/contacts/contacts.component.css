@@ -26,7 +26,7 @@
   border: 1px solid var(--border);
   border-radius: 1rem;
   background: var(--surface);
-  padding: 1rem;
+  padding: 1.05rem;
   box-shadow: var(--shadow-soft);
 }
 
@@ -40,7 +40,7 @@
   border: 1px solid var(--border);
   border-radius: 0.75rem;
   background: var(--surface-muted);
-  padding: 0.7rem;
+  padding: 0.8rem;
   margin-bottom: 0.8rem;
 }
 
@@ -103,6 +103,7 @@
   text-align: left;
   display: grid;
   cursor: pointer;
+  transition: background-color 120ms ease;
 }
 
 .contact-button[aria-pressed='true'],
@@ -132,6 +133,11 @@ select {
   border: 1px solid var(--border);
   padding: 0.6rem 0.75rem;
   background: var(--surface);
+}
+
+input:focus-visible,
+select:focus-visible {
+  border-color: var(--accent);
 }
 
 button {
@@ -219,6 +225,8 @@ form {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.75rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--border);
 }
 
 .modal-header-actions {

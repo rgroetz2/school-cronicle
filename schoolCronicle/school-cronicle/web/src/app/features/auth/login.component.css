@@ -12,6 +12,16 @@
   background: var(--surface);
   padding: 2rem;
   box-shadow: var(--shadow-soft);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 0.3rem;
+  background: linear-gradient(90deg, var(--accent), var(--brand));
 }
 
 .kicker {
@@ -34,7 +44,7 @@ h2 {
 
 .login-form {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.7rem;
   margin-top: 1.25rem;
 }
 
@@ -58,6 +68,10 @@ input {
 
 input:hover {
   border-color: var(--border-strong);
+}
+
+input:focus-visible {
+  border-color: var(--accent);
 }
 
 button {

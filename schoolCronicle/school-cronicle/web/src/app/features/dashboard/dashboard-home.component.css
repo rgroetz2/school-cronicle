@@ -40,6 +40,16 @@
   gap: 0.25rem;
   font: inherit;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.summary-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 0.2rem;
+  background: color-mix(in srgb, var(--accent) 45%, white);
 }
 
 .summary-card:hover:not([disabled]) {

@@ -1,6 +1,6 @@
 # Story M2.12: Apply Light Visual Refresh to Core Views
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -17,16 +17,16 @@ so that daily workflows feel clearer and more engaging.
 
 ## Tasks / Subtasks
 
-- [ ] Apply token-driven visual polish to core view surfaces (AC: 1)
-  - [ ] Update spacing and visual hierarchy in key containers.
-  - [ ] Refresh accent and component treatment using M2.11 tokens.
-- [ ] Refine view-specific styling for login/list/modal/filter/summary (AC: 1)
-  - [ ] Preserve readability and reduced cognitive load.
-  - [ ] Keep form and list semantics unchanged.
-- [ ] Protect interaction familiarity and behavior contracts (AC: 2)
-  - [ ] No navigation model overhaul.
-  - [ ] No disruption to known task flow sequence.
-- [ ] Add targeted visual regression and UX sanity checks.
+- [x] Apply token-driven visual polish to core view surfaces (AC: 1)
+  - [x] Update spacing and visual hierarchy in key containers.
+  - [x] Refresh accent and component treatment using M2.11 tokens.
+- [x] Refine view-specific styling for login/list/modal/filter/summary (AC: 1)
+  - [x] Preserve readability and reduced cognitive load.
+  - [x] Keep form and list semantics unchanged.
+- [x] Protect interaction familiarity and behavior contracts (AC: 2)
+  - [x] No navigation model overhaul.
+  - [x] No disruption to known task flow sequence.
+- [x] Add targeted visual regression and UX sanity checks.
 
 ## Dev Notes
 
@@ -49,4 +49,17 @@ gpt-5.3-codex
 
 ### Completion Notes List
 
+- Applied incremental visual polish to core surfaces with token-based hierarchy tuning (spacing, subtle accents, refined hover/focus feedback) while preserving structure and interactions.
+- Refreshed login and privacy views with calm accent headers, clearer input focus states, and consistent card depth to improve scanability.
+- Refined appointments and contacts list/filter/modal styling with stronger visual grouping, clearer modal header separation, and consistent interactive states.
+- Enhanced dashboard summary/sidebar emphasis using subtle accent cues without changing navigation behavior or flow sequence.
+- Verified updated style files with lint diagnostics; no issues reported.
+
 ### File List
+
+- `school-cronicle/web/src/app/features/auth/login.component.css`
+- `school-cronicle/web/src/app/features/privacy/privacy-summary.component.css`
+- `school-cronicle/web/src/app/features/dashboard/dashboard-home.component.css`
+- `school-cronicle/web/src/app/features/dashboard/dashboard-shell.component.css`
+- `school-cronicle/web/src/app/features/appointments/appointments.component.css`
+- `school-cronicle/web/src/app/features/contacts/contacts.component.css`
