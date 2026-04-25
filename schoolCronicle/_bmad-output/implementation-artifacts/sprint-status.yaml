@@ -1,5 +1,5 @@
 # generated: 2026-04-25T11:37:00+0200
-# last_updated: 2026-04-25T11:44:00+0200
+# last_updated: 2026-04-25T11:59:00+0200
 # project: schoolCronicle
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-25T11:37:00+0200
-last_updated: 2026-04-25T11:44:00+0200
+last_updated: 2026-04-25T11:59:00+0200
 project: schoolCronicle
 project_key: NOKEY
 tracking_system: file-system
@@ -122,8 +122,8 @@ development_status:
   epic-m2-4-retrospective: optional
   epic-ux3-1: in-progress
   ux3-1-define-shared-bottom-crud-action-bar-contract: in-progress
-  ux3-2-enforce-mode-aware-create-save-delete-rules: ready-for-dev
-  ux3-3-apply-shared-action-bar-to-appointment-editor: ready-for-dev
+  ux3-2-enforce-mode-aware-create-save-delete-rules: in-progress
+  ux3-3-apply-shared-action-bar-to-appointment-editor: in-progress
   epic-ux3-1-retrospective: optional
   epic-ux3-2: in-progress
   ux3-4-add-contact-delete-api-method-in-frontend-service: ready-for-dev

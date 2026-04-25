@@ -377,17 +377,17 @@ interface DemoStep {
 
                 <app-crud-action-bar
                   ariaLabel="Appointment CRUD actions"
-                  [showCreate]="!selectedDraftId"
-                  [showSave]="!!selectedDraftId"
-                  [showDelete]="!!selectedDraftId"
+                  [showCreate]="isAppointmentCreateMode"
+                  [showSave]="isAppointmentEditMode"
+                  [showDelete]="isAppointmentEditMode"
                   [createDisabled]="isCreatingDraft || isSavingDraft"
                   [saveDisabled]="isCreatingDraft || isSavingDraft"
                   [deleteDisabled]="isDeletingDraft"
                   [createLabel]="isCreatingDraft ? 'Creating appointment...' : 'Create appointment'"
                   [saveLabel]="isSavingDraft ? 'Saving appointment...' : 'Save appointment'"
                   [deleteLabel]="isDeletingDraft ? 'Deleting...' : 'Delete appointment'"
-                  (createClicked)="createDraft()"
-                  (saveClicked)="createDraft()"
+                  (createClicked)="onAppointmentCreateAction()"
+                  (saveClicked)="onAppointmentSaveAction()"
                   (deleteClicked)="deleteSelectedDraft()"
                 >
                   @if (selectedDraftId) {
@@ -701,6 +701,14 @@ export class AppointmentsComponent {
     return this.drafts.find((draft) => draft.id === this.selectedDraftId);
   }
 
+  get isAppointmentCreateMode(): boolean {
+    return !this.selectedDraftId;
+  }
+
+  get isAppointmentEditMode(): boolean {
+    return !!this.selectedDraftId;
+  }
+
   get isSelectedDraftSubmitted(): boolean {
     return this.selectedDraft?.status === 'submitted';
   }
@@ -928,6 +936,20 @@ export class AppointmentsComponent {
           this.closeEditorModal();
         },
       });
+  }
+
+  onAppointmentCreateAction(): void {
+    if (!this.isAppointmentCreateMode) {
+      return;
+    }
+    this.createDraft();
+  }
+
+  onAppointmentSaveAction(): void {
+    if (!this.isAppointmentEditMode) {
+      return;
+    }
+    this.createDraft();
   }
 
   openDraft(draftId: string): void {

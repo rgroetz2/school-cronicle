@@ -1,6 +1,6 @@
 # Story UX3.2: Enforce Mode-Aware Create/Save/Delete Rules
 
-Status: drafted
+Status: in-progress
 
 ## Story
 
@@ -19,3 +19,30 @@ so that I cannot trigger the wrong action.
 - [ ] Define mode contract (`create` vs `edit`) in CRUD editor state.
 - [ ] Bind action enablement/visibility to mode contract.
 - [ ] Add tests for all action/mode combinations.
+
+## Dev Agent Record
+
+### Debug Log References
+
+- `npx nx lint web` (pass)
+- `npx nx test web --include=web/src/app/shared/crud-action-bar.component.spec.ts --include=web/src/app/features/contacts/contacts.mode-actions.spec.ts --include=web/src/app/features/appointments/appointments.mode-actions.spec.ts` (pass)
+- `npx nx test web` (fails in pre-existing appointments component suite; see notes)
+
+### Completion Notes
+
+- Added explicit mode contract getters in appointments and contacts editors (`create` vs `edit`) to drive Create/Save/Delete rendering.
+- Added mode-gated action handlers to prevent invalid action combinations in handler logic (`onAppointmentCreateAction`, `onAppointmentSaveAction`, `onContactCreateAction`, `onContactSaveAction`).
+- Added focused mode-action tests for appointments and contacts plus shared action-bar tests.
+- Full regression suite currently has unrelated legacy failures in `appointments.component.spec.ts`; story remains `in-progress` until those are resolved.
+
+### File List
+
+- `school-cronicle/web/src/app/features/appointments/appointments.component.ts`
+- `school-cronicle/web/src/app/features/contacts/contacts.component.ts`
+- `school-cronicle/web/src/app/features/appointments/appointments.mode-actions.spec.ts`
+- `school-cronicle/web/src/app/features/contacts/contacts.mode-actions.spec.ts`
+- `school-cronicle/web/src/app/shared/crud-action-bar.component.spec.ts`
+
+### Change Log
+
+- 2026-04-25: Introduced mode-aware CRUD action gating and added focused mode tests for appointments/contacts.

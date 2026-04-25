@@ -117,17 +117,17 @@ import { CrudActionBarComponent } from '../../shared/crud-action-bar.component';
             <div class="contact-modal-footer">
               <app-crud-action-bar
                 ariaLabel="Contact CRUD actions"
-                [showCreate]="!selectedContactId"
-                [showSave]="!!selectedContactId"
-                [showDelete]="true"
+                [showCreate]="isContactCreateMode"
+                [showSave]="isContactEditMode"
+                [showDelete]="isContactEditMode"
                 [createDisabled]="isSavingContact"
                 [saveDisabled]="isSavingContact"
-                [deleteDisabled]="true"
+                [deleteDisabled]="isSavingContact"
                 [createLabel]="isSavingContact ? 'Creating contact...' : 'Create contact'"
                 [saveLabel]="isSavingContact ? 'Saving contact...' : 'Save contact'"
                 deleteLabel="Delete contact"
-                (createClicked)="saveContact()"
-                (saveClicked)="saveContact()"
+                (createClicked)="onContactCreateAction()"
+                (saveClicked)="onContactSaveAction()"
                 (deleteClicked)="showDeleteUnavailableMessage()"
               >
                 <button crud-secondary type="button" class="ghost" (click)="closeModal()">Cancel</button>
@@ -192,6 +192,14 @@ export class ContactsComponent {
     });
   }
 
+  get isContactCreateMode(): boolean {
+    return !this.selectedContactId;
+  }
+
+  get isContactEditMode(): boolean {
+    return !!this.selectedContactId;
+  }
+
   resetFilters(): void {
     this.filterForm.reset({ searchTerm: '', role: '' });
   }
@@ -252,6 +260,20 @@ export class ContactsComponent {
           this.contactMessage = 'Contact save failed.';
         },
       });
+  }
+
+  onContactCreateAction(): void {
+    if (!this.isContactCreateMode) {
+      return;
+    }
+    this.saveContact();
+  }
+
+  onContactSaveAction(): void {
+    if (!this.isContactEditMode) {
+      return;
+    }
+    this.saveContact();
   }
 
   showDeleteUnavailableMessage(): void {
