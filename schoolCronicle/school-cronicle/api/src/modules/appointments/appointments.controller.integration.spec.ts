@@ -1145,7 +1145,6 @@ describe('AppointmentsController integration', () => {
     });
   });
 
-<<<<<<< HEAD
   it('enforces max 5 uploads and max 3 printable images', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
@@ -1319,8 +1318,84 @@ describe('AppointmentsController integration', () => {
     expect(exportBody.data.base64.length).toBeGreaterThan(10);
   });
 
-=======
->>>>>>> 8d53f41dedad3f038dc5c50621c09648dd112e81
+  it('exports selected eligible appointments as markdown artifact via dedicated endpoint', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+
+    const createResponse = await fetch(`${baseUrl}/api/appointments/drafts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        title: 'Eligible markdown submission',
+        appointmentDate: '2026-08-02',
+        category: 'meeting',
+      }),
+    });
+    const draftId = (await createResponse.json()).data.draft.id as string;
+
+    await fetch(`${baseUrl}/api/appointments/drafts/${draftId}/submit`, {
+      method: 'POST',
+      headers: {
+        cookie: sessionCookie ?? '',
+      },
+    });
+
+    const exportResponse = await fetch(`${baseUrl}/api/appointments/chronicle/export-md`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie ?? '',
+      },
+      body: JSON.stringify({
+        appointmentIds: [draftId],
+      }),
+    });
+    expect(exportResponse.status).toBe(201);
+    const exportBody = await exportResponse.json();
+    expect(exportBody.data).toMatchObject({
+      mimeType: 'text/markdown; charset=utf-8',
+      exportedAppointmentIds: [draftId],
+    });
+    expect(typeof exportBody.data.fileName).toBe('string');
+    expect(exportBody.data.fileName.toLowerCase()).toContain('.md');
+    expect(typeof exportBody.data.base64).toBe('string');
+    expect(exportBody.data.base64.length).toBeGreaterThan(10);
+    const markdown = Buffer.from(exportBody.data.base64, 'base64').toString('utf8');
+    expect(markdown).toContain('## Contact persons');
+    expect(markdown).toContain('## Appointments');
+    expect(markdown).toContain('- Class/grade: -');
+    expect(markdown).toContain('- Guardian name: -');
+    expect(markdown).toContain('- Location: -');
+    expect(markdown).toContain('- Participants:');
+    expect(markdown).toContain('- Media:');
+    expect(markdown).not.toContain('data:image/');
+  });
+
   it('applies retention rules and audits draft/submission cleanup', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],

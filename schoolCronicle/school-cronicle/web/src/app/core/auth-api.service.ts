@@ -158,6 +158,15 @@ interface ChronicleExportResponse {
   };
 }
 
+interface ChronicleMarkdownExportResponse {
+  data: {
+    fileName: string;
+    mimeType: string;
+    base64: string;
+    exportedAppointmentIds: string[];
+  };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -615,6 +624,116 @@ export class AuthApiService {
     return this.http
       .post<ChronicleExportResponse>('/api/appointments/chronicle/export', { appointmentIds })
       .pipe(map((response) => response.data));
+  }
+
+  exportChronicleMarkdown(appointmentIds: string[]): Observable<ChronicleMarkdownExportResponse['data']> {
+    if (this.hasDummySession()) {
+      const selectedIds = new Set(appointmentIds);
+      const selectedDrafts = this.readDummyDrafts()
+        .filter((draft) => selectedIds.has(draft.id))
+        .sort((a, b) => {
+          const byDate = a.appointmentDate.localeCompare(b.appointmentDate);
+          if (byDate !== 0) {
+            return byDate;
+          }
+          return a.id.localeCompare(b.id);
+        });
+      const contacts = this.readDummyContacts().sort((a, b) => {
+        const byName = a.name.localeCompare(b.name);
+        if (byName !== 0) {
+          return byName;
+        }
+        return a.role.localeCompare(b.role);
+      });
+
+      const lines: string[] = [
+        '# Chronicle Export',
+        `Generated at: ${new Date().toISOString()}`,
+        '',
+        '## Contact persons',
+      ];
+      if (contacts.length === 0) {
+        lines.push('- None');
+      } else {
+        for (const contact of contacts) {
+          lines.push(`- id=${contact.id}; name=${contact.name}; role=${contact.role}`);
+        }
+      }
+
+      lines.push('', '## Appointments');
+      if (selectedDrafts.length === 0) {
+        lines.push('- None');
+      } else {
+        for (const draft of selectedDrafts) {
+          lines.push(`### ${draft.title}`);
+          lines.push(`- Date: ${draft.appointmentDate}`);
+          lines.push(`- Category: ${draft.category}`);
+          lines.push(`- Status: ${draft.status}`);
+          lines.push(`- Class/grade: ${draft.classGrade?.trim() || '-'}`);
+          lines.push(`- Guardian name: ${draft.guardianName?.trim() || '-'}`);
+          lines.push(`- Location: ${draft.location?.trim() || '-'}`);
+          lines.push(`- Notes: ${draft.notes.trim() || '-'}`);
+          lines.push('- Participants:');
+          const participants = (draft.participants ?? []).sort((a, b) => {
+            const byName = a.name.localeCompare(b.name);
+            if (byName !== 0) {
+              return byName;
+            }
+            return a.contactId.localeCompare(b.contactId);
+          });
+          if (participants.length === 0) {
+            lines.push('  - None');
+          } else {
+            for (const participant of participants) {
+              lines.push(`  - id=${participant.contactId}; name=${participant.name}; role=${participant.role}`);
+            }
+          }
+          lines.push('- Media:');
+          const media = (draft.images ?? [])
+            .map((image) => ({
+              name: image.name,
+              mimeType: image.mimeType,
+              printableInChronicle: image.printableInChronicle === true,
+            }))
+            .sort((a, b) => {
+              const byName = a.name.localeCompare(b.name);
+              if (byName !== 0) {
+                return byName;
+              }
+              return a.mimeType.localeCompare(b.mimeType);
+            });
+          if (media.length === 0) {
+            lines.push('  - None');
+          } else {
+            for (const image of media) {
+              lines.push(`  - file=${image.name}; mime=${image.mimeType}; printable=${image.printableInChronicle ? 'yes' : 'no'}`);
+            }
+          }
+          lines.push('');
+        }
+      }
+
+      const markdown = `${lines.join('\n').trim()}\n`;
+      return of({
+        fileName: `chronicle-${new Date().toISOString().slice(0, 10)}.md`,
+        mimeType: 'text/markdown; charset=utf-8',
+        base64: this.encodeUtf8ToBase64(markdown),
+        exportedAppointmentIds: selectedDrafts.map((draft) => draft.id),
+      });
+    }
+
+    return this.http
+      .post<ChronicleMarkdownExportResponse>('/api/appointments/chronicle/export-md', { appointmentIds })
+      .pipe(map((response) => response.data));
+  }
+
+  private encodeUtf8ToBase64(value: string): string {
+    const utf8 = new TextEncoder().encode(value);
+    let binary = '';
+    for (const byte of utf8) {
+      binary += String.fromCharCode(byte);
+    }
+    return globalThis.btoa(binary);
   }
 
   getTeacherProfile(): Observable<TeacherProfile> {

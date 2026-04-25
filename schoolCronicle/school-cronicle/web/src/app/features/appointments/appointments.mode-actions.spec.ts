@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthApiService } from '../../core/auth-api.service';
 import { PitchDemoModeService } from '../../core/pitch-demo-mode.service';
@@ -13,6 +13,22 @@ describe('AppointmentsComponent mode actions', () => {
     listCategories: vi.fn(() => of([])),
     listDrafts: vi.fn(() => of([])),
     listContacts: vi.fn(() => of([])),
+    exportChronicle: vi.fn(() =>
+      of({
+        fileName: 'chronicle.docx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        base64: 'UEsDBAoAAAAA',
+        exportedAppointmentIds: ['draft-1'],
+      }),
+    ),
+    exportChronicleMarkdown: vi.fn(() =>
+      of({
+        fileName: 'chronicle.md',
+        mimeType: 'text/markdown; charset=utf-8',
+        base64: 'IyBDaHJvbmljbGUgRXhwb3J0',
+        exportedAppointmentIds: ['draft-1'],
+      }),
+    ),
   };
   const pitchDemoMock = { isEnabled: vi.fn(() => false) };
   const activatedRouteMock = { queryParamMap: of(convertToParamMap({})) };
@@ -83,5 +99,30 @@ describe('AppointmentsComponent mode actions', () => {
     expect(text).toContain('Save appointment');
     expect(text).toContain('Delete appointment');
     expect(text).not.toContain('Create appointment');
+  });
+
+  it('preserves selection and shows feedback when markdown export fails', () => {
+    const fixture = TestBed.createComponent(AppointmentsComponent);
+    const component = fixture.componentInstance;
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    const createObjectURLSpy = vi.fn(() => 'blob:failed-md-export');
+    const revokeObjectURLSpy = vi.fn();
+    URL.createObjectURL = createObjectURLSpy;
+    URL.revokeObjectURL = revokeObjectURLSpy;
+    authApiMock.exportChronicleMarkdown.mockReturnValueOnce(
+      throwError(() => new Error('export failed')),
+    );
+
+    component.selectedChronicleAppointmentIds = ['draft-1'];
+    component.exportChronicleMarkdown();
+
+    expect(component.selectedChronicleAppointmentIds).toEqual(['draft-1']);
+    expect(component.draftSavedMessage).toBe('Chronicle markdown export failed.');
+    expect(createObjectURLSpy).not.toHaveBeenCalled();
+    expect(component.isExportingChronicleMarkdown).toBe(false);
+
+    URL.createObjectURL = originalCreateObjectURL;
+    URL.revokeObjectURL = originalRevokeObjectURL;
   });
 });

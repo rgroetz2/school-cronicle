@@ -1,5 +1,5 @@
 # generated: 2026-04-25T11:37:00+0200
-# last_updated: 2026-04-25T12:30:00+0200
+# last_updated: 2026-04-25T13:40:00+0200
 # project: schoolCronicle
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-25T11:37:00+0200
-last_updated: 2026-04-25T12:30:00+0200
+last_updated: 2026-04-25T13:40:00+0200
 project: schoolCronicle
 project_key: NOKEY
 tracking_system: file-system
@@ -133,3 +133,10 @@ development_status:
   ux3-6-introduce-colorful-crud-action-tokens-and-states: in-progress
   ux3-7-verify-cross-screen-crud-action-consistency-with-tests: in-progress
   epic-ux3-3-retrospective: optional
+  epic-cmd-1: in-progress
+  cmd-1-add-export-chronicle-md-action-in-existing-export-surface: in-progress
+  cmd-2-wire-frontend-backend-markdown-export-command: in-progress
+  cmd-3-implement-markdown-contract-with-contact-persons-and-appointments-sections: in-progress
+  cmd-4-enforce-deterministic-ordering-and-media-metadata-only-serialization: in-progress
+  cmd-5-add-automated-tests-for-markdown-export-and-docx-non-regression: in-progress
+  epic-cmd-1-retrospective: optional

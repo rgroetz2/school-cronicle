@@ -64,6 +64,13 @@ export interface ChronicleExportArtifact {
   exportedAppointmentIds: string[];
 }
 
+export interface ChronicleMarkdownExportArtifact {
+  fileName: string;
+  mimeType: string;
+  base64: string;
+  exportedAppointmentIds: string[];
+}
+
 export function buildChronicleSectionLines(draft: AppointmentDraft): string[] {
   const printableImages = (draft.images ?? []).filter((image) => image.printableInChronicle).slice(0, CHRONICLE_IMAGE_SLOT_COUNT);
   const participants = (draft.participants ?? []).map((participant) => `${participant.name} (${participant.role})`).join(', ');
@@ -177,6 +184,137 @@ export class AppointmentsService {
       fileName: `chronicle-${new Date().toISOString().slice(0, 10)}.docx`,
       mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       base64: buffer.toString('base64'),
+      exportedAppointmentIds: selectedDrafts.map((draft) => draft.id),
+    };
+  }
+
+  exportChronicleMarkdownForTeacher(
+    teacherId: string,
+    selectedAppointmentIds: string[],
+  ): ChronicleMarkdownExportArtifact {
+    const selectedIdSet = new Set(selectedAppointmentIds);
+    const selectedDrafts = this.drafts
+      .filter((draft) => draft.teacherId === teacherId && selectedIdSet.has(draft.id))
+      .filter((draft) => draft.status === 'submitted' || draft.chronicleExportEligible === true)
+      .sort((a, b) => {
+        const byDate = a.appointmentDate.localeCompare(b.appointmentDate);
+        if (byDate !== 0) {
+          return byDate;
+        }
+        return a.id.localeCompare(b.id);
+      });
+
+    const contactPersonMap = new Map<string, { contactId: string; name: string; role: string }>();
+    for (const draft of selectedDrafts) {
+      for (const participant of draft.participants ?? []) {
+        if (!contactPersonMap.has(participant.contactId)) {
+          contactPersonMap.set(participant.contactId, {
+            contactId: participant.contactId,
+            name: participant.name,
+            role: participant.role,
+          });
+        }
+      }
+    }
+    const contactPersons = [...contactPersonMap.values()].sort((a, b) => {
+      const byName = a.name.localeCompare(b.name);
+      return byName !== 0 ? byName : a.role.localeCompare(b.role);
+    });
+
+    const lines: string[] = [
+      '# Chronicle Export',
+      `Generated at: ${new Date().toISOString()}`,
+      '',
+      '## Contact persons',
+    ];
+
+    if (contactPersons.length === 0) {
+      lines.push('- None');
+    } else {
+      for (const person of contactPersons) {
+        lines.push(`- id=${person.contactId}; name=${person.name}; role=${person.role}`);
+      }
+    }
+
+    lines.push('', '## Appointments');
+    if (selectedDrafts.length === 0) {
+      lines.push('- None');
+    } else {
+      for (const draft of selectedDrafts) {
+        lines.push(`### ${draft.title}`);
+        lines.push(`- Date: ${draft.appointmentDate}`);
+        lines.push(`- Category: ${draft.category}`);
+        lines.push(`- Status: ${draft.status}`);
+        lines.push(`- Class/grade: ${draft.classGrade?.trim() || '-'}`);
+        lines.push(`- Guardian name: ${draft.guardianName?.trim() || '-'}`);
+        lines.push(`- Location: ${draft.location?.trim() || '-'}`);
+        lines.push(`- Notes: ${draft.notes.trim() || '-'}`);
+        lines.push('- Participants:');
+        const participants = (draft.participants ?? [])
+          .map((participant) => ({
+            contactId: participant.contactId,
+            name: participant.name,
+            role: participant.role,
+          }))
+          .sort((a, b) => {
+            const byName = a.name.localeCompare(b.name);
+            if (byName !== 0) {
+              return byName;
+            }
+            const byRole = a.role.localeCompare(b.role);
+            if (byRole !== 0) {
+              return byRole;
+            }
+            return a.contactId.localeCompare(b.contactId);
+          });
+        if (participants.length === 0) {
+          lines.push('  - None');
+        } else {
+          for (const participant of participants) {
+            lines.push(
+              `  - id=${participant.contactId}; name=${participant.name}; role=${participant.role}`,
+            );
+          }
+        }
+        lines.push('- Media:');
+        const media = (draft.images ?? [])
+          .map((image) => ({
+            name: image.name,
+            mimeType: image.mimeType,
+            printableInChronicle: image.printableInChronicle === true,
+          }))
+          .sort((a, b) => {
+            const byName = a.name.localeCompare(b.name);
+            if (byName !== 0) {
+              return byName;
+            }
+            const byMime = a.mimeType.localeCompare(b.mimeType);
+            if (byMime !== 0) {
+              return byMime;
+            }
+            if (a.printableInChronicle === b.printableInChronicle) {
+              return 0;
+            }
+            return a.printableInChronicle ? -1 : 1;
+          });
+        if (media.length === 0) {
+          lines.push('  - None');
+        } else {
+          for (const image of media) {
+            lines.push(
+              `  - file=${image.name}; mime=${image.mimeType}; printable=${image.printableInChronicle ? 'yes' : 'no'}`,
+            );
+          }
+        }
+        lines.push('');
+      }
+    }
+
+    const markdown = `${lines.join('\n').trim()}\n`;
+    return {
+      fileName: `chronicle-${new Date().toISOString().slice(0, 10)}.md`,
+      mimeType: 'text/markdown; charset=utf-8',
+      base64: Buffer.from(markdown, 'utf8').toString('base64'),
       exportedAppointmentIds: selectedDrafts.map((draft) => draft.id),
     };
   }

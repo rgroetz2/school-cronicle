@@ -107,3 +107,125 @@ describe('AuthApiService deleteContact', () => {
     httpTesting.verify();
   });
 });
+
+describe('AuthApiService chronicle export command paths', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      providers: [AuthApiService, provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
+  });
+
+  it('calls markdown export endpoint for markdown command path', async () => {
+    const service = TestBed.inject(AuthApiService);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const pending = firstValueFrom(service.exportChronicleMarkdown(['draft-1']));
+
+    const request = httpTesting.expectOne('/api/appointments/chronicle/export-md');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ appointmentIds: ['draft-1'] });
+    request.flush({
+      data: {
+        fileName: 'chronicle-2026-04-25.md',
+        mimeType: 'text/markdown; charset=utf-8',
+        base64: 'IyBDaHJvbmljbGUgRXhwb3J0',
+        exportedAppointmentIds: ['draft-1'],
+      },
+    });
+
+    await expect(pending).resolves.toMatchObject({
+      fileName: 'chronicle-2026-04-25.md',
+      mimeType: 'text/markdown; charset=utf-8',
+      exportedAppointmentIds: ['draft-1'],
+    });
+    httpTesting.verify();
+  });
+
+  it('keeps docx export endpoint unchanged', async () => {
+    const service = TestBed.inject(AuthApiService);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const pending = firstValueFrom(service.exportChronicle(['draft-2']));
+
+    const request = httpTesting.expectOne('/api/appointments/chronicle/export');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ appointmentIds: ['draft-2'] });
+    request.flush({
+      data: {
+        fileName: 'chronicle-2026-04-25.docx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        base64: 'UEsDBAoAAAAA',
+        exportedAppointmentIds: ['draft-2'],
+      },
+    });
+
+    await expect(pending).resolves.toMatchObject({
+      fileName: 'chronicle-2026-04-25.docx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      exportedAppointmentIds: ['draft-2'],
+    });
+    httpTesting.verify();
+  });
+
+  it('includes contacts and selected appointments in dummy markdown export', async () => {
+    const service = TestBed.inject(AuthApiService);
+    await firstValueFrom(service.signIn('teacher@school.local', 'password'));
+
+    const contact = await firstValueFrom(
+      service.createContact({
+        name: 'Nora Parent',
+        role: 'parent',
+        email: 'nora@school.local',
+      }),
+    );
+    const draft = await firstValueFrom(
+      service.createDraft({
+        title: 'Selected appointment',
+        appointmentDate: '2026-09-10',
+        category: 'meeting',
+        notes: 'Selected notes',
+        participantContactIds: [contact.id],
+      }),
+    );
+
+    const artifact = await firstValueFrom(service.exportChronicleMarkdown([draft.id]));
+    const markdown = globalThis.atob(artifact.base64);
+
+    expect(markdown).toContain('## Contact persons');
+    expect(markdown).toContain(`id=${contact.id}; name=${contact.name}; role=${contact.role}`);
+    expect(markdown).toContain('## Appointments');
+    expect(markdown).toContain(`### ${draft.title}`);
+    expect(artifact.exportedAppointmentIds).toEqual([draft.id]);
+    expect(markdown).not.toContain('Demo appointment metadata');
+
+    TestBed.inject(HttpTestingController).verify();
+  });
+
+  it('supports utf-8 contact names in dummy markdown export', async () => {
+    const service = TestBed.inject(AuthApiService);
+    await firstValueFrom(service.signIn('teacher@school.local', 'password'));
+
+    const contact = await firstValueFrom(
+      service.createContact({
+        name: 'Rüdolf Parent',
+        role: 'parent',
+      }),
+    );
+    const draft = await firstValueFrom(
+      service.createDraft({
+        title: 'Unicode appointment',
+        appointmentDate: '2026-09-11',
+        category: 'meeting',
+        notes: 'Nötë',
+        participantContactIds: [contact.id],
+      }),
+    );
+
+    const artifact = await firstValueFrom(service.exportChronicleMarkdown([draft.id]));
+    const binary = globalThis.atob(artifact.base64);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    const markdown = new TextDecoder().decode(bytes);
+
+    expect(markdown).toContain('Rüdolf Parent');
+    expect(artifact.exportedAppointmentIds).toEqual([draft.id]);
+    TestBed.inject(HttpTestingController).verify();
+  });
+});

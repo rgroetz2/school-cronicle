@@ -1145,3 +1145,118 @@ So that regressions are caught quickly.
 **When** tests run  
 **Then** they verify correct visibility/enabled states for `Create`, `Save`, and `Delete` in create and edit modes  
 **And** they verify successful and failing save/delete flows show expected feedback
+
+## Release Chronicle Markdown Epic Track
+
+This track was generated for `create-chronicle-md-file` using brainstorm inputs plus PRD/Architecture constraints.
+
+### Chronicle Markdown Requirements Inventory Addendum
+
+CMD-FR1: Users can export chronicle data into a single `.md` file from the existing export area.  
+CMD-FR2: Exported markdown always contains explicit `contact persons` and `appointments` sections.  
+CMD-FR3: Markdown output is deterministic in structure and entry ordering for the same input selection.  
+CMD-FR4: Media representation in markdown includes filename and metadata only (no binary/base64 payload).  
+CMD-FR5: Export errors are actionable and preserve selection state; `.docx` export remains unaffected.
+
+CMD-NFR1: Markdown is UTF-8 plain text compatible with common markdown viewers.  
+CMD-NFR2: Export controls remain keyboard-accessible with clear labels and feedback states.  
+CMD-NFR3: Existing `.docx` path has no behavioral regression.
+
+### Chronicle Markdown FR Coverage Map
+
+CMD-FR1: Epic CMD.1 - UI entry point and command wiring.  
+CMD-FR2: Epic CMD.2 - Markdown schema and section serializer.  
+CMD-FR3: Epic CMD.2 - Deterministic ordering and stable output contract.  
+CMD-FR4: Epic CMD.2 - Media filename/metadata-only serialization rules.  
+CMD-FR5: Epic CMD.1, Epic CMD.3 - Feedback/error handling and regression verification.
+
+### Chronicle Markdown Epic List
+
+### Epic CMD.1: Add Markdown Export Entry Point and Flow
+Users can trigger chronicle markdown export from the existing export area with clear success/failure feedback.
+**FRs covered:** CMD-FR1, CMD-FR5
+
+### Epic CMD.2: Build Deterministic Markdown Chronicle Serializer
+Exported markdown uses a stable contract with explicit `contact persons` and `appointments` sections, including media filename/metadata only.
+**FRs covered:** CMD-FR2, CMD-FR3, CMD-FR4
+
+### Epic CMD.3: Verify Markdown Export Reliability and Non-Regression
+Automated coverage ensures markdown export works end-to-end and does not break `.docx` export behavior.
+**FRs covered:** CMD-FR5
+
+## Epic CMD.1: Add Markdown Export Entry Point and Flow
+
+Users can trigger chronicle markdown export from the existing export area with clear success/failure feedback.
+
+### Story CMD.1: Add `Export chronicle (.md)` Action in Existing Export Surface
+
+As a teacher,  
+I want an `Export chronicle (.md)` action in the current export controls,  
+so that I can generate a markdown chronicle without leaving my workflow.
+
+**Acceptance Criteria:**
+
+**Given** export-eligible data is selected  
+**When** I use `Export chronicle (.md)`  
+**Then** the app starts markdown export and downloads one `.md` file  
+**And** success/error feedback is shown with selection preserved on failure
+
+### Story CMD.2: Wire Frontend/Backend Markdown Export Command
+
+As a developer,  
+I want a dedicated markdown export command path,  
+so that markdown generation is isolated from the existing `.docx` flow.
+
+**Acceptance Criteria:**
+
+**Given** markdown export is requested  
+**When** command handling executes  
+**Then** a dedicated markdown path is used end-to-end  
+**And** `.docx` export behavior remains unchanged
+
+## Epic CMD.2: Build Deterministic Markdown Chronicle Serializer
+
+Exported markdown uses a stable contract with explicit `contact persons` and `appointments` sections, including media filename/metadata only.
+
+### Story CMD.3: Implement Markdown Contract with `contact persons` and `appointments` Sections
+
+As a chronicle coordinator,  
+I want exported markdown to use explicit section headings,  
+so that I can reliably review and process contact and appointment content.
+
+**Acceptance Criteria:**
+
+**Given** markdown export runs  
+**When** file content is generated  
+**Then** the document contains `contact persons` and `appointments` sections  
+**And** each section renders available metadata safely when optional fields are missing
+
+### Story CMD.4: Enforce Deterministic Ordering and Media Metadata-Only Serialization
+
+As a developer,  
+I want output ordering and media formatting to be deterministic,  
+so that the markdown is diff-friendly and stable for downstream tooling.
+
+**Acceptance Criteria:**
+
+**Given** the same export selection and source data  
+**When** markdown is generated repeatedly  
+**Then** section and entry ordering remain stable  
+**And** media entries include filename + metadata only, without base64 or binary payloads
+
+## Epic CMD.3: Verify Markdown Export Reliability and Non-Regression
+
+Automated coverage ensures markdown export works end-to-end and does not break `.docx` export behavior.
+
+### Story CMD.5: Add Automated Tests for Markdown Export and `.docx` Non-Regression
+
+As a product owner,  
+I want automated checks for markdown export behavior and compatibility,  
+so that regressions are caught before release.
+
+**Acceptance Criteria:**
+
+**Given** unit/integration/e2e test execution  
+**When** export tests run  
+**Then** markdown contract, deterministic ordering, and failure feedback are verified  
+**And** existing `.docx` export path is verified to remain functional

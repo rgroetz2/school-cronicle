@@ -65,9 +65,17 @@ interface DemoStep {
             type="button"
             class="ghost"
             (click)="exportChronicle()"
-            [disabled]="selectedChronicleAppointmentIds.length === 0 || isExportingChronicle"
+            [disabled]="selectedChronicleAppointmentIds.length === 0 || isExportingChronicle || isExportingChronicleMarkdown"
           >
             {{ isExportingChronicle ? 'Exporting chronicle...' : 'Export chronicle (.docx)' }}
+          </button>
+          <button
+            type="button"
+            class="ghost"
+            (click)="exportChronicleMarkdown()"
+            [disabled]="selectedChronicleAppointmentIds.length === 0 || isExportingChronicle || isExportingChronicleMarkdown"
+          >
+            {{ isExportingChronicleMarkdown ? 'Exporting markdown...' : 'Export chronicle (.md)' }}
           </button>
         </div>
         @if (selectedChronicleAppointmentIds.length > 0) {
@@ -409,6 +417,7 @@ export class AppointmentsComponent {
   isSubmittingDraft = false;
   isDeletingDraft = false;
   isExportingChronicle = false;
+  isExportingChronicleMarkdown = false;
   isLoadingDrafts = false;
   isLoadingContacts = false;
   isSavingContact = false;
@@ -1054,6 +1063,37 @@ export class AppointmentsComponent {
         },
         error: () => {
           this.draftSavedMessage = 'Chronicle export failed.';
+        },
+      });
+  }
+
+  exportChronicleMarkdown(): void {
+    if (this.selectedChronicleAppointmentIds.length === 0 || this.isExportingChronicleMarkdown) {
+      return;
+    }
+    this.isExportingChronicleMarkdown = true;
+    this.draftSavedMessage = '';
+    this.authApiService
+      .exportChronicleMarkdown(this.selectedChronicleAppointmentIds)
+      .pipe(finalize(() => (this.isExportingChronicleMarkdown = false)))
+      .subscribe({
+        next: (artifact) => {
+          const byteCharacters = globalThis.atob(artifact.base64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let index = 0; index < byteCharacters.length; index += 1) {
+            byteNumbers[index] = byteCharacters.charCodeAt(index);
+          }
+          const blob = new Blob([new Uint8Array(byteNumbers)], { type: artifact.mimeType });
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = artifact.fileName;
+          anchor.click();
+          URL.revokeObjectURL(url);
+          this.draftSavedMessage = `Chronicle markdown exported: ${artifact.fileName}`;
+        },
+        error: () => {
+          this.draftSavedMessage = 'Chronicle markdown export failed.';
         },
       });
   }

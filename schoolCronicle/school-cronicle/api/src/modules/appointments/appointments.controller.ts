@@ -537,6 +537,38 @@ export class AppointmentsController {
     };
   }
 
+  @Post('chronicle/export-md')
+  exportChronicleMarkdown(
+    @Body() body: { appointmentIds?: string[] },
+    @Req() req: Request,
+  ) {
+    const appointmentIds = Array.isArray(body.appointmentIds)
+      ? body.appointmentIds.filter((id): id is string => typeof id === 'string').map((id) => id.trim()).filter(Boolean)
+      : [];
+    if (appointmentIds.length === 0) {
+      throw new BadRequestException({
+        message: 'At least one appointment must be selected for export.',
+        code: 'CHRONICLE_EXPORT_EMPTY_SELECTION',
+      });
+    }
+
+    const sessionId = extractSessionIdFromCookieHeader(req.headers.cookie);
+    const session = this.sessionService.getSession(sessionId);
+    if (!session) {
+      throw new UnauthorizedException({
+        message: 'Authentication required.',
+      });
+    }
+
+    const artifact = this.appointmentsService.exportChronicleMarkdownForTeacher(
+      session.teacherId,
+      appointmentIds,
+    );
+    return {
+      data: artifact,
+    };
+  }
+
   @Post('retention/run')
   runRetention(@Req() req: Request) {
     const sessionId = extractSessionIdFromCookieHeader(req.headers.cookie);

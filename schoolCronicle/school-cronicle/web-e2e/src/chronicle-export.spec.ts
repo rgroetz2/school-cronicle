@@ -24,3 +24,20 @@ test('[P0] exports chronicle from checkbox selection', async ({ page }) => {
   const fileName = download.suggestedFilename().toLowerCase();
   expect(fileName).toContain('.docx');
 });
+
+test('[P0] exports chronicle markdown from checkbox selection', async ({ page }) => {
+  await signIn(page);
+
+  const eligibleCheckbox = page.locator('.draft-list input[type="checkbox"]').first();
+  await expect(eligibleCheckbox).toBeVisible();
+  await eligibleCheckbox.check();
+
+  await expect(page.locator('.state-pill').filter({ hasText: 'Chronicle selection: 1 selected' })).toBeVisible();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export chronicle (.md)' }).click();
+  const download = await downloadPromise;
+
+  const fileName = download.suggestedFilename().toLowerCase();
+  expect(fileName).toContain('.md');
+});
