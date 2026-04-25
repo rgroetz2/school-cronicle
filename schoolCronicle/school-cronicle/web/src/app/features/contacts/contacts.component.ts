@@ -3,10 +3,11 @@ import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { AuthApiService, SchoolContact, SchoolContactRole } from '../../core/auth-api.service';
+import { CrudActionBarComponent } from '../../shared/crud-action-bar.component';
 
 @Component({
   selector: 'app-contacts',
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, CrudActionBarComponent],
   styleUrl: './contacts.component.css',
   template: `
     <main class="workspace">
@@ -80,13 +81,17 @@ import { AuthApiService, SchoolContact, SchoolContactRole } from '../../core/aut
 
       @if (isEditorModalOpen) {
         <div class="modal-backdrop" role="presentation" (click)="closeModal()">
-          <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title" (click)="$event.stopPropagation()">
+          <section
+            class="modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="contact-modal-title"
+            (click)="$event.stopPropagation()"
+            (keydown.enter)="$event.stopPropagation()"
+          >
             <header class="modal-header">
               <h3 id="contact-modal-title">{{ selectedContactId ? 'Maintain contact' : 'Create contact' }}</h3>
               <div class="modal-header-actions">
-                <button type="button" class="primary inline" (click)="saveContact()" [disabled]="isSavingContact">
-                  {{ isSavingContact ? 'Saving...' : 'Save contact' }}
-                </button>
                 <button type="button" class="ghost inline" (click)="closeModal()">Close</button>
               </div>
             </header>
@@ -109,11 +114,24 @@ import { AuthApiService, SchoolContact, SchoolContactRole } from '../../core/aut
               <label for="contact-phone">Phone</label>
               <input id="contact-phone" type="text" formControlName="phone" />
             </form>
-            <div class="form-actions contact-modal-footer">
-              <button type="button" class="primary" (click)="saveContact()" [disabled]="isSavingContact">
-                {{ isSavingContact ? 'Saving...' : 'Save contact' }}
-              </button>
-              <button type="button" class="ghost" (click)="closeModal()">Cancel</button>
+            <div class="contact-modal-footer">
+              <app-crud-action-bar
+                ariaLabel="Contact CRUD actions"
+                [showCreate]="!selectedContactId"
+                [showSave]="!!selectedContactId"
+                [showDelete]="true"
+                [createDisabled]="isSavingContact"
+                [saveDisabled]="isSavingContact"
+                [deleteDisabled]="true"
+                [createLabel]="isSavingContact ? 'Creating contact...' : 'Create contact'"
+                [saveLabel]="isSavingContact ? 'Saving contact...' : 'Save contact'"
+                deleteLabel="Delete contact"
+                (createClicked)="saveContact()"
+                (saveClicked)="saveContact()"
+                (deleteClicked)="showDeleteUnavailableMessage()"
+              >
+                <button crud-secondary type="button" class="ghost" (click)="closeModal()">Cancel</button>
+              </app-crud-action-bar>
             </div>
           </section>
         </div>
@@ -234,6 +252,10 @@ export class ContactsComponent {
           this.contactMessage = 'Contact save failed.';
         },
       });
+  }
+
+  showDeleteUnavailableMessage(): void {
+    this.contactMessage = 'Delete contact will be enabled in UX3.2.';
   }
 
   private loadContacts(): void {

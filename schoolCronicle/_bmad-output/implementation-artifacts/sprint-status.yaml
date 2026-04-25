@@ -1,5 +1,5 @@
-# generated: 2026-04-22T04:42:08+0200
-# last_updated: 2026-04-22T04:45:40+0200
+# generated: 2026-04-25T11:37:00+0200
+# last_updated: 2026-04-25T11:44:00+0200
 # project: schoolCronicle
 # project_key: NOKEY
 # tracking_system: file-system
@@ -34,8 +34,8 @@
 # - Developer typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
-generated: 2026-04-22T04:42:08+0200
-last_updated: 2026-04-23T07:50:00+0200
+generated: 2026-04-25T11:37:00+0200
+last_updated: 2026-04-25T11:44:00+0200
 project: schoolCronicle
 project_key: NOKEY
 tracking_system: file-system
@@ -79,15 +79,57 @@ development_status:
   6-3-support-erasure-restriction-process-invocation-path: review
   6-4-apply-retention-rules-to-drafts-submissions-and-media: review
   6-5-provide-in-product-guidance-for-required-fields-and-formats: review
-  6-6-surface-school-privacy-account-contact-information: backlog
+  6-6-surface-school-privacy-account-contact-information: review
   epic-6-retrospective: optional
-  epic-px: in-progress
+  epic-px-1: in-progress
   px1-1-introduce-left-sidebar-dashboard-shell: review
   px1-2-create-teacher-dashboard-home-view: review
   px1-3-reduce-workspace-cognitive-load-via-section-re-layout: review
+  epic-px-1-retrospective: optional
+  epic-px-2: in-progress
   px2-1-build-dedicated-filter-panel: review
   px2-2-add-new-optional-metadata-filters: review
+  px2-3-add-active-filter-chips-and-saved-presets: backlog
+  epic-px-2-retrospective: optional
+  epic-px-3: in-progress
   px3-1-add-optional-fields-to-appointment-model: review
-  epic-px4: in-progress
+  px3-2-show-optional-metadata-in-list-and-detail-views: review
+  px3-3-keep-optional-metadata-outside-submit-gate: review
+  epic-px-3-retrospective: optional
+  epic-px-4: in-progress
   px4-1-add-demo-data-seed-reset-flow: review
   px4-2-define-7-minute-teacher-demo-path: review
+  epic-px-4-retrospective: optional
+  epic-m2-1: in-progress
+  m2-1-build-unified-all-appointments-list-view: ready-for-dev
+  m2-2-add-search-and-filter-controls-to-unified-list: ready-for-dev
+  m2-3-open-appointment-in-modal-editor-from-list: ready-for-dev
+  m2-4-enable-submitted-editing-with-post-submit-indicator: ready-for-dev
+  epic-m2-1-retrospective: optional
+  epic-m2-2: in-progress
+  m2-5-create-school-wide-contacts-directory: ready-for-dev
+  m2-6-assign-participants-to-appointments-from-contacts: ready-for-dev
+  m2-7-add-special-event-appointment-type-with-optional-media: ready-for-dev
+  epic-m2-2-retrospective: optional
+  epic-m2-3: in-progress
+  m2-8-enforce-image-upload-and-printable-limits: ready-for-dev
+  m2-9-generate-chronicle-docx-from-manual-appointment-selection: ready-for-dev
+  m2-10-apply-fixed-chronicle-layout-independent-of-image-count: ready-for-dev
+  epic-m2-3-retrospective: optional
+  epic-m2-4: in-progress
+  m2-11-introduce-neutral-accessible-color-tokens: ready-for-dev
+  m2-12-apply-light-visual-refresh-to-core-views: ready-for-dev
+  epic-m2-4-retrospective: optional
+  epic-ux3-1: in-progress
+  ux3-1-define-shared-bottom-crud-action-bar-contract: in-progress
+  ux3-2-enforce-mode-aware-create-save-delete-rules: ready-for-dev
+  ux3-3-apply-shared-action-bar-to-appointment-editor: ready-for-dev
+  epic-ux3-1-retrospective: optional
+  epic-ux3-2: in-progress
+  ux3-4-add-contact-delete-api-method-in-frontend-service: ready-for-dev
+  ux3-5-wire-contact-delete-to-bottom-delete-action: ready-for-dev
+  epic-ux3-2-retrospective: optional
+  epic-ux3-3: in-progress
+  ux3-6-introduce-colorful-crud-action-tokens-and-states: ready-for-dev
+  ux3-7-verify-cross-screen-crud-action-consistency-with-tests: ready-for-dev
+  epic-ux3-3-retrospective: optional

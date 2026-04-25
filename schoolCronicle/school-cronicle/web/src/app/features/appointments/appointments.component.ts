@@ -12,6 +12,7 @@ import {
   SchoolContactRole,
 } from '../../core/auth-api.service';
 import { PitchDemoModeService } from '../../core/pitch-demo-mode.service';
+import { CrudActionBarComponent } from '../../shared/crud-action-bar.component';
 
 type ImageUploadState = 'queued' | 'uploading' | 'attached' | 'failed';
 
@@ -35,7 +36,7 @@ interface DemoStep {
 
 @Component({
   selector: 'app-appointments',
-  imports: [ReactiveFormsModule, FormsModule, DatePipe],
+  imports: [ReactiveFormsModule, FormsModule, DatePipe, CrudActionBarComponent],
   styleUrl: './appointments.component.css',
   template: `
     <main class="workspace">
@@ -195,11 +196,12 @@ interface DemoStep {
                   (click)="openDraft(draft.id)"
                   (keydown.enter)="openDraft(draft.id)"
                 >
-                  <span class="grid-cell grid-cell-select" (click)="$event.stopPropagation()">
+                  <span class="grid-cell grid-cell-select">
                     @if (isChronicleExportEligible(draft)) {
                       <input
                         type="checkbox"
                         [checked]="selectedChronicleAppointmentIds.includes(draft.id)"
+                        (click)="$event.stopPropagation()"
                         (change)="toggleChronicleSelection(draft.id)"
                       />
                     } @else {
@@ -239,6 +241,7 @@ interface DemoStep {
             aria-modal="true"
             aria-labelledby="editor-modal-title"
             (click)="$event.stopPropagation()"
+            (keydown.enter)="$event.stopPropagation()"
           >
             <header class="modal-header">
               <h3 id="editor-modal-title">
@@ -372,20 +375,24 @@ interface DemoStep {
                   </ul>
                 }
 
-                <div class="form-actions">
-                  <button type="submit" class="primary" [disabled]="isCreatingDraft || isSavingDraft">
-                    {{
-                      isSavingDraft
-                        ? 'Saving appointment...'
-                        : isCreatingDraft
-                          ? 'Creating appointment...'
-                          : selectedDraftId
-                            ? 'Save appointment'
-                            : 'Create appointment'
-                    }}
-                  </button>
+                <app-crud-action-bar
+                  ariaLabel="Appointment CRUD actions"
+                  [showCreate]="!selectedDraftId"
+                  [showSave]="!!selectedDraftId"
+                  [showDelete]="!!selectedDraftId"
+                  [createDisabled]="isCreatingDraft || isSavingDraft"
+                  [saveDisabled]="isCreatingDraft || isSavingDraft"
+                  [deleteDisabled]="isDeletingDraft"
+                  [createLabel]="isCreatingDraft ? 'Creating appointment...' : 'Create appointment'"
+                  [saveLabel]="isSavingDraft ? 'Saving appointment...' : 'Save appointment'"
+                  [deleteLabel]="isDeletingDraft ? 'Deleting...' : 'Delete appointment'"
+                  (createClicked)="createDraft()"
+                  (saveClicked)="createDraft()"
+                  (deleteClicked)="deleteSelectedDraft()"
+                >
                   @if (selectedDraftId) {
                     <button
+                      crud-secondary
                       type="button"
                       class="ghost"
                       (click)="submitDraft()"
@@ -393,16 +400,8 @@ interface DemoStep {
                     >
                       {{ isSubmittingDraft ? 'Submitting...' : 'Submit appointment' }}
                     </button>
-                    <button
-                      type="button"
-                      class="ghost danger"
-                      (click)="deleteSelectedDraft()"
-                      [disabled]="isDeletingDraft"
-                    >
-                      {{ isDeletingDraft ? 'Deleting...' : 'Delete appointment' }}
-                    </button>
                   }
-                </div>
+                </app-crud-action-bar>
               </form>
           </section>
         </div>

@@ -1004,3 +1004,144 @@ So that daily workflows feel clearer and more engaging.
 **When** the refresh is applied  
 **Then** spacing, hierarchy, accent usage, and component styling are visibly improved  
 **And** interaction patterns remain familiar (no major structural redesign)
+
+## Release UX MVP 3 Epic Track
+
+This track was generated for `release-ux-mvp-3` using BMAD create-epics-and-stories workflow inputs from PRD, Architecture, UX specification, and release-specific CRUD scope requirements.
+
+### Release UX MVP 3 Requirements Inventory Addendum
+
+UX3-FR1: Teachers can always find bottom CRUD actions (`Create`, `Save`, `Delete`) in appointment and contact CRUD editors.
+UX3-FR2: CRUD actions follow deterministic mode rules (new vs edit) and prevent invalid actions.
+UX3-FR3: Teachers can delete contacts from the contacts CRUD editor with confirmation and immediate list consistency.
+UX3-FR4: Colorful visual enhancements improve action discoverability without violating accessibility.
+UX3-FR5: Shared action-bar behavior remains consistent across all appointment/contact CRUD editors.
+
+UX3-NFR1: Bottom action controls remain keyboard accessible and touch-friendly (minimum 44x44 targets).
+UX3-NFR2: Button color combinations maintain WCAG-aligned contrast and non-color-only state communication.
+UX3-NFR3: CRUD action state transitions (idle/loading/success/error/disabled) are consistent and testable across surfaces.
+
+### Release UX MVP 3 FR Coverage Map
+
+UX3-FR1: Epic UX3.1 - Shared CRUD action bar and behavior contract.
+UX3-FR2: Epic UX3.1 - Mode-aware action enablement and visibility rules.
+UX3-FR3: Epic UX3.2 - Contact delete flow implementation.
+UX3-FR4: Epic UX3.3 - Colorful action system and visual polish.
+UX3-FR5: Epic UX3.1, Epic UX3.3 - Shared component adoption and verification.
+
+### Release UX MVP 3 Epic List
+
+### Epic UX3.1: Unified Bottom CRUD Actions for Appointment and Contact Editors
+Teachers can reliably perform create/save/delete from a consistent bottom action bar in CRUD editors.
+**FRs covered:** UX3-FR1, UX3-FR2, UX3-FR5
+
+### Epic UX3.2: Complete Contact Delete Capability
+Teachers can delete contacts directly in the contact CRUD editor with safe confirmation and full frontend integration.
+**FRs covered:** UX3-FR3
+
+### Epic UX3.3: Colorful and Accessible CRUD Visual Upgrade
+Teachers experience a vibrant but professional CRUD UI with clear action hierarchy and accessibility-safe states.
+**FRs covered:** UX3-FR4, UX3-FR5
+
+## Epic UX3.1: Unified Bottom CRUD Actions for Appointment and Contact Editors
+
+Teachers can reliably perform create/save/delete from a consistent bottom action bar in CRUD editors.
+
+### Story UX3.1: Define Shared Bottom CRUD Action Bar Contract
+
+As a teacher,  
+I want the same action layout at the bottom of every appointment/contact CRUD editor,  
+So that I always know where to create, save, or delete records.
+
+**Acceptance Criteria:**
+
+**Given** an appointment or contact CRUD editor is open  
+**When** the bottom action region renders  
+**Then** it uses one shared action-bar pattern with `Create`, `Save`, and `Delete` controls  
+**And** labels, ordering, spacing, and loading/disabled states are consistent across both surfaces
+
+### Story UX3.2: Enforce Mode-Aware Create/Save/Delete Rules
+
+As a teacher,  
+I want CRUD actions to match whether I am creating a new record or editing an existing one,  
+So that I cannot trigger the wrong action.
+
+**Acceptance Criteria:**
+
+**Given** a CRUD editor is in create mode  
+**When** bottom actions are shown  
+**Then** `Create` is available and `Save`/`Delete` are not actionable  
+**And** in edit mode `Save` and `Delete` are available while `Create` is not actionable
+
+### Story UX3.3: Apply Shared Action Bar to Appointment Editor
+
+As a teacher,  
+I want appointment editing to use the same bottom CRUD controls as other editors,  
+So that behavior feels predictable throughout the app.
+
+**Acceptance Criteria:**
+
+**Given** I open appointment create or edit modal/editor  
+**When** I use bottom actions  
+**Then** `Create` creates a new appointment, `Save` updates an existing appointment, and `Delete` removes a deletable appointment  
+**And** all action outcomes provide clear success/error feedback without losing unrelated form data
+
+## Epic UX3.2: Complete Contact Delete Capability
+
+Teachers can delete contacts directly in the contact CRUD editor with safe confirmation and full frontend integration.
+
+### Story UX3.4: Add Contact Delete API Method in Frontend Service
+
+As a developer,  
+I want a dedicated frontend API method for deleting contacts,  
+So that the contacts editor can invoke delete through the same service abstraction as create/save.
+
+**Acceptance Criteria:**
+
+**Given** the frontend service layer for contacts  
+**When** delete is requested for a contact id  
+**Then** a typed delete method calls the backend delete endpoint and returns actionable success/failure states  
+**And** error responses are surfaced in a consistent app error pattern
+
+### Story UX3.5: Wire Contact Delete to Bottom Delete Action
+
+As a teacher,  
+I want to delete an existing contact from the bottom action bar,  
+So that I can maintain a clean participants directory.
+
+**Acceptance Criteria:**
+
+**Given** a contact is opened in edit mode  
+**When** I click `Delete` and confirm  
+**Then** the contact is removed and the contacts list refreshes consistently  
+**And** canceling confirmation leaves the contact unchanged
+
+## Epic UX3.3: Colorful and Accessible CRUD Visual Upgrade
+
+Teachers experience a vibrant but professional CRUD UI with clear action hierarchy and accessibility-safe states.
+
+### Story UX3.6: Introduce Colorful CRUD Action Tokens and States
+
+As a teacher,  
+I want action buttons to be visually distinct and engaging,  
+So that primary actions stand out while destructive actions remain clear.
+
+**Acceptance Criteria:**
+
+**Given** appointment/contact CRUD editors  
+**When** colorful theme updates are applied  
+**Then** `Create` and `Save` use consistent prominent styles and `Delete` uses a clear destructive style  
+**And** contrast and focus indicators remain accessibility-compliant
+
+### Story UX3.7: Verify Cross-Screen CRUD Action Consistency with Tests
+
+As a product owner,  
+I want automated checks for bottom CRUD action behavior,  
+So that regressions are caught quickly.
+
+**Acceptance Criteria:**
+
+**Given** automated frontend/e2e coverage for CRUD editors  
+**When** tests run  
+**Then** they verify correct visibility/enabled states for `Create`, `Save`, and `Delete` in create and edit modes  
+**And** they verify successful and failing save/delete flows show expected feedback

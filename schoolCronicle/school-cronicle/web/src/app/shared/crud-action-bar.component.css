@@ -1,0 +1,39 @@
+.crud-action-bar {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-top: 0.3rem;
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+  padding-bottom: 0.2rem;
+}
+
+.crud-action-bar button {
+  min-height: 2.75rem;
+  padding: 0.65rem 0.95rem;
+  border-radius: 0.65rem;
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.crud-primary {
+  color: #fff;
+  background: linear-gradient(160deg, var(--brand), var(--brand-strong));
+}
+
+.crud-danger {
+  color: var(--danger-fg);
+  border-color: color-mix(in srgb, var(--danger-fg) 25%, white);
+  background: var(--danger-bg);
+}
+
+.crud-action-bar button[disabled] {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
