@@ -149,14 +149,14 @@ button {
 }
 
 button.primary {
-  background: var(--accent);
+  background: linear-gradient(160deg, var(--brand), var(--brand-strong));
   color: #fff;
 }
 
 button.ghost {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
+  border: 1px solid transparent;
+  background: linear-gradient(160deg, var(--brand), var(--brand-strong));
+  color: #fff;
 }
 
 button.inline {
@@ -235,7 +235,7 @@ form {
 }
 
 .modal-header-actions .primary {
-  background: var(--accent);
+  background: linear-gradient(160deg, var(--brand), var(--brand-strong));
   color: #fff;
 }
 
@@ -250,6 +250,6 @@ form {
 }
 
 .contact-modal-footer .primary {
-  background: var(--accent);
+  background: linear-gradient(160deg, var(--brand), var(--brand-strong));
   color: #fff;
 }

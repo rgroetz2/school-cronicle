@@ -31,4 +31,11 @@ test('[P0] creates and updates contact from dedicated list view', async ({ page 
 
   await expect(page.locator('.status-stack')).toContainText(`Contact updated: ${contactName}`);
   await expect(page.locator('.contact-list li').filter({ hasText: contactName }).first()).toContainText('+49-123-4567');
+
+  page.once('dialog', async (dialog) => {
+    await dialog.accept();
+  });
+  await page.getByRole('button', { name: 'Delete contact' }).click();
+  await expect(page.locator('.status-stack')).toContainText('Contact deleted.');
+  await expect(page.locator('.contact-list')).not.toContainText(contactName);
 });

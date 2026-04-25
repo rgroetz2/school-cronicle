@@ -26,6 +26,7 @@ so that behavior feels predictable throughout the app.
 
 - `npx nx lint web` (pass)
 - `npx nx test web --include=web/src/app/features/appointments/appointments.mode-actions.spec.ts --include=web/src/app/shared/crud-action-bar.component.spec.ts` (pass)
+- `npx nx lint web-e2e` (pass)
 - `npx nx test web` (fails in existing appointments component suite; see notes)
 
 ### Completion Notes
@@ -33,12 +34,15 @@ so that behavior feels predictable throughout the app.
 - Added appointment-focused mode behavior tests confirming modal action labels are create-only in create mode and save/delete in edit mode.
 - Verified shared action bar wiring remains consistent with appointment handlers and UX3.2 mode contract.
 - Confirmed targeted lint and tests pass for action bar and appointment mode behavior.
+- Added/extended appointment e2e workflow coverage for create/save/delete behavior through modal action bar controls.
 - Full web regression still fails in legacy `appointments.component.spec.ts` scenarios unrelated to this focused story, so story remains `in-progress`.
 
 ### File List
 
 - `school-cronicle/web/src/app/features/appointments/appointments.mode-actions.spec.ts`
+- `school-cronicle/web-e2e/src/appointments-workflow.spec.ts`
 
 ### Change Log
 
 - 2026-04-25: Added appointment-specific mode/action coverage for shared CRUD action bar usage.
+- 2026-04-25: Added e2e create/save/delete appointment workflow checks.

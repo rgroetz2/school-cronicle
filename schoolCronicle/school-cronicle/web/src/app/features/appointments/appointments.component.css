@@ -310,9 +310,9 @@ button {
 }
 
 .ghost {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
+  border: 1px solid transparent;
+  background: linear-gradient(160deg, var(--brand), var(--brand-strong));
+  color: #fff;
 }
 
 .ghost.inline {
@@ -323,12 +323,11 @@ button {
 }
 
 .ghost:hover:not([disabled]) {
-  border-color: var(--border-strong);
-  background: var(--surface-muted);
+  transform: translateY(-1px);
 }
 
 .danger {
-  color: var(--danger-fg);
+  color: #fff;
 }
 
 .form-actions {

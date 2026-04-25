@@ -120,15 +120,18 @@ import { CrudActionBarComponent } from '../../shared/crud-action-bar.component';
                 [showCreate]="isContactCreateMode"
                 [showSave]="isContactEditMode"
                 [showDelete]="isContactEditMode"
-                [createDisabled]="isSavingContact"
-                [saveDisabled]="isSavingContact"
-                [deleteDisabled]="isSavingContact"
+                [createDisabled]="isSavingContact || isDeletingContact"
+                [saveDisabled]="isSavingContact || isDeletingContact"
+                [deleteDisabled]="isSavingContact || isDeletingContact"
+                [createLoading]="isSavingContact && isContactCreateMode"
+                [saveLoading]="isSavingContact && isContactEditMode"
+                [deleteLoading]="isDeletingContact"
                 [createLabel]="isSavingContact ? 'Creating contact...' : 'Create contact'"
                 [saveLabel]="isSavingContact ? 'Saving contact...' : 'Save contact'"
-                deleteLabel="Delete contact"
+                [deleteLabel]="isDeletingContact ? 'Deleting contact...' : 'Delete contact'"
                 (createClicked)="onContactCreateAction()"
                 (saveClicked)="onContactSaveAction()"
-                (deleteClicked)="showDeleteUnavailableMessage()"
+                (deleteClicked)="onContactDeleteAction()"
               >
                 <button crud-secondary type="button" class="ghost" (click)="closeModal()">Cancel</button>
               </app-crud-action-bar>
@@ -152,6 +155,7 @@ export class ContactsComponent {
   selectedContactId: string | null = null;
   isLoadingContacts = false;
   isSavingContact = false;
+  isDeletingContact = false;
   isEditorModalOpen = false;
   contactMessage = '';
   readonly roleOptions: SchoolContactRole[] = this.authApiService.listContactRoles();
@@ -276,8 +280,44 @@ export class ContactsComponent {
     this.saveContact();
   }
 
-  showDeleteUnavailableMessage(): void {
-    this.contactMessage = 'Delete contact will be enabled in UX3.2.';
+  onContactDeleteAction(): void {
+    if (!this.isContactEditMode) {
+      return;
+    }
+    this.deleteContact();
+  }
+
+  deleteContact(): void {
+    this.contactMessage = '';
+    const contactId = this.selectedContactId;
+    if (!contactId || this.isDeletingContact || this.isSavingContact) {
+      return;
+    }
+
+    if (!globalThis.confirm('Delete this contact? This cannot be undone.')) {
+      return;
+    }
+
+    this.isDeletingContact = true;
+    this.authApiService
+      .deleteContact(contactId)
+      .pipe(finalize(() => (this.isDeletingContact = false)))
+      .subscribe({
+        next: (deleted) => {
+          if (!deleted) {
+            this.contactMessage = 'Contact could not be deleted.';
+            return;
+          }
+          this.contactMessage = 'Contact deleted.';
+          this.selectedContactId = null;
+          this.contactForm.reset({ name: '', role: '', email: '', phone: '' });
+          this.closeModal();
+          this.loadContacts();
+        },
+        error: () => {
+          this.contactMessage = 'Contact delete failed.';
+        },
+      });
   }
 
   private loadContacts(): void {

@@ -51,3 +51,59 @@ describe('AuthApiService pitch demo reset', () => {
     TestBed.inject(HttpTestingController).verify();
   });
 });
+
+describe('AuthApiService deleteContact', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      providers: [AuthApiService, provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
+  });
+
+  it('deletes contact in dummy session and returns true', async () => {
+    const service = TestBed.inject(AuthApiService);
+    await firstValueFrom(service.signIn('teacher@school.local', 'password'));
+    const created = await firstValueFrom(
+      service.createContact({
+        name: 'Delete Me',
+        role: 'teacher',
+        email: 'delete@school.local',
+      }),
+    );
+
+    const deleted = await firstValueFrom(service.deleteContact(created.id));
+    expect(deleted).toBe(true);
+
+    const contacts = await firstValueFrom(service.listContacts());
+    expect(contacts.some((contact) => contact.id === created.id)).toBe(false);
+
+    TestBed.inject(HttpTestingController).verify();
+  });
+
+  it('calls contacts delete endpoint and returns deleted flag', async () => {
+    const service = TestBed.inject(AuthApiService);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const pending = firstValueFrom(service.deleteContact('contact-123'));
+    const request = httpTesting.expectOne('/api/contacts/contact-123');
+    expect(request.request.method).toBe('DELETE');
+    request.flush({
+      data: {
+        deleted: true,
+        contactId: 'contact-123',
+      },
+    });
+
+    await expect(pending).resolves.toBe(true);
+    httpTesting.verify();
+  });
+
+  it('propagates api errors for delete failures', async () => {
+    const service = TestBed.inject(AuthApiService);
+    const httpTesting = TestBed.inject(HttpTestingController);
+    const pending = firstValueFrom(service.deleteContact('contact-missing'));
+    const request = httpTesting.expectOne('/api/contacts/contact-missing');
+    request.flush({ error: 'not found' }, { status: 404, statusText: 'Not Found' });
+
+    await expect(pending).rejects.toBeTruthy();
+    httpTesting.verify();
+  });
+});

@@ -1,12 +1,30 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
+import { AuthApiService } from '../../core/auth-api.service';
+import { PitchDemoModeService } from '../../core/pitch-demo-mode.service';
 import { DashboardShellComponent } from './dashboard-shell.component';
 
 describe('DashboardShellComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DashboardShellComponent],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        {
+          provide: AuthApiService,
+          useValue: {
+            signOut: () => of(true),
+            resetPitchDemoData: () => of({ version: 'v1', draftCount: 1 }),
+          } satisfies Pick<AuthApiService, 'signOut' | 'resetPitchDemoData'>,
+        },
+        {
+          provide: PitchDemoModeService,
+          useValue: {
+            isEnabled: () => true,
+          } satisfies Pick<PitchDemoModeService, 'isEnabled'>,
+        },
+      ],
     }).compileComponents();
   });
 
@@ -20,8 +38,10 @@ describe('DashboardShellComponent', () => {
     expect(text).toContain('Contacts');
     expect(text).toContain('Privacy');
     expect(text).toContain('Help');
-    expect(text).toContain('Latest changes');
-    expect(text).toContain('M2.11 Introduce neutral accessible color tokens');
+    expect(text).toContain('Reset demo data');
+    expect(text).toContain('Privacy summary');
+    expect(text).toContain('Sign out');
+    expect(text).not.toContain('Latest changes');
   });
 
   it('toggles sidebar state from menu button', () => {

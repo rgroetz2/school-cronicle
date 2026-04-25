@@ -7,9 +7,9 @@
   --border-strong: #aeb8c5;
   --text: #111827;
   --text-muted: #4b5563;
-  /* Primary palette: red + colorful green */
-  --brand: #d7263d;
-  --brand-strong: #14b84a;
+  /* UX design: single restrained primary for actions */
+  --brand: #0f766e;
+  --brand-strong: #115e59;
   /* Secondary palette: orange + turquoise */
   --accent: #14b8a6;
   --accent-muted: #ccfbf1;
@@ -22,6 +22,15 @@
   --warning-fg: #c2410c;
   --danger-bg: #fef2f2;
   --danger-fg: #991b1b;
+  --crud-create-bg: #0f766e;
+  --crud-create-bg-strong: #115e59;
+  --crud-save-bg: #0f766e;
+  --crud-save-bg-strong: #115e59;
+  --crud-delete-bg: #0f766e;
+  --crud-delete-bg-strong: #115e59;
+  --crud-delete-border: #0f766e;
+  --crud-delete-fg: #ffffff;
+  --crud-focus-ring: #0f766e;
   --shadow-soft: 0 14px 34px rgba(16, 24, 40, 0.08);
 }
 

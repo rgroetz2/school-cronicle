@@ -36,68 +36,50 @@
 .menu-list a {
   display: block;
   text-decoration: none;
-  color: var(--text);
+  color: #fff;
   border: 1px solid transparent;
   border-radius: 0.65rem;
   padding: 0.55rem 0.65rem;
   font-weight: 600;
+  background: linear-gradient(160deg, var(--brand), var(--brand-strong));
 }
 
 .menu-list a:hover {
-  border-color: var(--border);
-  background: var(--surface-muted);
+  transform: translateY(-1px);
 }
 
 .menu-list a.active {
-  border-color: var(--border-strong);
-  background: var(--surface-subtle);
-  box-shadow: inset 0.2rem 0 0 var(--accent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, #ffffff 55%, transparent);
 }
 
-.content {
-  min-width: 0;
-}
-
-.release-notes {
-  margin-top: 1rem;
+.menu-actions {
+  margin-top: 0.9rem;
   border-top: 1px solid var(--border);
-  padding-top: 0.75rem;
-}
-
-.release-notes h3 {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.release-notes-list {
-  list-style: none;
-  margin: 0.55rem 0 0;
-  padding: 0;
+  padding-top: 0.8rem;
   display: grid;
   gap: 0.45rem;
 }
 
-.release-notes-list li {
-  border: 1px solid var(--border);
-  border-radius: 0.6rem;
-  background: var(--surface-muted);
-  padding: 0.45rem 0.55rem;
-  display: grid;
-  gap: 0.2rem;
-}
-
-.change-title {
-  font-size: 0.82rem;
+.menu-action-button {
+  width: 100%;
+  min-height: 2.45rem;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  background: linear-gradient(160deg, var(--brand), var(--brand-strong));
+  color: #fff;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
   font-weight: 600;
-  color: var(--text);
+  cursor: pointer;
 }
 
-.change-date {
-  font-size: 0.76rem;
-  color: var(--text-muted);
+.menu-action-button[disabled] {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.content {
+  min-width: 0;
 }
 
 .mobile-header {
@@ -106,9 +88,10 @@
 }
 
 .menu-toggle {
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   border-radius: 0.65rem;
-  background: var(--surface);
+  background: linear-gradient(160deg, var(--brand), var(--brand-strong));
+  color: #fff;
   padding: 0.5rem 0.75rem;
   font: inherit;
   font-weight: 600;

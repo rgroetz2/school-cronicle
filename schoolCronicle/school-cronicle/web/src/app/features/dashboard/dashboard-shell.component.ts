@@ -1,15 +1,13 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { finalize } from 'rxjs';
+import { AuthApiService } from '../../core/auth-api.service';
+import { PitchDemoModeService } from '../../core/pitch-demo-mode.service';
 
 interface DashboardNavItem {
   label: string;
   path: string;
   fragment?: string;
-}
-
-interface ReleaseChangeItem {
-  title: string;
-  deliveredAt: string;
 }
 
 @Component({
@@ -41,18 +39,18 @@ interface ReleaseChangeItem {
             }
           </ul>
         </nav>
-
-        <section class="release-notes" aria-label="Latest delivered changes">
-          <h3>Latest changes</h3>
-          <ul class="release-notes-list">
-            @for (change of latestChanges; track change.title) {
-              <li>
-                <span class="change-title">{{ change.title }}</span>
-                <span class="change-date">{{ change.deliveredAt }}</span>
-              </li>
-            }
-          </ul>
+        <section class="menu-actions" aria-label="Workspace quick actions">
+          @if (pitchDemoModeEnabled) {
+            <button type="button" class="menu-action-button" (click)="resetDemoData()" [disabled]="isResettingDemoData">
+              {{ isResettingDemoData ? 'Resetting demo…' : 'Reset demo data' }}
+            </button>
+          }
+          <button type="button" class="menu-action-button" (click)="openPrivacySummary()">Privacy summary</button>
+          <button type="button" class="menu-action-button" (click)="signOut()" [disabled]="isSigningOut">
+            {{ isSigningOut ? 'Signing out...' : 'Sign out' }}
+          </button>
         </section>
+
       </aside>
 
       <div class="content">
@@ -73,7 +71,13 @@ interface ReleaseChangeItem {
   `,
 })
 export class DashboardShellComponent {
+  private readonly authApiService = inject(AuthApiService);
+  private readonly pitchDemoModeService = inject(PitchDemoModeService);
+  private readonly router = inject(Router);
+
   isMenuOpen = false;
+  isSigningOut = false;
+  isResettingDemoData = false;
 
   readonly navItems: DashboardNavItem[] = [
     { label: 'Dashboard', path: '/dashboard' },
@@ -83,13 +87,45 @@ export class DashboardShellComponent {
     { label: 'Help', path: '/help' },
   ];
 
-  readonly latestChanges: ReleaseChangeItem[] = [
-    { title: 'M2.11 Introduce neutral accessible color tokens', deliveredAt: 'Apr 2026' },
-    { title: 'M2.10 Apply fixed chronicle layout independent of image count', deliveredAt: 'Apr 2026' },
-    { title: 'M2.9 Generate chronicle .docx from manual appointment selection', deliveredAt: 'Apr 2026' },
-  ];
-
   toggleMenu(): void {
     this.isMenuOpen = !this.isMenuOpen;
+  }
+
+  get pitchDemoModeEnabled(): boolean {
+    return this.pitchDemoModeService.isEnabled();
+  }
+
+  openPrivacySummary(): void {
+    void this.router.navigateByUrl('/privacy');
+    this.isMenuOpen = false;
+  }
+
+  signOut(): void {
+    if (this.isSigningOut) {
+      return;
+    }
+    this.isSigningOut = true;
+    this.authApiService
+      .signOut()
+      .pipe(finalize(() => (this.isSigningOut = false)))
+      .subscribe({
+        next: () => {
+          void this.router.navigateByUrl('/login');
+        },
+        error: () => {
+          void this.router.navigateByUrl('/login');
+        },
+      });
+  }
+
+  resetDemoData(): void {
+    if (this.isResettingDemoData) {
+      return;
+    }
+    this.isResettingDemoData = true;
+    this.authApiService
+      .resetPitchDemoData()
+      .pipe(finalize(() => (this.isResettingDemoData = false)))
+      .subscribe();
   }
 }

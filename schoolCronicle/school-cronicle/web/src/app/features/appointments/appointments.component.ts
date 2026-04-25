@@ -11,7 +11,6 @@ import {
   SchoolContact,
   SchoolContactRole,
 } from '../../core/auth-api.service';
-import { PitchDemoModeService } from '../../core/pitch-demo-mode.service';
 import { CrudActionBarComponent } from '../../shared/crud-action-bar.component';
 
 type ImageUploadState = 'queued' | 'uploading' | 'attached' | 'failed';
@@ -47,23 +46,6 @@ interface DemoStep {
           <p class="subtle">
             Signed in as {{ teacherDisplayName }}. Review drafts, enrich metadata, attach files, and submit confidently.
           </p>
-        </div>
-        <div class="header-actions">
-          @if (pitchDemoModeEnabled) {
-            <button
-              type="button"
-              class="ghost"
-              (click)="onResetPitchDemo()"
-              [disabled]="isResettingDemoData"
-              aria-label="Reset demo data to canonical seed"
-            >
-              {{ isResettingDemoData ? 'Resetting demo…' : 'Reset demo data' }}
-            </button>
-          }
-          <button type="button" class="ghost" (click)="openPrivacySummary()">Privacy summary</button>
-          <button type="button" class="ghost" (click)="signOut()" [disabled]="isSigningOut">
-            {{ isSigningOut ? 'Signing out...' : 'Sign out' }}
-          </button>
         </div>
       </header>
 
@@ -383,6 +365,9 @@ interface DemoStep {
                   [createDisabled]="isCreatingDraft || isSavingDraft"
                   [saveDisabled]="isCreatingDraft || isSavingDraft"
                   [deleteDisabled]="isDeletingDraft"
+                  [createLoading]="isCreatingDraft"
+                  [saveLoading]="isSavingDraft"
+                  [deleteLoading]="isDeletingDraft"
                   [createLabel]="isCreatingDraft ? 'Creating appointment...' : 'Create appointment'"
                   [saveLabel]="isSavingDraft ? 'Saving appointment...' : 'Save appointment'"
                   [deleteLabel]="isDeletingDraft ? 'Deleting...' : 'Delete appointment'"
@@ -415,7 +400,6 @@ export class AppointmentsComponent {
   private static readonly ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
   private static readonly MAX_PARTICIPANTS_PER_APPOINTMENT = 3;
   private readonly authApiService = inject(AuthApiService);
-  private readonly pitchDemoModeService = inject(PitchDemoModeService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -521,10 +505,6 @@ export class AppointmentsComponent {
     email: new FormControl('', [Validators.email]),
     phone: new FormControl(''),
   });
-
-  get pitchDemoModeEnabled(): boolean {
-    return this.pitchDemoModeService.isEnabled();
-  }
 
   get completedDemoStepsCount(): number {
     return this.demoPathSteps.filter((step) => step.id !== 'fallback' && this.isDemoStepDone(step.id)).length;
@@ -812,6 +792,10 @@ export class AppointmentsComponent {
       });
   }
 
+  openPrivacySummary(): void {
+    void this.router.navigateByUrl('/privacy');
+  }
+
   isDemoStepDone(stepId: DemoStepId): boolean {
     if (stepId === 'navigation') {
       return this.activeListContext !== 'all';
@@ -826,10 +810,6 @@ export class AppointmentsComponent {
       return Boolean(this.selectedDraftId) && this.missingRequiredFields.length === 0 && this.failedImageUploadCount === 0;
     }
     return false;
-  }
-
-  openPrivacySummary(): void {
-    void this.router.navigateByUrl('/privacy');
   }
 
   clearListContext(): void {
@@ -1156,6 +1136,7 @@ export class AppointmentsComponent {
           this.draftSubmitMessage = response.submittedAt
             ? `Draft submitted at ${new Date(response.submittedAt).toLocaleString()}.`
             : 'Draft submitted.';
+          this.closeEditorModal();
         },
         error: (error: unknown) => {
           const response = error as HttpErrorResponse;
@@ -1323,6 +1304,7 @@ export class AppointmentsComponent {
             location: '',
           });
           this.deleteMessage = 'Appointment deleted.';
+          this.closeEditorModal();
         },
         error: () => {
           this.deleteMessage = 'Appointment deletion failed.';

@@ -142,6 +142,13 @@ interface UpsertContactResponse {
   };
 }
 
+interface DeleteContactResponse {
+  data: {
+    deleted: boolean;
+    contactId: string;
+  };
+}
+
 interface ChronicleExportResponse {
   data: {
     fileName: string;
@@ -580,6 +587,19 @@ export class AuthApiService {
     return this.http
       .patch<UpsertContactResponse>(`/api/contacts/${contactId}`, input)
       .pipe(map((response) => response.data.contact));
+  }
+
+  deleteContact(contactId: string): Observable<boolean> {
+    if (this.hasDummySession()) {
+      const contacts = this.readDummyContacts();
+      const nextContacts = contacts.filter((contact) => contact.id !== contactId);
+      this.writeDummyContacts(nextContacts);
+      return of(nextContacts.length !== contacts.length);
+    }
+
+    return this.http
+      .delete<DeleteContactResponse>(`/api/contacts/${contactId}`)
+      .pipe(map((response) => response.data.deleted));
   }
 
   exportChronicle(appointmentIds: string[]): Observable<ChronicleExportResponse['data']> {

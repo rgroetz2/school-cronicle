@@ -55,8 +55,8 @@ describe('CrudActionBarComponent', () => {
     component.createDisabled = false;
     component.deleteDisabled = true;
     fixture.detectChanges();
-    const createButton = fixture.debugElement.query(By.css('.crud-primary'));
-    const deleteButton = fixture.debugElement.query(By.css('.crud-danger'));
+    const createButton = fixture.debugElement.query(By.css('.crud-create'));
+    const deleteButton = fixture.debugElement.query(By.css('.crud-delete'));
     let createCalls = 0;
     let saveCalls = 0;
     let deleteCalls = 0;
@@ -70,5 +70,47 @@ describe('CrudActionBarComponent', () => {
     expect(createCalls).toBe(1);
     expect(saveCalls).toBe(0);
     expect(deleteCalls).toBe(0);
+  });
+
+  it('sets loading accessibility attributes on action buttons', () => {
+    component.showCreate = true;
+    component.showSave = true;
+    component.showDelete = true;
+    component.createLoading = true;
+    component.saveLoading = false;
+    component.deleteLoading = true;
+    fixture.detectChanges();
+
+    const createButton = fixture.debugElement.query(By.css('.crud-create')).nativeElement as HTMLButtonElement;
+    const saveButton = fixture.debugElement.query(By.css('.crud-save')).nativeElement as HTMLButtonElement;
+    const deleteButton = fixture.debugElement.query(By.css('.crud-delete')).nativeElement as HTMLButtonElement;
+
+    expect(createButton.getAttribute('aria-busy')).toBe('true');
+    expect(createButton.getAttribute('data-loading')).toBe('true');
+    expect(saveButton.getAttribute('aria-busy')).toBe('false');
+    expect(deleteButton.getAttribute('aria-busy')).toBe('true');
+  });
+
+  it('exposes group label and keyboard focusable action order', () => {
+    component.ariaLabel = 'Contact CRUD actions';
+    component.showCreate = true;
+    component.showSave = true;
+    component.showDelete = true;
+    component.createLabel = 'Create contact';
+    component.saveLabel = 'Save contact';
+    component.deleteLabel = 'Delete contact';
+    fixture.detectChanges();
+
+    const group = fixture.debugElement.query(By.css('.crud-action-bar')).nativeElement as HTMLDivElement;
+    const buttons = fixture.debugElement.queryAll(By.css('.crud-action-bar button'))
+      .map((entry) => entry.nativeElement as HTMLButtonElement);
+
+    expect(group.getAttribute('aria-label')).toBe('Contact CRUD actions');
+    expect(buttons.map((button) => button.textContent?.trim())).toEqual([
+      'Create contact',
+      'Save contact',
+      'Delete contact',
+    ]);
+    expect(buttons.every((button) => button.tabIndex >= 0)).toBe(true);
   });
 });

@@ -20,20 +20,35 @@
   font-weight: 600;
   border: 1px solid transparent;
   cursor: pointer;
+  transition:
+    transform 120ms ease,
+    filter 120ms ease,
+    box-shadow 120ms ease;
 }
 
-.crud-primary {
+.crud-create,
+.crud-save,
+.crud-delete {
   color: #fff;
-  background: linear-gradient(160deg, var(--brand), var(--brand-strong));
+  background: linear-gradient(160deg, var(--crud-create-bg), var(--crud-create-bg-strong));
+  border-color: color-mix(in srgb, var(--crud-delete-border) 45%, white);
 }
 
-.crud-danger {
-  color: var(--danger-fg);
-  border-color: color-mix(in srgb, var(--danger-fg) 25%, white);
-  background: var(--danger-bg);
+.crud-action-bar button:hover:not([disabled]) {
+  transform: translateY(-1px);
+}
+
+.crud-action-bar button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--crud-focus-ring) 40%, transparent);
+  outline-offset: 2px;
 }
 
 .crud-action-bar button[disabled] {
   opacity: 0.65;
   cursor: not-allowed;
+}
+
+.crud-action-bar button[data-loading='true'] {
+  filter: saturate(0.92);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, white 55%, transparent);
 }
