@@ -95,6 +95,7 @@ export class DashboardShellComponent implements OnInit {
   readonly navItems: DashboardNavItem[] = [
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'Appointments', path: '/appointments' },
+    { label: 'School personal', path: '/school-personal' },
     { label: 'Contacts', path: '/contacts' },
     { label: 'Privacy', path: '/privacy' },
     { label: 'Help', path: '/help' },

@@ -101,6 +101,30 @@ export interface UpsertSchoolContactInput {
   phone?: string;
 }
 
+export type SchoolPersonalJobRole = 'teacher' | 'assistant' | 'supporter' | 'other';
+
+export interface SchoolPersonalRecord {
+  id: string;
+  teacherId: string;
+  schoolId: string;
+  name: string;
+  role: UserRole;
+  jobRole: SchoolPersonalJobRole;
+  class?: string;
+  startDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpsertSchoolPersonalInput {
+  teacherId?: string;
+  name: string;
+  role: UserRole;
+  jobRole: SchoolPersonalJobRole;
+  class?: string;
+  startDate?: string;
+}
+
 export interface PrivacyRequestAuditEvent {
   id: string;
   type: 'erasure' | 'restriction';
@@ -161,6 +185,25 @@ interface DeleteContactResponse {
   };
 }
 
+interface ListSchoolPersonalResponse {
+  data: {
+    records: SchoolPersonalRecord[];
+  };
+}
+
+interface UpsertSchoolPersonalResponse {
+  data: {
+    record: SchoolPersonalRecord;
+  };
+}
+
+interface DeleteSchoolPersonalResponse {
+  data: {
+    deleted: boolean;
+    recordId: string;
+  };
+}
+
 interface ChronicleExportResponse {
   data: {
     fileName: string;
@@ -188,8 +231,15 @@ export class AuthApiService {
   private static readonly DUMMY_PROFILE_KEY = 'sc_dummy_profile';
   private static readonly DUMMY_PRIVACY_EVENTS_KEY = 'sc_dummy_privacy_events';
   private static readonly DUMMY_CONTACTS_KEY = 'sc_dummy_contacts';
+  private static readonly DUMMY_SCHOOL_PERSONAL_KEY = 'sc_dummy_school_personal';
   private static readonly DUMMY_CATEGORIES = ['meeting', 'consultation', 'progress', 'special_event'];
   private static readonly DUMMY_CONTACT_ROLES: SchoolContactRole[] = ['teacher', 'parent', 'staff', 'partner'];
+  private static readonly DUMMY_SCHOOL_PERSONAL_JOB_ROLES: SchoolPersonalJobRole[] = [
+    'teacher',
+    'assistant',
+    'supporter',
+    'other',
+  ];
   private static readonly SIGN_IN_TIMEOUT_MS = 10000;
   private readonly http = inject(HttpClient);
   private inMemoryDummySession = false;
@@ -201,6 +251,7 @@ export class AuthApiService {
   };
   private inMemoryPrivacyEvents: PrivacyRequestAuditEvent[] = [];
   private inMemoryDummyContacts: SchoolContact[] = [];
+  private inMemorySchoolPersonal: SchoolPersonalRecord[] = [];
 
   signIn(email: string, password: string): Observable<SignInResponse['data']> {
     const normalizedEmail = email.trim().toLowerCase();
@@ -640,6 +691,114 @@ export class AuthApiService {
       .pipe(map((response) => response.data.deleted));
   }
 
+  listSchoolPersonalJobRoles(): SchoolPersonalJobRole[] {
+    return [...AuthApiService.DUMMY_SCHOOL_PERSONAL_JOB_ROLES];
+  }
+
+  listSchoolPersonal(filters?: {
+    searchTerm?: string;
+    role?: UserRole | '';
+    jobRole?: SchoolPersonalJobRole | '';
+  }): Observable<SchoolPersonalRecord[]> {
+    if (this.hasDummySession()) {
+      const contextTeacherId = 'teacher-1';
+      const contextRole = this.inMemoryRole;
+      let records = this.readDummySchoolPersonal();
+      if (contextRole === 'user') {
+        records = records.filter((record) => record.teacherId === contextTeacherId);
+      } else {
+        const searchTerm = filters?.searchTerm?.trim().toLowerCase() ?? '';
+        const role = filters?.role || '';
+        const jobRole = filters?.jobRole || '';
+        records = records
+          .filter((record) => !role || record.role === role)
+          .filter((record) => !jobRole || record.jobRole === jobRole)
+          .filter((record) => {
+            if (!searchTerm) {
+              return true;
+            }
+            return [record.name, record.role, record.jobRole, record.class ?? '', record.startDate ?? '']
+              .join(' ')
+              .toLowerCase()
+              .includes(searchTerm);
+          });
+      }
+      return of(records.sort((a, b) => a.name.localeCompare(b.name)));
+    }
+
+    const queryParams = new URLSearchParams();
+    if (filters?.searchTerm?.trim()) {
+      queryParams.set('search', filters.searchTerm.trim());
+    }
+    if (filters?.role) {
+      queryParams.set('role', filters.role);
+    }
+    if (filters?.jobRole) {
+      queryParams.set('jobRole', filters.jobRole);
+    }
+    const queryString = queryParams.toString();
+    const url = queryString ? `/api/school-personal?${queryString}` : '/api/school-personal';
+    return this.http.get<ListSchoolPersonalResponse>(url).pipe(map((response) => response.data.records));
+  }
+
+  createSchoolPersonal(input: UpsertSchoolPersonalInput): Observable<SchoolPersonalRecord> {
+    if (this.hasDummySession()) {
+      const now = new Date().toISOString();
+      const records = this.readDummySchoolPersonal();
+      const record: SchoolPersonalRecord = {
+        id: `school-personal-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        teacherId: input.teacherId?.trim() || `teacher-${Date.now()}`,
+        schoolId: 'school-1',
+        name: input.name.trim(),
+        role: input.role,
+        jobRole: input.jobRole,
+        class: input.class?.trim() || undefined,
+        startDate: input.startDate?.trim() || undefined,
+        createdAt: now,
+        updatedAt: now,
+      };
+      records.push(record);
+      this.writeDummySchoolPersonal(records);
+      return of(record);
+    }
+    return this.http
+      .post<UpsertSchoolPersonalResponse>('/api/school-personal', input)
+      .pipe(map((response) => response.data.record));
+  }
+
+  updateSchoolPersonal(recordId: string, input: UpsertSchoolPersonalInput): Observable<SchoolPersonalRecord> {
+    if (this.hasDummySession()) {
+      const records = this.readDummySchoolPersonal();
+      const target = records.find((record) => record.id === recordId);
+      if (!target) {
+        return this.createSchoolPersonal(input);
+      }
+      target.name = input.name.trim();
+      target.role = input.role;
+      target.jobRole = input.jobRole;
+      target.class = input.class?.trim() || undefined;
+      target.startDate = input.startDate?.trim() || undefined;
+      target.updatedAt = new Date().toISOString();
+      this.writeDummySchoolPersonal(records);
+      return of(target);
+    }
+    return this.http
+      .patch<UpsertSchoolPersonalResponse>(`/api/school-personal/${recordId}`, input)
+      .pipe(map((response) => response.data.record));
+  }
+
+  deleteSchoolPersonal(recordId: string): Observable<boolean> {
+    if (this.hasDummySession()) {
+      const records = this.readDummySchoolPersonal();
+      const nextRecords = records.filter((record) => record.id !== recordId);
+      this.writeDummySchoolPersonal(nextRecords);
+      return of(nextRecords.length !== records.length);
+    }
+    return this.http
+      .delete<DeleteSchoolPersonalResponse>(`/api/school-personal/${recordId}`)
+      .pipe(map((response) => response.data.deleted));
+  }
+
   exportChronicle(appointmentIds: string[]): Observable<ChronicleExportResponse['data']> {
     if (this.hasDummySession()) {
       return of({
@@ -819,6 +978,7 @@ export class AuthApiService {
       storage.removeItem(AuthApiService.DUMMY_PROFILE_KEY);
       storage.removeItem(AuthApiService.DUMMY_PRIVACY_EVENTS_KEY);
       storage.removeItem(AuthApiService.DUMMY_CONTACTS_KEY);
+      storage.removeItem(AuthApiService.DUMMY_SCHOOL_PERSONAL_KEY);
     }
     this.inMemoryDummyDrafts = [];
     this.inMemoryDummyProfile = {
@@ -827,6 +987,7 @@ export class AuthApiService {
     };
     this.inMemoryPrivacyEvents = [];
     this.inMemoryDummyContacts = [];
+    this.inMemorySchoolPersonal = [];
   }
 
   private readDummyDrafts(): AppointmentDraft[] {
@@ -882,6 +1043,62 @@ export class AuthApiService {
       return;
     }
     storage.setItem(AuthApiService.DUMMY_CONTACTS_KEY, JSON.stringify(contacts));
+  }
+
+  private readDummySchoolPersonal(): SchoolPersonalRecord[] {
+    const storage = this.getStorage();
+    if (!storage) {
+      return [...this.inMemorySchoolPersonal];
+    }
+    const serialized = storage.getItem(AuthApiService.DUMMY_SCHOOL_PERSONAL_KEY);
+    if (!serialized) {
+      return this.seedDummySchoolPersonal();
+    }
+    try {
+      const parsed = JSON.parse(serialized) as SchoolPersonalRecord[];
+      return Array.isArray(parsed) ? parsed : this.seedDummySchoolPersonal();
+    } catch {
+      return this.seedDummySchoolPersonal();
+    }
+  }
+
+  private writeDummySchoolPersonal(records: SchoolPersonalRecord[]): void {
+    const storage = this.getStorage();
+    if (!storage) {
+      this.inMemorySchoolPersonal = [...records];
+      return;
+    }
+    storage.setItem(AuthApiService.DUMMY_SCHOOL_PERSONAL_KEY, JSON.stringify(records));
+  }
+
+  private seedDummySchoolPersonal(): SchoolPersonalRecord[] {
+    const now = new Date().toISOString();
+    const seeded: SchoolPersonalRecord[] = [
+      {
+        id: 'sp-teacher-1',
+        teacherId: 'teacher-1',
+        schoolId: 'school-1',
+        name: 'Teacher Account',
+        role: 'user',
+        jobRole: 'teacher',
+        class: '8A',
+        startDate: '2026-01-15',
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: 'sp-admin-1',
+        teacherId: 'admin-1',
+        schoolId: 'school-1',
+        name: 'Admin Account',
+        role: 'admin',
+        jobRole: 'supporter',
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+    this.writeDummySchoolPersonal(seeded);
+    return seeded;
   }
 
   private normalizeDraftImages(draft: AppointmentDraft): AppointmentDraft {

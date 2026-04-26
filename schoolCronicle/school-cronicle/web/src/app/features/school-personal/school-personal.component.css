@@ -1,0 +1,123 @@
+.workspace {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+.workspace-header h2 {
+  margin: 0.2rem 0 0.4rem;
+}
+
+.kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.subtle {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.panel {
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--surface);
+  padding: 1rem;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(12rem, 1fr));
+  gap: 0.45rem 0.8rem;
+}
+
+.filter-grid input,
+.filter-grid select {
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.filter-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.excel-grid {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.excel-grid th,
+.excel-grid td {
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+}
+
+.excel-grid tbody tr:hover {
+  background: #f8fafc;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(15 23 42 / 45%);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.modal-panel {
+  width: min(34rem, 100%);
+  background: var(--surface);
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  padding: 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.modal-panel input,
+.modal-panel select {
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.primary,
+.ghost {
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--border);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary {
+  background: #1d4ed8;
+  color: #fff;
+  border-color: #1d4ed8;
+}
+
+.ghost {
+  background: #fff;
+}
+
+.state-pill {
+  margin-top: 0.75rem;
+}

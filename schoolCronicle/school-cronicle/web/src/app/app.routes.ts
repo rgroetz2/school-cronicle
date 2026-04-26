@@ -8,6 +8,7 @@ import { DashboardShellComponent } from './features/dashboard/dashboard-shell.co
 import { WorkspacePlaceholderComponent } from './features/dashboard/workspace-placeholder.component';
 import { ContactsComponent } from './features/contacts/contacts.component';
 import { PrivacySummaryComponent } from './features/privacy/privacy-summary.component';
+import { SchoolPersonalComponent } from './features/school-personal/school-personal.component';
 
 export const appRoutes: Route[] = [
   {
@@ -35,6 +36,10 @@ export const appRoutes: Route[] = [
       {
         path: 'contacts',
         component: ContactsComponent,
+      },
+      {
+        path: 'school-personal',
+        component: SchoolPersonalComponent,
       },
       {
         path: 'drafts',

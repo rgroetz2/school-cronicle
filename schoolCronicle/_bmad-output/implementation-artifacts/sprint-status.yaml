@@ -1,5 +1,5 @@
 # generated: 2026-04-26T20:40:00+02:00
-# last_updated: 2026-04-26T21:24:00+02:00
+# last_updated: 2026-04-26T21:28:00+02:00
 # project: schoolCronicle
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-26T20:40:00+02:00
-last_updated: 2026-04-26T21:24:00+02:00
+last_updated: 2026-04-26T21:36:00+02:00
 project: schoolCronicle
 project_key: NOKEY
 tracking_system: file-system
@@ -49,12 +49,12 @@ development_status:
   1-4-enforce-frontend-route-and-action-visibility-by-role: done
   epic-1-retrospective: optional
 
-  epic-2: backlog
-  2-1-implement-school-personal-data-model-and-validation: backlog
-  2-2-build-school-personal-list-and-filter-grid: backlog
-  2-3-build-school-personal-crud-ui-with-bottom-actions: backlog
-  2-4-wire-save-cancel-and-double-click-edit-flow-for-school-personal: backlog
-  2-5-enforce-user-self-only-profile-permissions: backlog
+  epic-2: done
+  2-1-implement-school-personal-data-model-and-validation: done
+  2-2-build-school-personal-list-and-filter-grid: done
+  2-3-build-school-personal-crud-ui-with-bottom-actions: done
+  2-4-wire-save-cancel-and-double-click-edit-flow-for-school-personal: done
+  2-5-enforce-user-self-only-profile-permissions: done
   epic-2-retrospective: optional
 
   epic-3: backlog
