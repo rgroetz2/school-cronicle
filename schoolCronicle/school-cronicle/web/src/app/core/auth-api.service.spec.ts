@@ -52,6 +52,50 @@ describe('AuthApiService pitch demo reset', () => {
   });
 });
 
+describe('AuthApiService session context', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      providers: [AuthApiService, provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
+  });
+
+  it('returns dummy role context while dummy session is active', async () => {
+    const service = TestBed.inject(AuthApiService);
+    await firstValueFrom(service.signIn('teacher@school.local', 'password'));
+
+    await expect(firstValueFrom(service.getSessionContext())).resolves.toMatchObject({
+      authenticated: true,
+      teacherId: 'teacher-1',
+      role: 'user',
+    });
+
+    TestBed.inject(HttpTestingController).verify();
+  });
+
+  it('calls session-context endpoint for API-backed sessions', async () => {
+    const service = TestBed.inject(AuthApiService);
+    const httpTesting = TestBed.inject(HttpTestingController);
+
+    const pending = firstValueFrom(service.getSessionContext());
+    const request = httpTesting.expectOne('/api/auth/session-context');
+    expect(request.request.method).toBe('GET');
+    request.flush({
+      data: {
+        authenticated: true,
+        teacherId: 'teacher-1',
+        email: 'teacher@school.local',
+        role: 'admin',
+      },
+    });
+
+    await expect(pending).resolves.toMatchObject({
+      authenticated: true,
+      role: 'admin',
+    });
+    httpTesting.verify();
+  });
+});
+
 describe('AuthApiService deleteContact', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({

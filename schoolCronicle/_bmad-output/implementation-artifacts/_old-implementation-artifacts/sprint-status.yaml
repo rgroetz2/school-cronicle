@@ -1,0 +1,142 @@
+# generated: 2026-04-25T11:37:00+0200
+# last_updated: 2026-04-25T13:40:00+0200
+# project: schoolCronicle
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+#
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-04-25T11:37:00+0200
+last_updated: 2026-04-25T13:40:00+0200
+project: schoolCronicle
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: in-progress
+  1-1-set-up-initial-project-from-starter-template: review
+  1-2-implement-teacher-sign-in: review
+  1-3-implement-sign-out-and-session-lifecycle: review
+  1-4-implement-access-failure-and-help-path: review
+  epic-1-retrospective: optional
+  epic-2: in-progress
+  2-1-create-draft-appointment: review
+  2-2-view-and-open-appointment-list: review
+  2-3-edit-draft-metadata-and-category: review
+  2-4-enforce-metadata-submission-gate: review
+  2-5-remove-draft-appointment: review
+  epic-2-retrospective: optional
+  epic-3: in-progress
+  3-1-attach-images-to-draft: review
+  3-2-validate-image-type-and-size: review
+  3-3-remove-replace-invalid-images: review
+  3-4-block-submit-on-image-validation-failures: review
+  epic-3-retrospective: optional
+  epic-4: in-progress
+  4-1-submit-valid-appointment: review
+  4-2-display-draft-vs-submitted-states: review
+  4-3-enforce-read-only-submitted-view: review
+  epic-4-retrospective: optional
+  epic-5: backlog
+  5-1-enforce-school-scoped-authorization: backlog
+  5-2-persist-correct-school-associations: backlog
+  5-3-generate-structured-export: backlog
+  5-4-preserve-appointment-image-referential-integrity-in-export: backlog
+  5-5-record-audit-trail-for-significant-actions: backlog
+  epic-5-retrospective: optional
+  epic-6: in-progress
+  6-1-show-privacy-data-category-summary: review
+  6-2-enable-editable-profile-metadata-corrections: review
+  6-3-support-erasure-restriction-process-invocation-path: review
+  6-4-apply-retention-rules-to-drafts-submissions-and-media: review
+  6-5-provide-in-product-guidance-for-required-fields-and-formats: review
+  6-6-surface-school-privacy-account-contact-information: review
+  epic-6-retrospective: optional
+  epic-px-1: in-progress
+  px1-1-introduce-left-sidebar-dashboard-shell: review
+  px1-2-create-teacher-dashboard-home-view: review
+  px1-3-reduce-workspace-cognitive-load-via-section-re-layout: review
+  epic-px-1-retrospective: optional
+  epic-px-2: in-progress
+  px2-1-build-dedicated-filter-panel: review
+  px2-2-add-new-optional-metadata-filters: review
+  px2-3-add-active-filter-chips-and-saved-presets: backlog
+  epic-px-2-retrospective: optional
+  epic-px-3: in-progress
+  px3-1-add-optional-fields-to-appointment-model: review
+  px3-2-show-optional-metadata-in-list-and-detail-views: review
+  px3-3-keep-optional-metadata-outside-submit-gate: review
+  epic-px-3-retrospective: optional
+  epic-px-4: in-progress
+  px4-1-add-demo-data-seed-reset-flow: review
+  px4-2-define-7-minute-teacher-demo-path: review
+  epic-px-4-retrospective: optional
+  epic-m2-1: in-progress
+  m2-1-build-unified-all-appointments-list-view: ready-for-dev
+  m2-2-add-search-and-filter-controls-to-unified-list: ready-for-dev
+  m2-3-open-appointment-in-modal-editor-from-list: ready-for-dev
+  m2-4-enable-submitted-editing-with-post-submit-indicator: ready-for-dev
+  epic-m2-1-retrospective: optional
+  epic-m2-2: in-progress
+  m2-5-create-school-wide-contacts-directory: ready-for-dev
+  m2-6-assign-participants-to-appointments-from-contacts: ready-for-dev
+  m2-7-add-special-event-appointment-type-with-optional-media: ready-for-dev
+  epic-m2-2-retrospective: optional
+  epic-m2-3: in-progress
+  m2-8-enforce-image-upload-and-printable-limits: ready-for-dev
+  m2-9-generate-chronicle-docx-from-manual-appointment-selection: ready-for-dev
+  m2-10-apply-fixed-chronicle-layout-independent-of-image-count: ready-for-dev
+  epic-m2-3-retrospective: optional
+  epic-m2-4: in-progress
+  m2-11-introduce-neutral-accessible-color-tokens: ready-for-dev
+  m2-12-apply-light-visual-refresh-to-core-views: ready-for-dev
+  epic-m2-4-retrospective: optional
+  epic-ux3-1: in-progress
+  ux3-1-define-shared-bottom-crud-action-bar-contract: in-progress
+  ux3-2-enforce-mode-aware-create-save-delete-rules: in-progress
+  ux3-3-apply-shared-action-bar-to-appointment-editor: in-progress
+  epic-ux3-1-retrospective: optional
+  epic-ux3-2: in-progress
+  ux3-4-add-contact-delete-api-method-in-frontend-service: in-progress
+  ux3-5-wire-contact-delete-to-bottom-delete-action: in-progress
+  epic-ux3-2-retrospective: optional
+  epic-ux3-3: in-progress
+  ux3-6-introduce-colorful-crud-action-tokens-and-states: in-progress
+  ux3-7-verify-cross-screen-crud-action-consistency-with-tests: in-progress
+  epic-ux3-3-retrospective: optional
+  epic-cmd-1: in-progress
+  cmd-1-add-export-chronicle-md-action-in-existing-export-surface: in-progress
+  cmd-2-wire-frontend-backend-markdown-export-command: in-progress
+  cmd-3-implement-markdown-contract-with-contact-persons-and-appointments-sections: in-progress
+  cmd-4-enforce-deterministic-ordering-and-media-metadata-only-serialization: in-progress
+  cmd-5-add-automated-tests-for-markdown-export-and-docx-non-regression: in-progress
+  epic-cmd-1-retrospective: optional

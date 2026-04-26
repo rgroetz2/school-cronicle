@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { finalize } from 'rxjs';
-import { AuthApiService } from '../../core/auth-api.service';
+import { AuthApiService, UserRole } from '../../core/auth-api.service';
 import { PitchDemoModeService } from '../../core/pitch-demo-mode.service';
 
 interface DashboardNavItem {
@@ -37,10 +37,22 @@ interface DashboardNavItem {
                 </a>
               </li>
             }
+            @if (isAdmin) {
+              <li>
+                <a
+                  [routerLink]="adminNavItem.path"
+                  routerLinkActive="active"
+                  [routerLinkActiveOptions]="{ exact: true }"
+                  (click)="isMenuOpen = false"
+                >
+                  {{ adminNavItem.label }}
+                </a>
+              </li>
+            }
           </ul>
         </nav>
         <section class="menu-actions" aria-label="Workspace quick actions">
-          @if (pitchDemoModeEnabled) {
+          @if (pitchDemoModeEnabled && isAdmin) {
             <button type="button" class="menu-action-button" (click)="resetDemoData()" [disabled]="isResettingDemoData">
               {{ isResettingDemoData ? 'Resetting demo…' : 'Reset demo data' }}
             </button>
@@ -70,7 +82,7 @@ interface DashboardNavItem {
     </main>
   `,
 })
-export class DashboardShellComponent {
+export class DashboardShellComponent implements OnInit {
   private readonly authApiService = inject(AuthApiService);
   private readonly pitchDemoModeService = inject(PitchDemoModeService);
   private readonly router = inject(Router);
@@ -78,6 +90,7 @@ export class DashboardShellComponent {
   isMenuOpen = false;
   isSigningOut = false;
   isResettingDemoData = false;
+  userRole: UserRole = 'user';
 
   readonly navItems: DashboardNavItem[] = [
     { label: 'Dashboard', path: '/dashboard' },
@@ -87,12 +100,29 @@ export class DashboardShellComponent {
     { label: 'Help', path: '/help' },
   ];
 
+  readonly adminNavItem: DashboardNavItem = { label: 'Admin', path: '/admin' };
+
+  ngOnInit(): void {
+    this.authApiService.getSessionContext().subscribe({
+      next: (context) => {
+        this.userRole = context.role;
+      },
+      error: () => {
+        this.userRole = 'user';
+      },
+    });
+  }
+
   toggleMenu(): void {
     this.isMenuOpen = !this.isMenuOpen;
   }
 
   get pitchDemoModeEnabled(): boolean {
     return this.pitchDemoModeService.isEnabled();
+  }
+
+  get isAdmin(): boolean {
+    return this.userRole === 'admin';
   }
 
   openPrivacySummary(): void {

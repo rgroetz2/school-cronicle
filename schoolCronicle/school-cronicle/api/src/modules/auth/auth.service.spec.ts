@@ -16,6 +16,7 @@ describe('AuthService', () => {
 
     expect(result).toBeTruthy();
     expect(result?.teacherId).toBe('teacher-1');
+    expect(result?.role).toBe('user');
     expect(result?.sessionId).toBeTruthy();
   });
 
@@ -32,5 +33,16 @@ describe('AuthService', () => {
 
     expect(attempt.result).toBeNull();
     expect(attempt.failureReason).toBe('account-blocked');
+  });
+
+  it('rejects session setup when configured role is invalid', () => {
+    process.env.SC_TEACHER_ROLE = 'super-admin';
+    const invalidRoleService = new AuthService(new SessionService());
+
+    const attempt = invalidRoleService.signIn('teacher@school.local', 'teachpass123');
+
+    expect(attempt.result).toBeNull();
+    expect(attempt.failureReason).toBe('invalid-role-state');
+    delete process.env.SC_TEACHER_ROLE;
   });
 });

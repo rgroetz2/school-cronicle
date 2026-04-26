@@ -7,6 +7,7 @@ interface SignInResponse {
   data: {
     teacherId: string;
     email: string;
+    role: UserRole;
   };
 }
 
@@ -15,6 +16,17 @@ interface SessionProbeResponse {
     authenticated: boolean;
   };
 }
+
+interface SessionContextResponse {
+  data: {
+    authenticated: boolean;
+    teacherId: string;
+    email: string;
+    role: UserRole;
+  };
+}
+
+export type UserRole = 'admin' | 'user';
 
 export interface CreateDraftInput {
   title: string;
@@ -181,6 +193,7 @@ export class AuthApiService {
   private static readonly SIGN_IN_TIMEOUT_MS = 10000;
   private readonly http = inject(HttpClient);
   private inMemoryDummySession = false;
+  private inMemoryRole: UserRole = 'user';
   private inMemoryDummyDrafts: AppointmentDraft[] = [];
   private inMemoryDummyProfile: TeacherProfile = {
     displayName: 'Teacher Account',
@@ -204,6 +217,7 @@ export class AuthApiService {
     return of({
       teacherId: 'teacher-1',
       email: normalizedEmail,
+      role: this.inMemoryRole,
     });
   }
 
@@ -221,6 +235,21 @@ export class AuthApiService {
     return this.http
       .get<SessionProbeResponse>('/api/auth/session')
       .pipe(map((response) => response.data.authenticated));
+  }
+
+  getSessionContext(): Observable<SessionContextResponse['data']> {
+    if (this.hasDummySession()) {
+      return of({
+        authenticated: true,
+        teacherId: 'teacher-1',
+        email: 'teacher@school.local',
+        role: this.inMemoryRole,
+      });
+    }
+
+    return this.http
+      .get<SessionContextResponse>('/api/auth/session-context')
+      .pipe(map((response) => response.data));
   }
 
   private hasDummySession(): boolean {

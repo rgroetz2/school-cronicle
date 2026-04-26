@@ -42,7 +42,7 @@ describe('AuthController integration', () => {
 
     expect(response.status).toBe(200);
     expect(responseBody).toEqual({
-      data: { teacherId: 'teacher-1', email: 'teacher@school.local' },
+      data: { teacherId: 'teacher-1', email: 'teacher@school.local', role: 'user' },
     });
     expect(response.headers.get('set-cookie')).toContain('sc_session=');
     expect(response.headers.get('set-cookie')).toContain('HttpOnly');
@@ -150,6 +150,19 @@ describe('AuthController integration', () => {
     });
     expect(sessionProbeBeforeSignOut.status).toBe(200);
 
+    const sessionContextBeforeSignOut = await fetch(`${baseUrl}/api/auth/session-context`, {
+      headers: { cookie: sessionCookie ?? '' },
+    });
+    expect(sessionContextBeforeSignOut.status).toBe(200);
+    expect(await sessionContextBeforeSignOut.json()).toMatchObject({
+      data: {
+        authenticated: true,
+        teacherId: 'teacher-1',
+        email: 'teacher@school.local',
+        role: 'user',
+      },
+    });
+
     const signOutResponse = await fetch(`${baseUrl}/api/auth/sign-out`, {
       method: 'POST',
       headers: { cookie: sessionCookie ?? '' },
@@ -164,6 +177,117 @@ describe('AuthController integration', () => {
     });
     expect(sessionProbeAfterSignOut.status).toBe(401);
     expect(await sessionProbeAfterSignOut.json()).toMatchObject({
+      message: 'Authentication required.',
+    });
+  });
+
+  it('denies user role for admin-only endpoint even with direct API access', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'teacher@school.local',
+        password: 'teachpass123',
+      }),
+    });
+    const sessionCookie = signInResponse.headers.get('set-cookie');
+    expect(sessionCookie).toContain('sc_session=');
+
+    const adminProbeResponse = await fetch(`${baseUrl}/api/auth/admin-probe`, {
+      headers: { cookie: sessionCookie ?? '' },
+    });
+
+    expect(adminProbeResponse.status).toBe(403);
+    expect(await adminProbeResponse.json()).toMatchObject({
+      message: 'Forbidden.',
+      code: 'AUTH_FORBIDDEN_ROLE',
+      requiredRole: 'admin',
+    });
+  });
+
+  it('allows admin role to reach admin-only endpoint', async () => {
+    const previousRole = process.env.SC_TEACHER_ROLE;
+    process.env.SC_TEACHER_ROLE = 'admin';
+    try {
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      app = moduleRef.createNestApplication();
+      app.setGlobalPrefix('api');
+      await app.init();
+      await app.listen(0);
+
+      const address = app.getHttpServer().address();
+      const baseUrl =
+        typeof address === 'string'
+          ? address
+          : `http://127.0.0.1:${address?.port ?? 0}`;
+
+      const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email: 'teacher@school.local',
+          password: 'teachpass123',
+        }),
+      });
+      const sessionCookie = signInResponse.headers.get('set-cookie');
+      expect(sessionCookie).toContain('sc_session=');
+
+      const adminProbeResponse = await fetch(`${baseUrl}/api/auth/admin-probe`, {
+        headers: { cookie: sessionCookie ?? '' },
+      });
+      expect(adminProbeResponse.status).toBe(200);
+      expect(await adminProbeResponse.json()).toMatchObject({
+        data: {
+          authorized: true,
+          role: 'admin',
+        },
+      });
+    } finally {
+      if (previousRole === undefined) {
+        delete process.env.SC_TEACHER_ROLE;
+      } else {
+        process.env.SC_TEACHER_ROLE = previousRole;
+      }
+    }
+  });
+
+  it('rejects admin-only endpoint when session is missing', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    await app.listen(0);
+
+    const address = app.getHttpServer().address();
+    const baseUrl =
+      typeof address === 'string'
+        ? address
+        : `http://127.0.0.1:${address?.port ?? 0}`;
+
+    const response = await fetch(`${baseUrl}/api/auth/admin-probe`);
+    expect(response.status).toBe(401);
+    expect(await response.json()).toMatchObject({
       message: 'Authentication required.',
     });
   });

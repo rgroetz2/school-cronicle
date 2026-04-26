@@ -1,16 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { AuthSession } from './auth.types';
+import { AuthRole, AuthSession } from './auth.types';
 
 @Injectable()
 export class SessionService {
   private readonly sessions = new Map<string, AuthSession>();
 
-  createSession(teacherId: string, email: string): AuthSession {
+  createSession(teacherId: string, email: string, role: AuthRole): AuthSession {
     const session: AuthSession = {
       id: randomUUID(),
       teacherId,
       email,
+      role,
       createdAt: Date.now(),
     };
 

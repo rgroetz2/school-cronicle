@@ -1,5 +1,6 @@
 import { Route } from '@angular/router';
 import { authSessionGuard } from './core/auth-session.guard';
+import { authAdminRoleGuard } from './core/auth-role.guard';
 import { AppointmentsComponent } from './features/appointments/appointments.component';
 import { LoginComponent } from './features/auth/login.component';
 import { DashboardHomeComponent } from './features/dashboard/dashboard-home.component';
@@ -63,6 +64,15 @@ export const appRoutes: Route[] = [
           title: 'Help',
           description:
             'Teacher support resources are reachable here. Use Privacy for current privacy and account support details.',
+        },
+      },
+      {
+        path: 'admin',
+        component: WorkspacePlaceholderComponent,
+        canActivate: [authAdminRoleGuard],
+        data: {
+          title: 'Admin',
+          description: 'Admin-only workspace.',
         },
       },
     ],
