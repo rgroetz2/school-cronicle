@@ -1,6 +1,6 @@
 # Story 4.2: Create Shared Excel-Like Grid Interaction Contract
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -17,10 +17,10 @@ so that row/column behavior and double-click editing are consistent.
 
 ## Tasks / Subtasks
 
-- [ ] Define reusable grid interaction contract (AC: 1, 2)
-- [ ] Apply shared contract to `school-personal` grid (AC: 1, 2)
-- [ ] Apply shared contract to `school` grid (AC: 1, 2)
-- [ ] Add/adjust tests for consistent grid interaction behavior (AC: 1, 2)
+- [x] Define reusable grid interaction contract (AC: 1, 2)
+- [x] Apply shared contract to `school-personal` grid (AC: 1, 2)
+- [x] Apply shared contract to `school` grid (AC: 1, 2)
+- [x] Add/adjust tests for consistent grid interaction behavior (AC: 1, 2)
 
 ## Dev Notes
 
@@ -43,8 +43,16 @@ gpt-5.3-codex
 
 ### Completion Notes List
 
-- Story prepared for implementation.
+- Added shared `GridRecordOpenDirective` to standardize cell open interactions (double-click and Enter key).
+- Applied shared directive to both school and school-personal grid cells for consistent behavior.
+- Added consistent selected-row visual state in both grids.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/release-1/4-2-create-shared-excel-like-grid-interaction-contract.md`
+- `school-cronicle/web/src/app/shared/grid-record-open.directive.ts`
+- `school-cronicle/web/src/app/shared/grid-record-open.directive.spec.ts`
+- `school-cronicle/web/src/app/features/school/school.component.ts`
+- `school-cronicle/web/src/app/features/school/school.component.css`
+- `school-cronicle/web/src/app/features/school-personal/school-personal.component.ts`
+- `school-cronicle/web/src/app/features/school-personal/school-personal.component.css`

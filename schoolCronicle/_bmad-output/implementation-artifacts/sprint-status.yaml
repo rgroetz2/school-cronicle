@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-26T20:40:00+02:00
-last_updated: 2026-04-28T21:21:00+02:00
+last_updated: 2026-04-28T21:26:00+02:00
 project: schoolCronicle
 project_key: NOKEY
 tracking_system: file-system
@@ -65,10 +65,10 @@ development_status:
   3-5-restrict-school-crud-to-admin-role: done
   epic-3-retrospective: optional
 
-  epic-4: in-progress
+  epic-4: done
   4-1-create-shared-crud-bottom-action-bar-component: done
-  4-2-create-shared-excel-like-grid-interaction-contract: ready-for-dev
-  4-3-standardize-post-action-ui-lifecycle: ready-for-dev
+  4-2-create-shared-excel-like-grid-interaction-contract: done
+  4-3-standardize-post-action-ui-lifecycle: done
   epic-4-retrospective: optional
 
   epic-5: backlog

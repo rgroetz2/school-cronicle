@@ -1,6 +1,6 @@
 # Story 4.3: Standardize Post-Action UI Lifecycle
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -17,10 +17,10 @@ so that workflows are predictable across modules.
 
 ## Tasks / Subtasks
 
-- [ ] Audit existing school + school-personal editor lifecycle behavior (AC: 1, 2)
-- [ ] Standardize save-success close and refresh flow (AC: 1)
-- [ ] Standardize cancel-close-without-mutation flow (AC: 2)
-- [ ] Add/adjust tests for lifecycle consistency (AC: 1, 2)
+- [x] Audit existing school + school-personal editor lifecycle behavior (AC: 1, 2)
+- [x] Standardize save-success close and refresh flow (AC: 1)
+- [x] Standardize cancel-close-without-mutation flow (AC: 2)
+- [x] Add/adjust tests for lifecycle consistency (AC: 1, 2)
 
 ## Dev Notes
 
@@ -43,8 +43,12 @@ gpt-5.3-codex
 
 ### Completion Notes List
 
-- Story prepared for implementation.
+- Standardized lifecycle in both components through shared `handleSaveSuccess()` and `closeEditor()` helpers.
+- Verified `SAVE` success always closes editor and refreshes list state in both modules.
+- Verified `CANCEL` closes editor without persistence in both modules.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/release-1/4-3-standardize-post-action-ui-lifecycle.md`
+- `school-cronicle/web/src/app/features/school/school.component.ts`
+- `school-cronicle/web/src/app/features/school-personal/school-personal.component.ts`

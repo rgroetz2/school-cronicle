@@ -4,10 +4,11 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { finalize } from 'rxjs';
 import { AuthApiService, SchoolEntityRecord, UpsertSchoolEntityInput } from '../../core/auth-api.service';
 import { SaveCancelActionBarComponent } from '../../shared/save-cancel-action-bar.component';
+import { GridRecordOpenDirective } from '../../shared/grid-record-open.directive';
 
 @Component({
   selector: 'app-school',
-  imports: [ReactiveFormsModule, DatePipe, SaveCancelActionBarComponent],
+  imports: [ReactiveFormsModule, DatePipe, SaveCancelActionBarComponent, GridRecordOpenDirective],
   styleUrl: './school.component.css',
   template: `
     <main class="workspace">
@@ -55,13 +56,13 @@ import { SaveCancelActionBarComponent } from '../../shared/save-cancel-action-ba
             </thead>
             <tbody>
               @for (record of records; track record.id) {
-                <tr>
-                  <td (dblclick)="openRecord(record.id)">{{ record.name }}</td>
-                  <td (dblclick)="openRecord(record.id)">{{ record.type }}</td>
-                  <td (dblclick)="openRecord(record.id)">{{ record.address }}</td>
-                  <td (dblclick)="openRecord(record.id)">{{ record.description || '-' }}</td>
-                  <td (dblclick)="openRecord(record.id)">{{ record.comment || '-' }}</td>
-                  <td (dblclick)="openRecord(record.id)">{{ record.updatedAt | date: 'yyyy-MM-dd HH:mm' }}</td>
+                <tr [class.selected]="selectedRecordId === record.id">
+                  <td appGridRecordOpen [recordId]="record.id" (recordOpen)="openRecord($event)">{{ record.name }}</td>
+                  <td appGridRecordOpen [recordId]="record.id" (recordOpen)="openRecord($event)">{{ record.type }}</td>
+                  <td appGridRecordOpen [recordId]="record.id" (recordOpen)="openRecord($event)">{{ record.address }}</td>
+                  <td appGridRecordOpen [recordId]="record.id" (recordOpen)="openRecord($event)">{{ record.description || '-' }}</td>
+                  <td appGridRecordOpen [recordId]="record.id" (recordOpen)="openRecord($event)">{{ record.comment || '-' }}</td>
+                  <td appGridRecordOpen [recordId]="record.id" (recordOpen)="openRecord($event)">{{ record.updatedAt | date: 'yyyy-MM-dd HH:mm' }}</td>
                 </tr>
               }
             </tbody>
@@ -199,9 +200,7 @@ export class SchoolComponent implements OnInit {
       .pipe(finalize(() => (this.isSaving = false)))
       .subscribe({
         next: () => {
-          this.message = 'School saved.';
-          this.isEditorOpen = false;
-          this.loadRecords();
+          this.handleSaveSuccess('School saved.');
         },
         error: () => {
           this.message = 'School save failed.';
@@ -210,8 +209,7 @@ export class SchoolComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.isEditorOpen = false;
-    this.selectedRecordId = null;
+    this.closeEditor();
   }
 
   private loadRecords(): void {
@@ -232,5 +230,16 @@ export class SchoolComponent implements OnInit {
           this.message = 'School loading failed.';
         },
       });
+  }
+
+  private handleSaveSuccess(message: string): void {
+    this.message = message;
+    this.closeEditor();
+    this.loadRecords();
+  }
+
+  private closeEditor(): void {
+    this.isEditorOpen = false;
+    this.selectedRecordId = null;
   }
 }

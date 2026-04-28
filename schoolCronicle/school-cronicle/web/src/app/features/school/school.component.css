@@ -64,6 +64,10 @@
   background: #f8fafc;
 }
 
+.excel-grid tbody tr.selected {
+  background: #eaf2ff;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

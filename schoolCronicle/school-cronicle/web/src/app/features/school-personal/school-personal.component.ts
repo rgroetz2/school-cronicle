@@ -10,10 +10,11 @@ import {
   UserRole,
 } from '../../core/auth-api.service';
 import { SaveCancelActionBarComponent } from '../../shared/save-cancel-action-bar.component';
+import { GridRecordOpenDirective } from '../../shared/grid-record-open.directive';
 
 @Component({
   selector: 'app-school-personal',
-  imports: [ReactiveFormsModule, DatePipe, SaveCancelActionBarComponent],
+  imports: [ReactiveFormsModule, DatePipe, SaveCancelActionBarComponent, GridRecordOpenDirective],
   styleUrl: './school-personal.component.css',
   template: `
     <main class="workspace">
@@ -73,13 +74,13 @@ import { SaveCancelActionBarComponent } from '../../shared/save-cancel-action-ba
             </thead>
             <tbody>
               @for (record of records; track record.id) {
-                <tr>
-                  <td (dblclick)="openRecord(record.id)">{{ record.name }}</td>
-                  <td (dblclick)="openRecord(record.id)">{{ record.role }}</td>
-                  <td (dblclick)="openRecord(record.id)">{{ record.jobRole }}</td>
-                  <td (dblclick)="openRecord(record.id)">{{ record.class || '-' }}</td>
-                  <td (dblclick)="openRecord(record.id)">{{ record.startDate || '-' }}</td>
-                  <td (dblclick)="openRecord(record.id)">{{ record.updatedAt | date: 'yyyy-MM-dd HH:mm' }}</td>
+                <tr [class.selected]="selectedRecordId === record.id">
+                  <td appGridRecordOpen [recordId]="record.id" (recordOpen)="openRecord($event)">{{ record.name }}</td>
+                  <td appGridRecordOpen [recordId]="record.id" (recordOpen)="openRecord($event)">{{ record.role }}</td>
+                  <td appGridRecordOpen [recordId]="record.id" (recordOpen)="openRecord($event)">{{ record.jobRole }}</td>
+                  <td appGridRecordOpen [recordId]="record.id" (recordOpen)="openRecord($event)">{{ record.class || '-' }}</td>
+                  <td appGridRecordOpen [recordId]="record.id" (recordOpen)="openRecord($event)">{{ record.startDate || '-' }}</td>
+                  <td appGridRecordOpen [recordId]="record.id" (recordOpen)="openRecord($event)">{{ record.updatedAt | date: 'yyyy-MM-dd HH:mm' }}</td>
                 </tr>
               }
             </tbody>
@@ -236,9 +237,7 @@ export class SchoolPersonalComponent implements OnInit {
       .pipe(finalize(() => (this.isSaving = false)))
       .subscribe({
         next: () => {
-          this.message = 'Profile saved.';
-          this.isEditorOpen = false;
-          this.loadRecords();
+          this.handleSaveSuccess('Profile saved.');
         },
         error: () => {
           this.message = 'Profile save failed.';
@@ -247,8 +246,7 @@ export class SchoolPersonalComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.isEditorOpen = false;
-    this.selectedRecordId = null;
+    this.closeEditor();
   }
 
   private loadRecords(): void {
@@ -271,5 +269,16 @@ export class SchoolPersonalComponent implements OnInit {
           this.message = 'Profile loading failed.';
         },
       });
+  }
+
+  private handleSaveSuccess(message: string): void {
+    this.message = message;
+    this.closeEditor();
+    this.loadRecords();
+  }
+
+  private closeEditor(): void {
+    this.isEditorOpen = false;
+    this.selectedRecordId = null;
   }
 }
