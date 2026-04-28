@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-26T20:40:00+02:00
-last_updated: 2026-04-26T21:36:00+02:00
+last_updated: 2026-04-28T21:21:00+02:00
 project: schoolCronicle
 project_key: NOKEY
 tracking_system: file-system
@@ -57,18 +57,18 @@ development_status:
   2-5-enforce-user-self-only-profile-permissions: done
   epic-2-retrospective: optional
 
-  epic-3: backlog
-  3-1-implement-school-data-model-and-validation: backlog
-  3-2-build-school-list-and-filter-grid: backlog
-  3-3-build-school-crud-ui-with-save-cancel: backlog
-  3-4-wire-school-double-click-edit-and-close-on-action: backlog
-  3-5-restrict-school-crud-to-admin-role: backlog
+  epic-3: done
+  3-1-implement-school-data-model-and-validation: done
+  3-2-build-school-list-and-filter-grid: done
+  3-3-build-school-crud-ui-with-save-cancel: done
+  3-4-wire-school-double-click-edit-and-close-on-action: done
+  3-5-restrict-school-crud-to-admin-role: done
   epic-3-retrospective: optional
 
-  epic-4: backlog
-  4-1-create-shared-crud-bottom-action-bar-component: backlog
-  4-2-create-shared-excel-like-grid-interaction-contract: backlog
-  4-3-standardize-post-action-ui-lifecycle: backlog
+  epic-4: in-progress
+  4-1-create-shared-crud-bottom-action-bar-component: done
+  4-2-create-shared-excel-like-grid-interaction-contract: ready-for-dev
+  4-3-standardize-post-action-ui-lifecycle: ready-for-dev
   epic-4-retrospective: optional
 
   epic-5: backlog

@@ -69,7 +69,7 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx vitest run api/src/modules/auth/auth.service.spec.ts api/src/modules/auth/auth.controller.integration.spec.ts api/src/modules/appointments/appointments.controller.integration.spec.ts api/src/modules/school-personal/school-personal.controller.integration.spec.ts"
+        "command": "npx vitest run api/src/modules/auth/auth.service.spec.ts api/src/modules/auth/auth.controller.integration.spec.ts api/src/modules/appointments/appointments.controller.integration.spec.ts api/src/modules/school-personal/school-personal.controller.integration.spec.ts api/src/modules/school/school.controller.integration.spec.ts"
       }
     }
   },

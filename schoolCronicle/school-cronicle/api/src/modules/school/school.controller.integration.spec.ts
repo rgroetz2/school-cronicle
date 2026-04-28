@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { describe, expect, it, afterEach } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { AppModule } from '../../app/app.module';
 
-describe('SchoolPersonalController (integration)', () => {
+describe('SchoolController (integration)', () => {
   let app: INestApplication;
 
   afterEach(async () => {
@@ -13,7 +13,7 @@ describe('SchoolPersonalController (integration)', () => {
     delete process.env.SC_TEACHER_ROLE;
   });
 
-  it('allows admin to list and create school-personal records', async () => {
+  it('allows admin to create and update schools', async () => {
     process.env.SC_TEACHER_ROLE = 'admin';
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = moduleRef.createNestApplication();
@@ -31,39 +31,48 @@ describe('SchoolPersonalController (integration)', () => {
     });
     const sessionCookie = signInResponse.headers.get('set-cookie');
 
-    const listResponse = await fetch(`${baseUrl}/api/school-personal`, {
-      headers: { cookie: sessionCookie ?? '' },
-    });
-    expect(listResponse.status).toBe(200);
-    const listBody = await listResponse.json();
-    expect(Array.isArray(listBody.data.records)).toBe(true);
-
-    const createResponse = await fetch(`${baseUrl}/api/school-personal`, {
+    const createResponse = await fetch(`${baseUrl}/api/schools`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', cookie: sessionCookie ?? '' },
       body: JSON.stringify({
-        teacherId: 'teacher-2',
-        name: 'Second Teacher',
-        role: 'user',
-        jobRole: 'assistant',
-        class: '5B',
-        startDate: '2026-02-01',
+        name: 'Secondary School West',
+        type: 'private',
+        address: 'Schulgasse 2, 8001 Zurich',
+        description: '',
+        comment: '',
       }),
     });
     expect(createResponse.status).toBe(201);
-    expect(await createResponse.json()).toMatchObject({
+    const createBody = await createResponse.json();
+    expect(createBody.data.record).toMatchObject({
+      name: 'Secondary School West',
+      type: 'private',
+      address: 'Schulgasse 2, 8001 Zurich',
+    });
+
+    const updateResponse = await fetch(`${baseUrl}/api/schools/${createBody.data.record.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', cookie: sessionCookie ?? '' },
+      body: JSON.stringify({
+        name: 'Secondary School West Updated',
+        type: 'private',
+        address: 'Schulgasse 2, 8001 Zurich',
+        description: 'Updated description',
+      }),
+    });
+    expect(updateResponse.status).toBe(200);
+    expect(await updateResponse.json()).toMatchObject({
       data: {
         record: {
-          teacherId: 'teacher-2',
-          name: 'Second Teacher',
-          role: 'user',
-          jobRole: 'assistant',
+          id: createBody.data.record.id,
+          name: 'Secondary School West Updated',
+          description: 'Updated description',
         },
       },
     });
   });
 
-  it('allows user to list and create school-personal records', async () => {
+  it('allows school CRUD for user role', async () => {
     process.env.SC_TEACHER_ROLE = 'user';
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = moduleRef.createNestApplication();
@@ -81,21 +90,13 @@ describe('SchoolPersonalController (integration)', () => {
     });
     const sessionCookie = signInResponse.headers.get('set-cookie');
 
-    const listResponse = await fetch(`${baseUrl}/api/school-personal`, {
-      headers: { cookie: sessionCookie ?? '' },
-    });
-    expect(listResponse.status).toBe(200);
-    const listBody = await listResponse.json();
-    expect(Array.isArray(listBody.data.records)).toBe(true);
-
-    const createResponse = await fetch(`${baseUrl}/api/school-personal`, {
+    const createResponse = await fetch(`${baseUrl}/api/schools`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', cookie: sessionCookie ?? '' },
       body: JSON.stringify({
-        teacherId: 'teacher-x',
-        name: 'User Managed Profile',
-        role: 'user',
-        jobRole: 'teacher',
+        name: 'User Managed School',
+        type: 'public',
+        address: 'User access street',
       }),
     });
     expect(createResponse.status).toBe(201);

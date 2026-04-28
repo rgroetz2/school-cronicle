@@ -9,6 +9,7 @@ import { WorkspacePlaceholderComponent } from './features/dashboard/workspace-pl
 import { ContactsComponent } from './features/contacts/contacts.component';
 import { PrivacySummaryComponent } from './features/privacy/privacy-summary.component';
 import { SchoolPersonalComponent } from './features/school-personal/school-personal.component';
+import { SchoolComponent } from './features/school/school.component';
 
 export const appRoutes: Route[] = [
   {
@@ -40,6 +41,10 @@ export const appRoutes: Route[] = [
       {
         path: 'school-personal',
         component: SchoolPersonalComponent,
+      },
+      {
+        path: 'schools',
+        component: SchoolComponent,
       },
       {
         path: 'drafts',

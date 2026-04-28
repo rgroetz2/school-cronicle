@@ -9,10 +9,11 @@ import {
   UpsertSchoolPersonalInput,
   UserRole,
 } from '../../core/auth-api.service';
+import { SaveCancelActionBarComponent } from '../../shared/save-cancel-action-bar.component';
 
 @Component({
   selector: 'app-school-personal',
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, SaveCancelActionBarComponent],
   styleUrl: './school-personal.component.css',
   template: `
     <main class="workspace">
@@ -50,9 +51,7 @@ import {
           </form>
           <div class="filter-actions">
             <button type="button" class="ghost inline" (click)="resetFilters()">Clear filters</button>
-            @if (isAdmin) {
-              <button type="button" class="ghost inline" (click)="openCreateModal()">Create profile</button>
-            }
+            <button type="button" class="ghost inline" (click)="openCreateModal()">Create profile</button>
           </div>
         </div>
 
@@ -105,7 +104,7 @@ import {
               <input id="record-name" type="text" formControlName="name" />
 
               <label for="record-role">Role *</label>
-              <select id="record-role" formControlName="role" [disabled]="!canEditRole">
+              <select id="record-role" formControlName="role">
                 <option value="">Select role</option>
                 <option value="admin">admin</option>
                 <option value="user">user</option>
@@ -126,10 +125,13 @@ import {
               <input id="record-start-date" type="date" formControlName="startDate" />
             </form>
 
-            <footer class="modal-footer">
-              <button type="button" class="primary" (click)="onSave()" [disabled]="isSaving">SAVE</button>
-              <button type="button" class="ghost" (click)="onCancel()" [disabled]="isSaving">CANCEL</button>
-            </footer>
+            <app-save-cancel-action-bar
+              ariaLabel="School-personal CRUD actions"
+              [saveDisabled]="isSaving"
+              [cancelDisabled]="isSaving"
+              (saveClicked)="onSave()"
+              (cancelClicked)="onCancel()"
+            />
           </section>
         </div>
       }
@@ -147,10 +149,8 @@ export class SchoolPersonalComponent implements OnInit {
   isEditorOpen = false;
   isLoading = false;
   isSaving = false;
-  isAdmin = false;
   message = '';
   readonly jobRoleOptions = this.authApiService.listSchoolPersonalJobRoles();
-  private currentTeacherId = 'teacher-1';
 
   readonly filterForm = new FormGroup({
     searchTerm: new FormControl(''),
@@ -169,21 +169,13 @@ export class SchoolPersonalComponent implements OnInit {
 
   ngOnInit(): void {
     this.authApiService.getSessionContext().subscribe({
-      next: (context) => {
-        this.isAdmin = context.role === 'admin';
-        this.currentTeacherId = context.teacherId;
+      next: () => {
         this.loadRecords();
       },
       error: () => {
-        this.isAdmin = false;
-        this.currentTeacherId = 'teacher-1';
         this.loadRecords();
       },
     });
-  }
-
-  get canEditRole(): boolean {
-    return this.isAdmin;
   }
 
   resetFilters(): void {
@@ -236,15 +228,6 @@ export class SchoolPersonalComponent implements OnInit {
       class: formValue.class ?? '',
       startDate: formValue.startDate ?? '',
     };
-    if (!this.isAdmin) {
-      payload.teacherId = this.currentTeacherId;
-      if (this.selectedRecordId) {
-        const existing = this.records.find((record) => record.id === this.selectedRecordId);
-        if (existing) {
-          payload.role = existing.role;
-        }
-      }
-    }
     this.isSaving = true;
     const request$ = this.selectedRecordId
       ? this.authApiService.updateSchoolPersonal(this.selectedRecordId, payload)

@@ -125,6 +125,26 @@ export interface UpsertSchoolPersonalInput {
   startDate?: string;
 }
 
+export interface SchoolEntityRecord {
+  id: string;
+  schoolId: string;
+  name: string;
+  type: string;
+  address: string;
+  description?: string;
+  comment?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpsertSchoolEntityInput {
+  name: string;
+  type: string;
+  address: string;
+  description?: string;
+  comment?: string;
+}
+
 export interface PrivacyRequestAuditEvent {
   id: string;
   type: 'erasure' | 'restriction';
@@ -204,6 +224,25 @@ interface DeleteSchoolPersonalResponse {
   };
 }
 
+interface ListSchoolsResponse {
+  data: {
+    records: SchoolEntityRecord[];
+  };
+}
+
+interface UpsertSchoolResponse {
+  data: {
+    record: SchoolEntityRecord;
+  };
+}
+
+interface DeleteSchoolResponse {
+  data: {
+    deleted: boolean;
+    recordId: string;
+  };
+}
+
 interface ChronicleExportResponse {
   data: {
     fileName: string;
@@ -232,6 +271,7 @@ export class AuthApiService {
   private static readonly DUMMY_PRIVACY_EVENTS_KEY = 'sc_dummy_privacy_events';
   private static readonly DUMMY_CONTACTS_KEY = 'sc_dummy_contacts';
   private static readonly DUMMY_SCHOOL_PERSONAL_KEY = 'sc_dummy_school_personal';
+  private static readonly DUMMY_SCHOOLS_KEY = 'sc_dummy_schools';
   private static readonly DUMMY_CATEGORIES = ['meeting', 'consultation', 'progress', 'special_event'];
   private static readonly DUMMY_CONTACT_ROLES: SchoolContactRole[] = ['teacher', 'parent', 'staff', 'partner'];
   private static readonly DUMMY_SCHOOL_PERSONAL_JOB_ROLES: SchoolPersonalJobRole[] = [
@@ -252,6 +292,7 @@ export class AuthApiService {
   private inMemoryPrivacyEvents: PrivacyRequestAuditEvent[] = [];
   private inMemoryDummyContacts: SchoolContact[] = [];
   private inMemorySchoolPersonal: SchoolPersonalRecord[] = [];
+  private inMemorySchools: SchoolEntityRecord[] = [];
 
   signIn(email: string, password: string): Observable<SignInResponse['data']> {
     const normalizedEmail = email.trim().toLowerCase();
@@ -701,28 +742,22 @@ export class AuthApiService {
     jobRole?: SchoolPersonalJobRole | '';
   }): Observable<SchoolPersonalRecord[]> {
     if (this.hasDummySession()) {
-      const contextTeacherId = 'teacher-1';
-      const contextRole = this.inMemoryRole;
+      const searchTerm = filters?.searchTerm?.trim().toLowerCase() ?? '';
+      const role = filters?.role || '';
+      const jobRole = filters?.jobRole || '';
       let records = this.readDummySchoolPersonal();
-      if (contextRole === 'user') {
-        records = records.filter((record) => record.teacherId === contextTeacherId);
-      } else {
-        const searchTerm = filters?.searchTerm?.trim().toLowerCase() ?? '';
-        const role = filters?.role || '';
-        const jobRole = filters?.jobRole || '';
-        records = records
-          .filter((record) => !role || record.role === role)
-          .filter((record) => !jobRole || record.jobRole === jobRole)
-          .filter((record) => {
-            if (!searchTerm) {
-              return true;
-            }
-            return [record.name, record.role, record.jobRole, record.class ?? '', record.startDate ?? '']
-              .join(' ')
-              .toLowerCase()
-              .includes(searchTerm);
-          });
-      }
+      records = records
+        .filter((record) => !role || record.role === role)
+        .filter((record) => !jobRole || record.jobRole === jobRole)
+        .filter((record) => {
+          if (!searchTerm) {
+            return true;
+          }
+          return [record.name, record.role, record.jobRole, record.class ?? '', record.startDate ?? '']
+            .join(' ')
+            .toLowerCase()
+            .includes(searchTerm);
+        });
       return of(records.sort((a, b) => a.name.localeCompare(b.name)));
     }
 
@@ -796,6 +831,92 @@ export class AuthApiService {
     }
     return this.http
       .delete<DeleteSchoolPersonalResponse>(`/api/school-personal/${recordId}`)
+      .pipe(map((response) => response.data.deleted));
+  }
+
+  listSchools(filters?: { searchTerm?: string; type?: string }): Observable<SchoolEntityRecord[]> {
+    if (this.hasDummySession()) {
+      const searchTerm = filters?.searchTerm?.trim().toLowerCase() ?? '';
+      const type = filters?.type?.trim().toLowerCase() ?? '';
+      const records = this.readDummySchools()
+        .filter((record) => !type || record.type.toLowerCase() === type)
+        .filter((record) => {
+          if (!searchTerm) {
+            return true;
+          }
+          return [record.name, record.type, record.address, record.description ?? '', record.comment ?? '']
+            .join(' ')
+            .toLowerCase()
+            .includes(searchTerm);
+        })
+        .sort((a, b) => a.name.localeCompare(b.name));
+      return of(records);
+    }
+
+    const queryParams = new URLSearchParams();
+    if (filters?.searchTerm?.trim()) {
+      queryParams.set('search', filters.searchTerm.trim());
+    }
+    if (filters?.type?.trim()) {
+      queryParams.set('type', filters.type.trim());
+    }
+    const queryString = queryParams.toString();
+    const url = queryString ? `/api/schools?${queryString}` : '/api/schools';
+    return this.http.get<ListSchoolsResponse>(url).pipe(map((response) => response.data.records));
+  }
+
+  createSchool(input: UpsertSchoolEntityInput): Observable<SchoolEntityRecord> {
+    if (this.hasDummySession()) {
+      const now = new Date().toISOString();
+      const records = this.readDummySchools();
+      const record: SchoolEntityRecord = {
+        id: `school-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        schoolId: 'school-1',
+        name: input.name.trim(),
+        type: input.type.trim(),
+        address: input.address.trim(),
+        description: input.description?.trim() || undefined,
+        comment: input.comment?.trim() || undefined,
+        createdAt: now,
+        updatedAt: now,
+      };
+      records.push(record);
+      this.writeDummySchools(records);
+      return of(record);
+    }
+    return this.http.post<UpsertSchoolResponse>('/api/schools', input).pipe(map((response) => response.data.record));
+  }
+
+  updateSchool(recordId: string, input: UpsertSchoolEntityInput): Observable<SchoolEntityRecord> {
+    if (this.hasDummySession()) {
+      const records = this.readDummySchools();
+      const target = records.find((record) => record.id === recordId);
+      if (!target) {
+        return this.createSchool(input);
+      }
+      target.name = input.name.trim();
+      target.type = input.type.trim();
+      target.address = input.address.trim();
+      target.description = input.description?.trim() || undefined;
+      target.comment = input.comment?.trim() || undefined;
+      target.updatedAt = new Date().toISOString();
+      this.writeDummySchools(records);
+      return of(target);
+    }
+    return this.http
+      .patch<UpsertSchoolResponse>(`/api/schools/${recordId}`, input)
+      .pipe(map((response) => response.data.record));
+  }
+
+  deleteSchool(recordId: string): Observable<boolean> {
+    if (this.hasDummySession()) {
+      const records = this.readDummySchools();
+      const nextRecords = records.filter((record) => record.id !== recordId);
+      this.writeDummySchools(nextRecords);
+      return of(nextRecords.length !== records.length);
+    }
+    return this.http
+      .delete<DeleteSchoolResponse>(`/api/schools/${recordId}`)
       .pipe(map((response) => response.data.deleted));
   }
 
@@ -979,6 +1100,7 @@ export class AuthApiService {
       storage.removeItem(AuthApiService.DUMMY_PRIVACY_EVENTS_KEY);
       storage.removeItem(AuthApiService.DUMMY_CONTACTS_KEY);
       storage.removeItem(AuthApiService.DUMMY_SCHOOL_PERSONAL_KEY);
+      storage.removeItem(AuthApiService.DUMMY_SCHOOLS_KEY);
     }
     this.inMemoryDummyDrafts = [];
     this.inMemoryDummyProfile = {
@@ -988,6 +1110,7 @@ export class AuthApiService {
     this.inMemoryPrivacyEvents = [];
     this.inMemoryDummyContacts = [];
     this.inMemorySchoolPersonal = [];
+    this.inMemorySchools = [];
   }
 
   private readDummyDrafts(): AppointmentDraft[] {
@@ -1098,6 +1221,51 @@ export class AuthApiService {
       },
     ];
     this.writeDummySchoolPersonal(seeded);
+    return seeded;
+  }
+
+  private readDummySchools(): SchoolEntityRecord[] {
+    const storage = this.getStorage();
+    if (!storage) {
+      return [...this.inMemorySchools];
+    }
+    const serialized = storage.getItem(AuthApiService.DUMMY_SCHOOLS_KEY);
+    if (!serialized) {
+      return this.seedDummySchools();
+    }
+    try {
+      const parsed = JSON.parse(serialized) as SchoolEntityRecord[];
+      return Array.isArray(parsed) ? parsed : this.seedDummySchools();
+    } catch {
+      return this.seedDummySchools();
+    }
+  }
+
+  private writeDummySchools(records: SchoolEntityRecord[]): void {
+    const storage = this.getStorage();
+    if (!storage) {
+      this.inMemorySchools = [...records];
+      return;
+    }
+    storage.setItem(AuthApiService.DUMMY_SCHOOLS_KEY, JSON.stringify(records));
+  }
+
+  private seedDummySchools(): SchoolEntityRecord[] {
+    const now = new Date().toISOString();
+    const seeded: SchoolEntityRecord[] = [
+      {
+        id: 'school-entity-1',
+        schoolId: 'school-1',
+        name: 'Primary School North',
+        type: 'public',
+        address: 'Musterstrasse 10, 8000 Zurich',
+        description: 'Main school site for grade 1-6',
+        comment: 'Pitch seed school',
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+    this.writeDummySchools(seeded);
     return seeded;
   }
 

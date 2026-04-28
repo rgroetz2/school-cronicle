@@ -43,6 +43,7 @@ describe('DashboardShellComponent', () => {
     expect(text).toContain('Dashboard');
     expect(text).toContain('Appointments');
     expect(text).toContain('School personal');
+    expect(text).toContain('Schools');
     expect(text).toContain('Contacts');
     expect(text).toContain('Privacy');
     expect(text).toContain('Help');

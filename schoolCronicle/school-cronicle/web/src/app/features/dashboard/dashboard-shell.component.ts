@@ -96,6 +96,7 @@ export class DashboardShellComponent implements OnInit {
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'Appointments', path: '/appointments' },
     { label: 'School personal', path: '/school-personal' },
+    { label: 'Schools', path: '/schools' },
     { label: 'Contacts', path: '/contacts' },
     { label: 'Privacy', path: '/privacy' },
     { label: 'Help', path: '/help' },

@@ -31,12 +31,11 @@
 
 .filter-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(12rem, 1fr));
+  grid-template-columns: repeat(2, minmax(12rem, 1fr));
   gap: 0.45rem 0.8rem;
 }
 
-.filter-grid input,
-.filter-grid select {
+.filter-grid input {
   border: 1px solid var(--border);
   border-radius: 0.55rem;
   padding: 0.45rem 0.6rem;
@@ -85,7 +84,7 @@
 }
 
 .modal-panel input,
-.modal-panel select {
+.modal-panel textarea {
   border: 1px solid var(--border);
   border-radius: 0.55rem;
   padding: 0.45rem 0.6rem;

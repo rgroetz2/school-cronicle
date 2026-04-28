@@ -4,7 +4,7 @@ import { authSessionGuard } from './core/auth-session.guard';
 import { DashboardShellComponent } from './features/dashboard/dashboard-shell.component';
 
 describe('appRoutes', () => {
-  it('protects dashboard shell with auth guard and exposes privacy and school-personal child routes', () => {
+  it('protects dashboard shell with auth guard and exposes privacy, school-personal, and schools child routes', () => {
     const shellRoute = appRoutes.find((route) => route.component === DashboardShellComponent);
     expect(shellRoute).toBeDefined();
     expect(shellRoute?.canActivate).toEqual([authSessionGuard]);
@@ -13,6 +13,8 @@ describe('appRoutes', () => {
     expect(privacyChild).toBeDefined();
     const schoolPersonalChild = shellRoute?.children?.find((route) => route.path === 'school-personal');
     expect(schoolPersonalChild).toBeDefined();
+    const schoolsChild = shellRoute?.children?.find((route) => route.path === 'schools');
+    expect(schoolsChild).toBeDefined();
   });
 
   it('protects admin route with role guard', () => {

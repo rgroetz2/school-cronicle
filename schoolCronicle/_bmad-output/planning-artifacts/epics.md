@@ -22,8 +22,8 @@ This document provides the complete epic and story breakdown for schoolCronicle 
 ### Functional Requirements
 
 FR1: The system supports two roles: `admin` and `user`.
-FR2: A `user` is not allowed to perform admin operations.
-FR3: A `user` can maintain only their own `school-personal` profile.
+FR2: A `user` is not allowed to access admin-only areas unrelated to shared CRUD modules.
+FR3: A `user` can maintain `school-personal` records (not restricted to self-only).
 FR4: A `user` can maintain only their own appointments.
 FR5: The system provides a `school-personal` entity with properties: `name`, `role` (`admin | user`), `jobRole` (`teacher | assistant | supporter | other`), `class` (optional), and `startDate` (optional).
 FR6: The system provides CRUD UI for `school-personal`.
@@ -41,7 +41,7 @@ FR16: After `SAVE`, list/filter UI reflects the persisted changes.
 ### NonFunctional Requirements
 
 NFR1: Authorization enforcement follows deny-by-default and prevents role escalation.
-NFR2: `user` ownership restrictions are enforced server-side, not UI-only.
+NFR2: Authorization behavior for `school` and `school-personal` is enforced server-side, not UI-only.
 NFR3: Core list/open/save interactions should align with existing p95 responsiveness goals (2s target under nominal load).
 NFR4: UI interactions are keyboard-accessible and do not rely on color-only state meaning.
 NFR5: API and frontend naming/format conventions remain consistent with project architecture standards.
@@ -49,7 +49,7 @@ NFR6: Significant CRUD actions are auditable with actor, action, target, and tim
 
 ### Additional Requirements
 
-- Keep API authorization checks role-aware (`admin` vs `user`) and ownership-aware for `school-personal`.
+- Keep API authorization checks role-aware (`admin` vs `user`) while allowing both roles to maintain `school` and `school-personal`.
 - Keep API payloads camelCase and persistence naming conventions consistent with architecture (`snake_case` in DB).
 - Preserve architecture pattern: frontend facades/services + Reactive Forms.
 - Maintain uniform API success/error envelopes and typed validation errors.
@@ -67,8 +67,8 @@ UX-DR6: Missing optional values (`class`, `startDate`, optional `school` text fi
 ### FR Coverage Map
 
 FR1: Epic 1 - Define two-role authorization model.
-FR2: Epic 1 - Block `user` from admin operations.
-FR3: Epic 2 - Restrict `user` to own `school-personal` profile.
+FR2: Epic 1 - Block `user` from unrelated admin-only operations.
+FR3: Epic 2 - Allow `user` to maintain `school-personal`.
 FR4: Epic 5 - Restrict appointment maintenance to owning user.
 FR5: Epic 2 - Implement `school-personal` data model.
 FR6: Epic 2 - Implement `school-personal` CRUD UI.
@@ -90,7 +90,7 @@ Deliver secure two-role behavior (`admin`, `user`) with deny-by-default guards s
 **FRs covered:** FR1, FR2
 
 ### Epic 2: School-Personal Management
-Enable `school-personal` entity lifecycle with role-aware permissions (`admin` full access, `user` self-only profile maintenance).
+Enable `school-personal` entity lifecycle with CRUD/filter management available to both `admin` and `user`.
 **FRs covered:** FR3, FR5, FR6, FR7
 
 ### Epic 3: School Management
@@ -163,7 +163,7 @@ So that the interface matches my permissions and reduces accidental access attem
 
 ## Epic 2: School-Personal Management
 
-Enable `school-personal` entity lifecycle with role-aware permissions (`admin` full access, `user` self-only profile maintenance).
+Enable `school-personal` entity lifecycle with CRUD/filter management available to both `admin` and `user`.
 
 ### Story 2.1: Implement School-Personal Data Model and Validation
 
@@ -217,18 +217,18 @@ So that editing is fast and list context is preserved.
 **Then** the matching record opens in CRUD edit mode
 **And** `SAVE` persists and closes while `CANCEL` closes without persisting.
 
-### Story 2.5: Enforce User Self-Only Profile Permissions
+### Story 2.5: Enable User CRUD Permissions for School-Personal
 
 As a `user`,
-I want to maintain only my own `school-personal` profile,
-So that data ownership and role boundaries are respected.
+I want to create, edit, and delete `school-personal` records,
+So that both roles can maintain profile data in Release 1.
 
 **Acceptance Criteria:**
 
 **Given** a signed-in `user`
-**When** they open profile maintenance
-**Then** only their own record is editable
-**And** attempts to edit or fetch another user's profile are denied server-side.
+**When** they open `school-personal` management
+**Then** list/create/edit/delete flows are available
+**And** server-side authorization allows these CRUD operations for both roles.
 
 ## Epic 3: School Management
 
@@ -286,18 +286,18 @@ So that record updates are efficient.
 **Then** the row record opens in CRUD edit mode
 **And** `SAVE` persists + closes + refreshes the list while `CANCEL` closes immediately.
 
-### Story 3.5: Restrict School CRUD to Admin Role
+### Story 3.5: Enable School CRUD for Both Roles
 
 As a system owner,
-I want only admins to modify school records,
-So that non-admin users cannot perform administrative data changes.
+I want both `admin` and `user` to modify school records,
+So that school data management is collaborative across roles.
 
 **Acceptance Criteria:**
 
 **Given** a signed-in `user`
 **When** they attempt create, update, or delete on `school`
-**Then** the backend denies the request
-**And** admin-only school actions are not presented in user-facing UI.
+**Then** the backend allows the request
+**And** school CRUD actions are presented in UI for both roles.
 
 ## Epic 4: Shared CRUD and Grid Interaction Experience
 
